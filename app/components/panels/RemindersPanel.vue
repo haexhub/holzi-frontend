@@ -3,7 +3,7 @@ import { Trash2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApi } from '~/composables/useApi'
-import type { Reminder } from '~/types/api'
+import type { Reminder, ReminderCreate } from '~/types/api'
 
 const api = useApi()
 const reminders = ref<Reminder[]>([])
@@ -35,12 +35,13 @@ async function add() {
     error.value = 'Ungültiger Zeitpunkt.'
     return
   }
+  const body: ReminderCreate = {
+    message,
+    due_at: Math.floor(due.getTime() / 1000),
+    channel: 'signal',
+  }
   try {
-    await api.post('/api/reminders', {
-      message,
-      due_at: Math.floor(due.getTime() / 1000),
-      channel: 'signal',
-    })
+    await api.post('/api/reminders', body)
     newMessage.value = ''
     newWhen.value = ''
     await load()

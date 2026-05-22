@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useApi } from '~/composables/useApi'
-import type { Note } from '~/types/api'
+import type { Note, NoteCreate } from '~/types/api'
 
 const api = useApi()
 const notes = ref<Note[]>([])
@@ -30,8 +30,9 @@ async function add() {
   const key = newKey.value.trim()
   const content = newContent.value.trim()
   if (!key || !content) return
+  const body: NoteCreate = { key, content, tags: [] }
   try {
-    await api.post('/api/notes', { key, content, tags: [] })
+    await api.post('/api/notes', body)
     newKey.value = ''
     newContent.value = ''
     await load()

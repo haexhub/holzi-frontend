@@ -59,10 +59,20 @@ app/
 │   └── useChatStream.ts        # fetch + SSE parser for /api/chat
 ├── stores/auth.ts              # token persisted in localStorage
 ├── lib/utils.ts                # cn() (clsx + tailwind-merge)
-└── types/api.ts                # hand-rolled API shapes (TODO: openapi-typescript)
+├── types/
+│   ├── api.ts                  # public type surface: re-exports request bodies from generated, response shapes hand-rolled (see TODO)
+│   └── api-generated.ts        # auto-generated from hermes openapi — do not edit
 ```
+
+## Regenerating API types
+
+```bash
+HERMES_AUTH_TOKEN=… pnpm run gen:api   # requires hermes-server running on :8082
+```
+
+This pulls the OpenAPI schema from the live server (it's Bearer-gated) and regenerates `app/types/api-generated.ts`. Commit the result.
 
 ## Open items
 
-- Wire `openapi-typescript` against the hermes `/openapi.json` so `types/api.ts` is auto-generated.
-- Streaming-text rendering: backend currently emits one final `text` event after the full agent turn — add token-level SSE on the backend and render incremental text here.
+- Backend follow-up: add `response_model=` to each FastAPI endpoint so response shapes become named schemas in `/openapi.json` — then the hand-rolled response types in `app/types/api.ts` can move into the generated file too.
+- Streaming-text rendering already incremental on the server side (PR #8 in Holzi); the UI animates token-by-token automatically since `useChatStream` concatenates each SSE `text` event.
