@@ -60,7 +60,7 @@ app/
 ├── stores/auth.ts              # token persisted in localStorage
 ├── lib/utils.ts                # cn() (clsx + tailwind-merge)
 ├── types/
-│   ├── api.ts                  # public type surface: re-exports request bodies from generated, response shapes hand-rolled (see TODO)
+│   ├── api.ts                  # public type surface: re-exports request + response shapes from generated
 │   └── api-generated.ts        # auto-generated from hermes openapi — do not edit
 ```
 
@@ -85,5 +85,5 @@ This pulls the OpenAPI schema from the live server (it's Bearer-gated) and regen
 
 ## Open items
 
-- Backend follow-up: add `response_model=` to each FastAPI endpoint so response shapes become named schemas in `/openapi.json` — then the hand-rolled response types in `app/types/api.ts` can move into the generated file too.
-- Streaming-text rendering already incremental on the server side (PR #8 in Holzi); the UI animates token-by-token automatically since `useChatStream` concatenates each SSE `text` event.
+- The generated `MessageResponse.role` is plain `string`; tightening to a `Literal["user","assistant","tool"]` on the backend would let the UI's role-based branching be exhaustively checked.
+- Streaming-text rendering already incremental on the server side; the UI animates token-by-token automatically since `useChatStream` concatenates each SSE `text` event.
