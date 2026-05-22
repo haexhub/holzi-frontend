@@ -64,6 +64,17 @@ app/
 │   └── api-generated.ts        # auto-generated from hermes openapi — do not edit
 ```
 
+## Testing
+
+Vitest with happy-dom for pure composable + store tests (no Nuxt runtime needed — fast).
+
+```bash
+pnpm test        # one-shot
+pnpm test:watch  # interactive
+```
+
+Tests live under `tests/` (mirroring the `app/` layout). Coverage today: `useChatStream` SSE parser, `useApi` auth/header/401 handling, `useAuthStore` persistence.
+
 ## Regenerating API types
 
 ```bash
