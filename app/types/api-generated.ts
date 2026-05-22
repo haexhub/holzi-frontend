@@ -235,10 +235,55 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ConversationDetailResponse */
+        ConversationDetailResponse: {
+            conversation: components["schemas"]["ConversationResponse"];
+            /** Messages */
+            messages: components["schemas"]["MessageResponse"][];
+        };
+        /** ConversationResponse */
+        ConversationResponse: {
+            /** Id */
+            id: number;
+            /** Channel */
+            channel: string;
+            /** Title */
+            title: string | null;
+            /** Started At */
+            started_at: number;
+            /** Updated At */
+            updated_at: number;
+        };
+        /** ConversationSummaryResponse */
+        ConversationSummaryResponse: {
+            /** Id */
+            id: number;
+            /** Channel */
+            channel: string;
+            /** Title */
+            title: string | null;
+            /** Started At */
+            started_at: number;
+            /** Updated At */
+            updated_at: number;
+            /** Message Count */
+            message_count: number;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** MessageResponse */
+        MessageResponse: {
+            /** Id */
+            id: number;
+            /** Role */
+            role: string;
+            /** Content */
+            content: string;
+            /** Ts */
+            ts: number;
         };
         /** NoteCreate */
         NoteCreate: {
@@ -248,6 +293,19 @@ export interface components {
             content: string;
             /** Tags */
             tags?: string[];
+        };
+        /** NoteResponse */
+        NoteResponse: {
+            /** Id */
+            id: number;
+            /** Key */
+            key: string;
+            /** Content */
+            content: string;
+            /** Tags */
+            tags: string | null;
+            /** Updated At */
+            updated_at: number;
         };
         /** NoteUpdate */
         NoteUpdate: {
@@ -268,12 +326,40 @@ export interface components {
              */
             channel: string;
         };
+        /** ReminderResponse */
+        ReminderResponse: {
+            /** Id */
+            id: number;
+            /** Due At */
+            due_at: number;
+            /** Message */
+            message: string;
+            /** Channel */
+            channel: string;
+            /** Fired At */
+            fired_at: number | null;
+            /** Created At */
+            created_at: number;
+        };
         /** TodoCreate */
         TodoCreate: {
             /** Content */
             content: string;
             /** Tags */
             tags?: string[];
+        };
+        /** TodoResponse */
+        TodoResponse: {
+            /** Id */
+            id: number;
+            /** Content */
+            content: string;
+            /** Tags */
+            tags: string | null;
+            /** Done At */
+            done_at: number | null;
+            /** Created At */
+            created_at: number;
         };
         /** TodoUpdate */
         TodoUpdate: {
@@ -360,9 +446,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    }[];
+                    "application/json": components["schemas"]["ConversationSummaryResponse"][];
                 };
             };
             /** @description Validation Error */
@@ -395,9 +479,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["ConversationDetailResponse"];
                 };
             };
             /** @description Validation Error */
@@ -428,9 +510,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    }[];
+                    "application/json": components["schemas"]["NoteResponse"][];
                 };
             };
             /** @description Validation Error */
@@ -463,9 +543,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["NoteResponse"];
                 };
             };
             /** @description Validation Error */
@@ -496,9 +574,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["NoteResponse"];
                 };
             };
             /** @description Validation Error */
@@ -533,9 +609,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["NoteResponse"];
                 };
             };
             /** @description Validation Error */
@@ -597,9 +671,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    }[];
+                    "application/json": components["schemas"]["TodoResponse"][];
                 };
             };
             /** @description Validation Error */
@@ -632,9 +704,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["TodoResponse"];
                 };
             };
             /** @description Validation Error */
@@ -698,9 +768,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["TodoResponse"];
                 };
             };
             /** @description Validation Error */
@@ -732,9 +800,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    }[];
+                    "application/json": components["schemas"]["ReminderResponse"][];
                 };
             };
             /** @description Validation Error */
@@ -767,9 +833,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["ReminderResponse"];
                 };
             };
             /** @description Validation Error */
