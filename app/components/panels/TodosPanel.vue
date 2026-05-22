@@ -3,7 +3,7 @@ import { Check, Trash2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApi } from '~/composables/useApi'
-import type { Todo } from '~/types/api'
+import type { Todo, TodoCreate, TodoUpdate } from '~/types/api'
 
 const api = useApi()
 const todos = ref<Todo[]>([])
@@ -26,8 +26,9 @@ async function load() {
 async function add() {
   const content = newContent.value.trim()
   if (!content) return
+  const body: TodoCreate = { content, tags: [] }
   try {
-    await api.post('/api/todos', { content, tags: [] })
+    await api.post('/api/todos', body)
     newContent.value = ''
     await load()
   } catch (err: unknown) {
@@ -36,8 +37,9 @@ async function add() {
 }
 
 async function markDone(id: number) {
+  const body: TodoUpdate = { done: true }
   try {
-    await api.patch(`/api/todos/${id}`, { done: true })
+    await api.patch(`/api/todos/${id}`, body)
     await load()
   } catch (err: unknown) {
     error.value = err instanceof Error ? err.message : 'Fehler.'
