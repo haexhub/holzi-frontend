@@ -278,8 +278,11 @@ export interface components {
         MessageResponse: {
             /** Id */
             id: number;
-            /** Role */
-            role: string;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "user" | "assistant" | "tool";
             /** Content */
             content: string;
             /** Ts */

@@ -85,5 +85,4 @@ This pulls the OpenAPI schema from the live server (it's Bearer-gated) and regen
 
 ## Open items
 
-- The generated `MessageResponse.role` is plain `string`; tightening to a `Literal["user","assistant","tool"]` on the backend would let the UI's role-based branching be exhaustively checked.
 - Streaming-text rendering already incremental on the server side; the UI animates token-by-token automatically since `useChatStream` concatenates each SSE `text` event.
