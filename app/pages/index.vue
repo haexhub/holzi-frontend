@@ -21,6 +21,7 @@ const conversations = ref<Conversation[]>([])
 const activeId = ref<number | null>(null)
 const messages = ref<Message[]>([])
 const streaming = ref(false)
+const streamingText = ref('')
 const error = ref<string | null>(null)
 const activePanel = ref<'notes' | 'todos' | 'reminders'>('notes')
 const messagesScroller = ref<HTMLElement | null>(null)
@@ -69,6 +70,7 @@ async function send(text: string) {
   scrollToBottom()
 
   streaming.value = true
+  streamingText.value = ''
   error.value = null
   try {
     const result = await sendChatMessage(
@@ -76,6 +78,10 @@ async function send(text: string) {
       {
         onSession: (id) => {
           activeId.value = id
+        },
+        onText: (chunk) => {
+          streamingText.value += chunk
+          nextTick(scrollToBottom)
         },
       },
     )
@@ -87,6 +93,7 @@ async function send(text: string) {
     error.value = err instanceof Error ? err.message : 'Chat-Fehler.'
   } finally {
     streaming.value = false
+    streamingText.value = ''
   }
 }
 
@@ -142,7 +149,11 @@ onMounted(loadConversations)
           :key="m.id"
           :message="m"
         />
-        <div v-if="streaming" class="flex justify-start">
+        <ChatMessage
+          v-if="streaming && streamingText"
+          :message="{ role: 'assistant', content: streamingText }"
+        />
+        <div v-if="streaming && !streamingText" class="flex justify-start">
           <div class="rounded-2xl bg-muted px-4 py-2 text-sm text-muted-foreground">
             <span class="inline-flex gap-1">
               <span class="size-1.5 animate-bounce rounded-full bg-current" />
