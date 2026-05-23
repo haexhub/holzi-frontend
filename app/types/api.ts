@@ -20,3 +20,45 @@ export type ConversationDetail = components['schemas']['ConversationDetailRespon
 export type Note = components['schemas']['NoteResponse']
 export type Todo = components['schemas']['TodoResponse']
 export type Reminder = components['schemas']['ReminderResponse']
+
+// --- LLM credentials ----------------------------------------------------
+// Declared manually until `pnpm run gen:api` is re-run against a Hermes
+// build that ships the OAuth + CRUD endpoints (Phase 3+4 of the
+// llm-credentials feature). Keep these shapes in sync with
+// `src/hermes/routes/llm.py` until the regeneration happens.
+export type LlmProvider =
+  | 'anthropic'
+  | 'openai'
+  | 'openrouter'
+  | 'google'
+  | 'custom'
+
+export interface LlmCredential {
+  id: number
+  provider: string
+  mode: 'api_key' | 'oauth_claude' | string
+  display_name: string
+  base_url: string | null
+  is_active: boolean
+  oauth_status: 'pending' | 'authorized' | 'expired' | null
+  oauth_authorized_at: number | null
+  created_at: number
+  updated_at: number
+}
+
+export interface LlmCredentialCreate {
+  provider: LlmProvider
+  display_name: string
+  base_url?: string | null
+  api_key: string
+}
+
+export interface OAuthStartResponse {
+  id: number
+  url: string
+}
+
+export interface OAuthStatusResponse {
+  id: number
+  status: 'pending' | 'authorized' | 'expired' | string
+}
