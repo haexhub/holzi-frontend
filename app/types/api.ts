@@ -39,11 +39,21 @@ export interface LlmCredential {
   mode: 'api_key' | 'oauth_claude' | string
   display_name: string
   base_url: string | null
+  model: string | null
   is_active: boolean
   oauth_status: 'pending' | 'authorized' | 'expired' | null
   oauth_authorized_at: number | null
   created_at: number
   updated_at: number
+}
+
+export interface LlmModelChoice {
+  id: string
+  label: string
+}
+
+export interface LlmModelListResponse {
+  models: LlmModelChoice[]
 }
 
 export interface LlmCredentialCreate {

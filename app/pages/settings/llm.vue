@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import ModelSelect from '~/components/settings/ModelSelect.vue'
 import { useLlmCredentials } from '~/composables/useLlmCredentials'
 import type {
   LlmCredential,
@@ -84,6 +85,18 @@ async function activate(id: number) {
     await load()
   } catch (err: unknown) {
     error.value = err instanceof Error ? err.message : 'Fehler beim Aktivieren.'
+  }
+}
+
+async function setModel(cred: LlmCredential, model: string | null) {
+  // Optimistic update so the ModelSelect doesn't flicker between picks.
+  const previous = cred.model
+  cred.model = model
+  try {
+    await llm.setModel(cred.id, model)
+  } catch (err: unknown) {
+    cred.model = previous
+    error.value = err instanceof Error ? err.message : 'Fehler beim Speichern.'
   }
 }
 
@@ -239,11 +252,12 @@ onBeforeUnmount(stopPolling)
       <div
         v-for="c in credentials"
         :key="c.id"
-        class="flex items-center gap-3 rounded-md border p-3 text-sm"
+        class="flex flex-col gap-3 rounded-md border p-3 text-sm sm:flex-row sm:items-center"
       >
-        <BadgeCheck v-if="c.is_active" class="size-4 text-emerald-500" />
+        <BadgeCheck v-if="c.is_active" class="hidden size-4 text-emerald-500 sm:block" />
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2">
+            <BadgeCheck v-if="c.is_active" class="size-4 text-emerald-500 sm:hidden" />
             <span class="font-medium">{{ c.display_name }}</span>
             <span class="rounded bg-muted px-1.5 py-0.5 text-xs font-mono text-muted-foreground">
               {{ c.provider }}
@@ -259,6 +273,13 @@ onBeforeUnmount(stopPolling)
               · Authorisiert {{ formatTimestamp(c.oauth_authorized_at) }}
             </template>
           </p>
+          <div class="mt-2 w-full max-w-md">
+            <ModelSelect
+              :model-value="c.model"
+              :credential-id="c.id"
+              @update:model-value="(v) => setModel(c, v)"
+            />
+          </div>
         </div>
         <Button
           v-if="!c.is_active"
@@ -303,7 +324,7 @@ onBeforeUnmount(stopPolling)
           </div>
           <div class="space-y-1">
             <Label for="display">Display-Name</Label>
-            <Input id="display" v-model="newDisplayName" placeholder="z.B. Marko OpenAI" />
+            <Input id="display" v-model="newDisplayName" placeholder="z.B. Martin OpenAI" />
           </div>
         </div>
         <div class="space-y-1">
