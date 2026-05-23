@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ArrowLeft, BadgeCheck, ExternalLink, Trash2 } from 'lucide-vue-next'
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -35,7 +35,6 @@ const oauthFlowId = ref<number | null>(null)
 const oauthUrl = ref<string | null>(null)
 const oauthCode = ref('')
 const oauthStarting = ref(false)
-const oauthPollTimer = ref<ReturnType<typeof setInterval> | null>(null)
 
 async function load() {
   loading.value = true
@@ -137,49 +136,17 @@ async function submitCode() {
   oauthPhase.value = 'submitting'
   error.value = null
   try {
+    // submit_code now returns the authorised credential synchronously —
+    // the backend extracts the sk-ant-oat01 token from claude's stdout,
+    // promotes the row to mode=api_key + is_active=true in one shot,
+    // and returns the updated row. No more /status polling needed.
     await llm.oauthSubmitCode(id, code)
-    // Don't flip to 'done' yet — wait for /status to confirm authorized.
-    // If the CLI exits 0 but a refresh somehow leaves the row 'expired',
-    // pollOAuthStatus surfaces that instead of falsely celebrating.
-    pollOAuthStatus()
+    oauthPhase.value = 'done'
+    await load()
+    resetOAuth()
   } catch (err: unknown) {
     error.value = err instanceof Error ? err.message : 'Code abgelehnt.'
     oauthPhase.value = 'awaiting_code'
-  }
-}
-
-function pollOAuthStatus() {
-  const id = oauthFlowId.value
-  if (id === null) return
-  if (oauthPollTimer.value) {
-    clearInterval(oauthPollTimer.value)
-  }
-  oauthPollTimer.value = setInterval(async () => {
-    try {
-      const res = await llm.oauthStatus(id)
-      if (res.status === 'authorized') {
-        stopPolling()
-        oauthPhase.value = 'done'
-        await load()
-        resetOAuth()
-      } else if (res.status === 'expired') {
-        stopPolling()
-        error.value = 'OAuth-Flow ist expired. Starte neu.'
-        oauthPhase.value = 'idle'
-        await load()
-      }
-    } catch (err: unknown) {
-      // 404 once the row got deleted by /cancel — stop polling silently.
-      stopPolling()
-      error.value = err instanceof Error ? err.message : 'Status-Poll fehlgeschlagen.'
-    }
-  }, 1000)
-}
-
-function stopPolling() {
-  if (oauthPollTimer.value) {
-    clearInterval(oauthPollTimer.value)
-    oauthPollTimer.value = null
   }
 }
 
@@ -191,7 +158,6 @@ function resetOAuth() {
 }
 
 async function cancelOAuth() {
-  stopPolling()
   const id = oauthFlowId.value
   resetOAuth()
   if (id !== null) {
@@ -227,7 +193,6 @@ function isOAuthUnready(c: LlmCredential): boolean {
 }
 
 onMounted(load)
-onBeforeUnmount(stopPolling)
 </script>
 
 <template>
