@@ -67,6 +67,42 @@ describe('useLlmCredentials', () => {
     )
   })
 
+  it('PATCHes model with the value in body', async () => {
+    const spy = stubFetch(() => ({ id: 1, model: 'gpt-5' }))
+    await useLlmCredentials().setModel(1, 'gpt-5')
+    expect(spy).toHaveBeenCalledWith(
+      '/api/llm/credentials/1/model',
+      expect.objectContaining({
+        method: 'PATCH',
+        body: { model: 'gpt-5' },
+      }),
+    )
+  })
+
+  it('PATCHes model with null to clear', async () => {
+    const spy = stubFetch(() => ({ id: 1, model: null }))
+    await useLlmCredentials().setModel(1, null)
+    expect(spy).toHaveBeenCalledWith(
+      '/api/llm/credentials/1/model',
+      expect.objectContaining({
+        method: 'PATCH',
+        body: { model: null },
+      }),
+    )
+  })
+
+  it('GETs the per-credential models list', async () => {
+    const spy = stubFetch(() => ({
+      models: [{ id: 'gpt-5', label: 'GPT-5 (gpt-5)' }],
+    }))
+    const r = await useLlmCredentials().listModels(42)
+    expect(spy).toHaveBeenCalledWith(
+      '/api/llm/credentials/42/models',
+      expect.objectContaining({ method: 'GET' }),
+    )
+    expect(r.models[0].id).toBe('gpt-5')
+  })
+
   it('POSTs oauth start', async () => {
     const spy = stubFetch(() => ({ id: 1, url: 'https://claude.com/cai/oauth/x' }))
     const result = await useLlmCredentials().oauthStart()

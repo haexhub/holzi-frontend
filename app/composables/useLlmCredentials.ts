@@ -2,6 +2,7 @@ import { useApi } from '~/composables/useApi'
 import type {
   LlmCredential,
   LlmCredentialCreate,
+  LlmModelListResponse,
   OAuthStartResponse,
   OAuthStatusResponse,
 } from '~/types/api'
@@ -27,6 +28,12 @@ export function useLlmCredentials() {
 
     activate: (id: number) =>
       api.patch<LlmCredential>(`/api/llm/credentials/${id}/activate`),
+
+    setModel: (id: number, model: string | null) =>
+      api.patch<LlmCredential>(`/api/llm/credentials/${id}/model`, { model }),
+
+    listModels: (id: number) =>
+      api.get<LlmModelListResponse>(`/api/llm/credentials/${id}/models`),
 
     delete: (id: number) =>
       api.delete<void>(`/api/llm/credentials/${id}`),
