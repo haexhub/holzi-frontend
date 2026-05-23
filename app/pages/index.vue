@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { LogOut, NotebookPen, Bell, ListChecks } from 'lucide-vue-next'
+import { LogOut, NotebookPen, Bell, ListChecks, Settings } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import ChatComposer from '~/components/chat/ChatComposer.vue'
@@ -128,10 +128,18 @@ onMounted(loadConversations)
         <h1 class="text-sm font-semibold">
           {{ activeId === null ? 'Neuer Chat' : `Conversation #${activeId}` }}
         </h1>
-        <Button size="sm" variant="ghost" @click="logout">
-          <LogOut class="mr-1 size-4" />
-          Logout
-        </Button>
+        <div class="flex items-center gap-1">
+          <NuxtLink to="/settings/llm">
+            <Button size="sm" variant="ghost">
+              <Settings class="mr-1 size-4" />
+              Settings
+            </Button>
+          </NuxtLink>
+          <Button size="sm" variant="ghost" @click="logout">
+            <LogOut class="mr-1 size-4" />
+            Logout
+          </Button>
+        </div>
       </header>
 
       <div
