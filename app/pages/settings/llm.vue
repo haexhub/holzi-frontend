@@ -125,9 +125,9 @@ async function submitCode() {
   error.value = null
   try {
     await llm.oauthSubmitCode(id, code)
-    oauthPhase.value = 'done'
-    // Begin polling for status — single-shot will already say authorized,
-    // but polling guards against weird CLI delays.
+    // Don't flip to 'done' yet — wait for /status to confirm authorized.
+    // If the CLI exits 0 but a refresh somehow leaves the row 'expired',
+    // pollOAuthStatus surfaces that instead of falsely celebrating.
     pollOAuthStatus()
   } catch (err: unknown) {
     error.value = err instanceof Error ? err.message : 'Code abgelehnt.'
@@ -144,12 +144,16 @@ function pollOAuthStatus() {
   oauthPollTimer.value = setInterval(async () => {
     try {
       const res = await llm.oauthStatus(id)
-      if (res.status === 'authorized' || res.status === 'expired') {
+      if (res.status === 'authorized') {
         stopPolling()
+        oauthPhase.value = 'done'
         await load()
-        if (res.status === 'authorized') {
-          resetOAuth()
-        }
+        resetOAuth()
+      } else if (res.status === 'expired') {
+        stopPolling()
+        error.value = 'OAuth-Flow ist expired. Starte neu.'
+        oauthPhase.value = 'idle'
+        await load()
       }
     } catch (err: unknown) {
       // 404 once the row got deleted by /cancel — stop polling silently.
@@ -264,7 +268,13 @@ onBeforeUnmount(stopPolling)
         >
           Aktivieren
         </Button>
-        <Button size="sm" variant="ghost" @click="remove(c)">
+        <Button
+          size="sm"
+          variant="ghost"
+          :aria-label="`Credential ${c.display_name} löschen`"
+          :title="`Credential ${c.display_name} löschen`"
+          @click="remove(c)"
+        >
           <Trash2 class="size-3.5" />
         </Button>
       </div>
