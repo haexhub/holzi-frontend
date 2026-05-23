@@ -216,6 +216,16 @@ function modeBadge(c: LlmCredential): string {
   return 'API Key'
 }
 
+/**
+ * Pending / expired OAuth rows have no usable ciphertext — activating them
+ * leaves the proxy without a token and chat 503s. We block the action in the
+ * UI and the backend also rejects with 409, but the badge gives the user a
+ * clear "this credential isn't ready" signal.
+ */
+function isOAuthUnready(c: LlmCredential): boolean {
+  return c.mode === 'oauth_claude' && c.oauth_status !== 'authorized'
+}
+
 onMounted(load)
 onBeforeUnmount(stopPolling)
 </script>
@@ -273,16 +283,21 @@ onBeforeUnmount(stopPolling)
               · Authorisiert {{ formatTimestamp(c.oauth_authorized_at) }}
             </template>
           </p>
+          <p v-if="isOAuthUnready(c)" class="mt-1 text-xs text-amber-600">
+            OAuth-Flow ist noch nicht abgeschlossen — klicke unten auf
+            „OAuth starten“, um den Code-Submit-Schritt erneut zu durchlaufen.
+          </p>
           <div class="mt-2 w-full max-w-md">
             <ModelSelect
               :model-value="c.model"
               :credential-id="c.id"
+              :disabled="isOAuthUnready(c)"
               @update:model-value="(v) => setModel(c, v)"
             />
           </div>
         </div>
         <Button
-          v-if="!c.is_active"
+          v-if="!c.is_active && !isOAuthUnready(c)"
           size="sm"
           variant="secondary"
           @click="activate(c.id)"
