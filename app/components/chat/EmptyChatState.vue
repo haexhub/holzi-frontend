@@ -11,7 +11,10 @@ defineProps<{
 </script>
 
 <template>
-  <div class="flex flex-col items-center gap-4 py-16 text-center">
+  <div
+    v-if="hasCredentials !== null"
+    class="flex flex-col items-center gap-4 py-16 text-center"
+  >
     <template v-if="hasCredentials === false">
       <div class="rounded-full bg-muted p-3 text-muted-foreground">
         <KeyRound class="size-6" />
@@ -23,15 +26,18 @@ defineProps<{
           API-Key hinzu oder verbinde deinen Claude-Account per OAuth.
         </p>
       </div>
-      <NuxtLink to="/settings/llm">
-        <Button size="sm">
+      <!-- Use as-child so the link is the interactive root — otherwise
+           we end up with <a><button>, which is invalid HTML and breaks
+           keyboard/screen-reader semantics. -->
+      <Button as-child size="sm">
+        <NuxtLink to="/settings/llm">
           Credentials einrichten
           <ArrowRight class="ml-1 size-4" />
-        </Button>
-      </NuxtLink>
+        </NuxtLink>
+      </Button>
     </template>
 
-    <template v-else-if="hasCredentials === true">
+    <template v-else>
       <div class="rounded-full bg-muted p-3 text-muted-foreground">
         <MessageCircle class="size-6" />
       </div>

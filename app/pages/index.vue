@@ -47,10 +47,10 @@ async function loadCredentialState() {
     const creds = await llm.list()
     hasCredentials.value = creds.length > 0
   } catch {
-    // Silent: the empty-state still falls back to the generic "say hello"
-    // greeting if we can't determine credential state, which is no worse
-    // than the pre-empty-state behavior.
-    hasCredentials.value = null
+    // Silent: if we can't determine credential state, fall back to the
+    // generic greeting (treat-as-has-credentials) rather than leaving
+    // the user with no empty-state guidance at all.
+    hasCredentials.value = true
   }
 }
 
