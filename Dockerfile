@@ -8,9 +8,11 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# pnpm via corepack — version pulled at build-time, no lockfile lock-in
-# to a global pnpm version that might drift between local and CI.
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# pnpm via corepack. Pinned to v10 to match the ci.yml workflow
+# (uses pnpm/action-setup@v4 with version: 10). `@latest` would resolve
+# to pnpm 11 today, which trips ERR_PNPM_IGNORED_BUILDS on this
+# repo's onlyBuiltDependencies declaration in pnpm-workspace.yaml.
+RUN corepack enable && corepack prepare pnpm@10 --activate
 
 # Install deps first for cache-friendly rebuilds.
 COPY package.json pnpm-lock.yaml ./
