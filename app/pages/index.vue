@@ -5,16 +5,19 @@ import { Separator } from '@/components/ui/separator'
 import ChatComposer from '~/components/chat/ChatComposer.vue'
 import ChatMessage from '~/components/chat/ChatMessage.vue'
 import ConversationList from '~/components/chat/ConversationList.vue'
+import EmptyChatState from '~/components/chat/EmptyChatState.vue'
 import NotesPanel from '~/components/panels/NotesPanel.vue'
 import RemindersPanel from '~/components/panels/RemindersPanel.vue'
 import TodosPanel from '~/components/panels/TodosPanel.vue'
 import { useApi } from '~/composables/useApi'
 import { sendChatMessage } from '~/composables/useChatStream'
+import { useLlmCredentials } from '~/composables/useLlmCredentials'
 import { useAuthStore } from '~/stores/auth'
 import type { Conversation, ConversationDetail, Message } from '~/types/api'
 
 const auth = useAuthStore()
 const api = useApi()
+const llm = useLlmCredentials()
 const router = useRouter()
 
 const conversations = ref<Conversation[]>([])
@@ -25,6 +28,9 @@ const streamingText = ref('')
 const error = ref<string | null>(null)
 const activePanel = ref<'notes' | 'todos' | 'reminders'>('notes')
 const messagesScroller = ref<HTMLElement | null>(null)
+// `null` while the credentials list is still loading — EmptyChatState
+// uses this to avoid flashing the "add credentials" CTA before we know.
+const hasCredentials = ref<boolean | null>(null)
 
 async function loadConversations() {
   try {
@@ -33,6 +39,18 @@ async function loadConversations() {
     })
   } catch (err: unknown) {
     error.value = err instanceof Error ? err.message : 'Fehler beim Laden.'
+  }
+}
+
+async function loadCredentialState() {
+  try {
+    const creds = await llm.list()
+    hasCredentials.value = creds.length > 0
+  } catch {
+    // Silent: the empty-state still falls back to the generic "say hello"
+    // greeting if we can't determine credential state, which is no worse
+    // than the pre-empty-state behavior.
+    hasCredentials.value = null
   }
 }
 
@@ -107,7 +125,10 @@ function logout() {
   router.replace('/login')
 }
 
-onMounted(loadConversations)
+onMounted(() => {
+  loadConversations()
+  loadCredentialState()
+})
 </script>
 
 <template>
@@ -146,12 +167,10 @@ onMounted(loadConversations)
         ref="messagesScroller"
         class="flex-1 space-y-3 overflow-y-auto p-4"
       >
-        <p
+        <EmptyChatState
           v-if="messages.length === 0 && !streaming"
-          class="py-12 text-center text-sm text-muted-foreground"
-        >
-          Sag Hermes Hallo.
-        </p>
+          :has-credentials="hasCredentials"
+        />
         <ChatMessage
           v-for="m in messages"
           :key="m.id"
