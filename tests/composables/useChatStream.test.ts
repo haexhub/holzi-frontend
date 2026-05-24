@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { sendChatMessage } from '~/composables/useChatStream'
+import { ChatStreamError, friendlyChatError, sendChatMessage } from '~/composables/useChatStream'
 import { useAuthStore } from '~/stores/auth'
 
 function sseBody(events: { event: string; data: unknown }[]): string {
@@ -93,6 +93,24 @@ describe('sendChatMessage', () => {
     await expect(sendChatMessage({ message: 'hi' })).rejects.toThrow('agent exploded')
   })
 
+  it('surfaces code + status_code from the SSE error event', async () => {
+    mockFetch(
+      new Response(sseBody([
+        { event: 'session', data: { conversation_id: 1 } },
+        {
+          event: 'error',
+          data: { code: 'upstream_timeout', status_code: 504, message: 'upstream timed out' },
+        },
+      ])),
+    )
+    await expect(sendChatMessage({ message: 'hi' })).rejects.toMatchObject({
+      name: 'ChatStreamError',
+      code: 'upstream_timeout',
+      statusCode: 504,
+      message: 'upstream timed out',
+    })
+  })
+
   it('throws when the stream ends without a session event', async () => {
     mockFetch(new Response(sseBody([{ event: 'done', data: {} }])))
     await expect(sendChatMessage({ message: 'hi' })).rejects.toThrow(/without a session event/)
@@ -141,3 +159,43 @@ describe('sendChatMessage', () => {
     expect(body.conversation_id).toBe(99)
   })
 })
+
+describe('friendlyChatError', () => {
+  it('falls back to neutral copy for unknown ChatStreamError codes', () => {
+    const err = new ChatStreamError('internal backend detail', { code: 'future_new_code' })
+    expect(friendlyChatError(err)).toBe('Chat-Fehler.')
+  })
+
+  it('maps upstream_timeout to a retry-friendly message', () => {
+    const err = new ChatStreamError('upstream timed out', { code: 'upstream_timeout' })
+    expect(friendlyChatError(err)).toMatch(/zu lange/i)
+  })
+
+  it('maps upstream_unreachable and points to settings', () => {
+    const err = new ChatStreamError('boom', { code: 'upstream_unreachable' })
+    expect(friendlyChatError(err)).toMatch(/nicht erreichbar/i)
+    expect(friendlyChatError(err)).toMatch(/settings/i)
+  })
+
+  it('surfaces the upstream status code for upstream_http_error', () => {
+    const err = new ChatStreamError('upstream returned 500', {
+      code: 'upstream_http_error',
+      statusCode: 500,
+    })
+    expect(friendlyChatError(err)).toContain('500')
+  })
+
+  it('includes the raw message for agent_error', () => {
+    const err = new ChatStreamError('tool catalog blew up', { code: 'agent_error' })
+    expect(friendlyChatError(err)).toContain('tool catalog blew up')
+  })
+
+  it('falls back to the message for plain Errors', () => {
+    expect(friendlyChatError(new Error('nope'))).toBe('nope')
+  })
+
+  it('falls back to a neutral copy for non-Error values', () => {
+    expect(friendlyChatError('weird')).toBe('Chat-Fehler.')
+  })
+})
+

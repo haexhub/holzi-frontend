@@ -8,7 +8,7 @@ import { useAuthStore } from '~/stores/auth'
  *   - `text`    → { content: string }   (final assistant message)
  *   - `done`    → {}
  * Plus on failure:
- *   - `error`   → { message: string }
+ *   - `error`   → { code, status_code, message }
  *
  * Returns the conversation_id from the `session` event and the assembled
  * assistant text once `done` arrives. Throws on `error` or non-2xx.
@@ -22,6 +22,30 @@ export interface ChatStreamCallbacks {
   onSession?: (conversationId: number) => void
   onText?: (chunk: string) => void
   signal?: AbortSignal
+}
+
+/**
+ * Codes emitted by `_classify_chat_error` in `src/hermes/routes/api.py`.
+ * Kept loose (`string`) so an unknown future code falls through to a
+ * generic message instead of breaking the build.
+ */
+export type ChatStreamErrorCode =
+  | 'upstream_http_error'
+  | 'upstream_timeout'
+  | 'upstream_unreachable'
+  | 'agent_error'
+  | (string & {})
+
+export class ChatStreamError extends Error {
+  readonly code: ChatStreamErrorCode
+  readonly statusCode: number | null
+
+  constructor(message: string, opts: { code?: ChatStreamErrorCode; statusCode?: number | null } = {}) {
+    super(message)
+    this.name = 'ChatStreamError'
+    this.code = opts.code ?? 'unknown'
+    this.statusCode = opts.statusCode ?? null
+  }
 }
 
 export async function sendChatMessage(
@@ -45,11 +69,17 @@ export async function sendChatMessage(
 
   if (response.status === 401) {
     auth.clear()
-    throw new Error('unauthorized')
+    throw new ChatStreamError('unauthorized', {
+      code: 'unauthorized',
+      statusCode: 401,
+    })
   }
   if (!response.ok || !response.body) {
     const detail = await response.text().catch(() => '')
-    throw new Error(`chat request failed: ${response.status} ${detail}`)
+    throw new ChatStreamError(
+      `chat request failed: ${response.status} ${detail}`,
+      { code: 'request_failed', statusCode: response.status },
+    )
   }
 
   const reader = response.body.getReader()
@@ -57,7 +87,7 @@ export async function sendChatMessage(
   let buffer = ''
   let conversationId: number | null = null
   let assistantText = ''
-  let errorMessage: string | null = null
+  let streamError: ChatStreamError | null = null
 
   while (true) {
     const { value, done } = await reader.read()
@@ -86,20 +116,59 @@ export async function sendChatMessage(
         }
         case 'done':
           break
-        case 'error':
-          errorMessage = (data as { message?: string }).message ?? 'unknown agent error'
+        case 'error': {
+          const payload = data as {
+            code?: ChatStreamErrorCode
+            status_code?: number
+            message?: string
+          }
+          streamError = new ChatStreamError(
+            payload.message ?? 'unknown agent error',
+            { code: payload.code, statusCode: payload.status_code ?? null },
+          )
           break
+        }
       }
     }
   }
 
-  if (errorMessage) {
-    throw new Error(errorMessage)
+  if (streamError) {
+    throw streamError
   }
   if (conversationId === null) {
-    throw new Error('chat stream ended without a session event')
+    throw new ChatStreamError('chat stream ended without a session event')
   }
   return { conversationId, text: assistantText }
+}
+
+/**
+ * Render a ChatStreamError as user-facing copy. Generic Errors fall
+ * through to their own `.message`; unknown future codes fall back to
+ * a neutral "Chat-Fehler" so the UI never shows a raw stack trace.
+ */
+export function friendlyChatError(err: unknown): string {
+  if (!(err instanceof ChatStreamError)) {
+    return err instanceof Error ? err.message : 'Chat-Fehler.'
+  }
+  switch (err.code) {
+    case 'upstream_unreachable':
+      return 'LLM-Provider nicht erreichbar. Prüfe deine Credentials in den Settings.'
+    case 'upstream_timeout':
+      return 'LLM-Provider hat zu lange gebraucht. Versuch es nochmal.'
+    case 'upstream_http_error':
+      return `LLM-Provider hat einen Fehler zurückgegeben${err.statusCode ? ` (${err.statusCode})` : ''}. Versuch es gleich nochmal.`
+    case 'agent_error':
+      return `Interner Fehler: ${err.message}`
+    case 'unauthorized':
+      return 'Session abgelaufen — bitte neu einloggen.'
+    case 'request_failed':
+      return `Chat-Request fehlgeschlagen${err.statusCode ? ` (${err.statusCode})` : ''}.`
+    default:
+      // Don't leak backend `err.message` for codes we haven't mapped —
+      // they could carry raw upstream text. New codes should be added
+      // to this switch deliberately.
+      return 'Chat-Fehler.'
+  }
 }
 
 function parseSseBlock(block: string): { event: string | null; data: unknown } {

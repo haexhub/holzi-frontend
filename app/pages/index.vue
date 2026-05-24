@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { LogOut, NotebookPen, Bell, ListChecks, Settings } from 'lucide-vue-next'
+import {
+  AlertCircle,
+  Bell,
+  ListChecks,
+  LogOut,
+  NotebookPen,
+  Settings,
+  X,
+} from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import ChatComposer from '~/components/chat/ChatComposer.vue'
@@ -11,7 +19,7 @@ import RemindersPanel from '~/components/panels/RemindersPanel.vue'
 import TodosPanel from '~/components/panels/TodosPanel.vue'
 import ThemeToggle from '~/components/ThemeToggle.vue'
 import { useApi } from '~/composables/useApi'
-import { sendChatMessage } from '~/composables/useChatStream'
+import { friendlyChatError, sendChatMessage } from '~/composables/useChatStream'
 import { useLlmCredentials } from '~/composables/useLlmCredentials'
 import { useAuthStore } from '~/stores/auth'
 import type { Conversation, ConversationDetail, Message } from '~/types/api'
@@ -109,7 +117,7 @@ async function send(text: string) {
     await selectConversation(result.conversationId)
     await loadConversations()
   } catch (err: unknown) {
-    error.value = err instanceof Error ? err.message : 'Chat-Fehler.'
+    error.value = friendlyChatError(err)
   } finally {
     streaming.value = false
     streamingText.value = ''
@@ -191,9 +199,22 @@ onMounted(() => {
             </span>
           </div>
         </div>
-        <p v-if="error" class="text-center text-sm text-destructive">
-          {{ error }}
-        </p>
+        <div
+          v-if="error"
+          role="alert"
+          class="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+        >
+          <AlertCircle class="mt-0.5 size-4 shrink-0" />
+          <p class="flex-1">{{ error }}</p>
+          <button
+            type="button"
+            class="rounded p-0.5 text-destructive/70 hover:text-destructive"
+            aria-label="Fehler ausblenden"
+            @click="error = null"
+          >
+            <X class="size-3.5" />
+          </button>
+        </div>
       </div>
 
       <ChatComposer :disabled="streaming" @send="send" />
