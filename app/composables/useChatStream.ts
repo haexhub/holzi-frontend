@@ -164,7 +164,10 @@ export function friendlyChatError(err: unknown): string {
     case 'request_failed':
       return `Chat-Request fehlgeschlagen${err.statusCode ? ` (${err.statusCode})` : ''}.`
     default:
-      return err.message || 'Chat-Fehler.'
+      // Don't leak backend `err.message` for codes we haven't mapped —
+      // they could carry raw upstream text. New codes should be added
+      // to this switch deliberately.
+      return 'Chat-Fehler.'
   }
 }
 

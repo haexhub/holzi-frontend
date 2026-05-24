@@ -161,6 +161,11 @@ describe('sendChatMessage', () => {
 })
 
 describe('friendlyChatError', () => {
+  it('falls back to neutral copy for unknown ChatStreamError codes', () => {
+    const err = new ChatStreamError('internal backend detail', { code: 'future_new_code' })
+    expect(friendlyChatError(err)).toBe('Chat-Fehler.')
+  })
+
   it('maps upstream_timeout to a retry-friendly message', () => {
     const err = new ChatStreamError('upstream timed out', { code: 'upstream_timeout' })
     expect(friendlyChatError(err)).toMatch(/zu lange/i)
