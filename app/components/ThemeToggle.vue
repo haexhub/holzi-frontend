@@ -19,6 +19,7 @@ function toggle() {
     size="sm"
     variant="ghost"
     :aria-label="isDark ? 'Light-Mode' : 'Dark-Mode'"
+    :aria-pressed="isDark"
     @click="toggle"
   >
     <Sun v-if="isDark" class="size-4" />
