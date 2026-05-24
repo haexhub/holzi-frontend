@@ -18,9 +18,13 @@ RUN corepack enable && corepack prepare pnpm@10 --activate
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
-# Build the SPA.
+# Build the SPA. `nuxt generate` (not `nuxt build`) is what we want for
+# nginx-served static output: `build` produces a Nitro Node server +
+# assets but leaves no top-level index.html. `generate` pre-renders the
+# SPA shell into .output/public/index.html so nginx can serve a
+# fully-static bundle without any Node runtime.
 COPY . .
-RUN pnpm run build
+RUN pnpm run generate
 
 # ── Runtime stage ─────────────────────────────────────────────────────
 FROM nginx:1.27-alpine
