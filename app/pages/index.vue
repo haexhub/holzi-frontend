@@ -8,6 +8,7 @@ import ConversationList from '~/components/chat/ConversationList.vue'
 import NotesPanel from '~/components/panels/NotesPanel.vue'
 import RemindersPanel from '~/components/panels/RemindersPanel.vue'
 import TodosPanel from '~/components/panels/TodosPanel.vue'
+import ThemeToggle from '~/components/ThemeToggle.vue'
 import { useApi } from '~/composables/useApi'
 import { sendChatMessage } from '~/composables/useChatStream'
 import { useAuthStore } from '~/stores/auth'
@@ -129,6 +130,7 @@ onMounted(loadConversations)
           {{ activeId === null ? 'Neuer Chat' : `Conversation #${activeId}` }}
         </h1>
         <div class="flex items-center gap-1">
+          <ThemeToggle />
           <NuxtLink to="/settings/llm">
             <Button size="sm" variant="ghost">
               <Settings class="mr-1 size-4" />

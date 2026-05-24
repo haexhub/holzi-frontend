@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import ModelSelect from '~/components/settings/ModelSelect.vue'
+import ThemeToggle from '~/components/ThemeToggle.vue'
 import { useLlmCredentials } from '~/composables/useLlmCredentials'
 import type {
   LlmCredential,
@@ -240,12 +241,15 @@ onBeforeUnmount(stopPolling)
           Credential ist aktiv.
         </p>
       </div>
-      <NuxtLink to="/">
-        <Button variant="ghost" size="sm">
-          <ArrowLeft class="mr-1 size-4" />
-          Zurück
-        </Button>
-      </NuxtLink>
+      <div class="flex items-center gap-1">
+        <ThemeToggle />
+        <NuxtLink to="/">
+          <Button variant="ghost" size="sm">
+            <ArrowLeft class="mr-1 size-4" />
+            Zurück
+          </Button>
+        </NuxtLink>
+      </div>
     </header>
 
     <p v-if="error" class="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
