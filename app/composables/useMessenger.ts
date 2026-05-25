@@ -2,8 +2,10 @@ import { useApi } from '~/composables/useApi'
 import { useAuthStore } from '~/stores/auth'
 import type {
   MessengerAccountActivateResponse,
+  MessengerAccountCreateResponse,
   MessengerAccountDeleteResponse,
   MessengerAccountListResponse,
+  TelegramAccountCreate,
 } from '~/types/api'
 
 /**
@@ -43,6 +45,12 @@ export function useMessenger() {
     pollSignalLink: () =>
       api.post<MessengerAccountListResponse>(
         '/api/messenger/accounts/signal/link/poll',
+      ),
+
+    createTelegram: (body: TelegramAccountCreate) =>
+      api.post<MessengerAccountCreateResponse>(
+        '/api/messenger/accounts/telegram',
+        body,
       ),
 
     activate: (id: number) =>

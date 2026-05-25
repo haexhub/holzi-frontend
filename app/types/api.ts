@@ -98,6 +98,17 @@ export interface MessengerAccountActivateResponse {
   account: MessengerAccount
 }
 
+export interface MessengerAccountCreateResponse {
+  account: MessengerAccount
+}
+
 export interface MessengerAccountDeleteResponse {
   deleted: boolean
+}
+
+export interface TelegramAccountCreate {
+  bot_token: string
+  // Optional allowlist; omit (or empty) to let the bot respond in any
+  // chat it's added to.
+  allowed_chat_ids?: number[]
 }
