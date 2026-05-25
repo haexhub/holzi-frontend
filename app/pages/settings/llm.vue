@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { ArrowLeft, BadgeCheck, ExternalLink, Trash2 } from 'lucide-vue-next'
+import { BadgeCheck, ExternalLink, Trash2 } from 'lucide-vue-next'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import ModelSelect from '~/components/settings/ModelSelect.vue'
-import ThemeToggle from '~/components/ThemeToggle.vue'
 import { useLlmCredentials } from '~/composables/useLlmCredentials'
 import type {
   LlmCredential,
@@ -232,25 +231,14 @@ onBeforeUnmount(stopPolling)
 </script>
 
 <template>
-  <div class="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 p-6">
-    <header class="flex items-center justify-between">
-      <div>
-        <h1 class="text-xl font-semibold">LLM-Credentials</h1>
-        <p class="text-sm text-muted-foreground">
-          Wähle aus, welcher Provider den Hermes-Agent treibt. Nur eine
-          Credential ist aktiv.
-        </p>
-      </div>
-      <div class="flex items-center gap-1">
-        <ThemeToggle />
-        <NuxtLink to="/">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft class="mr-1 size-4" />
-            Zurück
-          </Button>
-        </NuxtLink>
-      </div>
-    </header>
+  <div class="flex flex-col gap-6">
+    <div>
+      <h2 class="text-base font-semibold">LLM-Credentials</h2>
+      <p class="text-sm text-muted-foreground">
+        Wähle aus, welcher Provider den Hermes-Agent treibt. Nur eine
+        Credential ist aktiv.
+      </p>
+    </div>
 
     <p v-if="error" class="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
       {{ error }}
