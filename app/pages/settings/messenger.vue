@@ -16,7 +16,8 @@ import type { MessengerAccount } from '~/types/api'
 //   5. user activates → backend hot-reloads the worker; UI updates the
 //      is_active badge
 //
-// Telegram lands in Phase 3 — same page, separate section.
+// Telegram is simpler: paste a BotFather token, backend validates +
+// stores; same activate/delete plumbing.
 
 const messenger = useMessenger()
 
@@ -36,6 +37,15 @@ const pollTimer = ref<ReturnType<typeof setInterval> | null>(null)
 const signalAccounts = computed(() =>
   accounts.value.filter((a) => a.provider === 'signal'),
 )
+
+const telegramAccounts = computed(() =>
+  accounts.value.filter((a) => a.provider === 'telegram'),
+)
+
+// ── Telegram form state ──────────────────────────────────────────────
+const telegramTokenInput = ref('')
+const telegramCreating = ref(false)
+const telegramError = ref<string | null>(null)
 
 async function loadAccounts() {
   loading.value = true
@@ -140,11 +150,9 @@ async function activate(account: MessengerAccount) {
 }
 
 async function removeAccount(account: MessengerAccount) {
-  if (
-    !window.confirm(
-      `Account ${account.phone_number ?? account.id} wirklich entfernen?`,
-    )
-  ) {
+  const label =
+    account.phone_number ?? account.bot_username ?? String(account.id)
+  if (!window.confirm(`Account ${label} wirklich entfernen?`)) {
     return
   }
   try {
@@ -152,6 +160,33 @@ async function removeAccount(account: MessengerAccount) {
     await loadAccounts()
   } catch (err: unknown) {
     error.value = err instanceof Error ? err.message : 'Fehler beim Löschen.'
+  }
+}
+
+async function createTelegramAccount() {
+  const token = telegramTokenInput.value.trim()
+  if (!token) return
+  telegramCreating.value = true
+  telegramError.value = null
+  try {
+    await messenger.createTelegram({ bot_token: token })
+    telegramTokenInput.value = ''
+    await loadAccounts()
+  } catch (err: unknown) {
+    // 400 from the backend means getMe rejected the token; surface the
+    // raw message so the user sees "invalid bot token: Unauthorized" or
+    // similar instead of a generic "Fehler".
+    const status = (err as { statusCode?: number })?.statusCode
+    const data = (err as { data?: { detail?: string } })?.data
+    telegramError.value =
+      data?.detail ?? (err instanceof Error ? err.message : 'Fehler beim Anlegen.')
+    if (status !== 400) {
+      // Non-validation errors land in the top-level error banner too —
+      // helps spot transport/auth issues that aren't token-specific.
+      error.value = telegramError.value
+    }
+  } finally {
+    telegramCreating.value = false
   }
 }
 
@@ -171,7 +206,7 @@ onBeforeUnmount(() => {
       <h2 class="text-base font-semibold">Messenger</h2>
       <p class="text-sm text-muted-foreground">
         Verbinde Messenger, über die du den Agent ansprichst. Aktuell
-        unterstützt: Signal. Telegram folgt.
+        unterstützt: Signal, Telegram.
       </p>
     </div>
 
@@ -295,14 +330,104 @@ onBeforeUnmount(() => {
       </ul>
     </section>
 
-    <!-- ── Telegram placeholder (Phase 3) ──────────────────────────── -->
-    <section class="space-y-2 opacity-60">
-      <h3 class="text-sm font-semibold uppercase text-muted-foreground">
-        Telegram
-      </h3>
-      <p class="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-        Folgt — Bot-Token via @BotFather, dann hier eintragen.
+    <!-- ── Telegram section ────────────────────────────────────────── -->
+    <section class="space-y-3">
+      <header>
+        <h3 class="text-sm font-semibold uppercase text-muted-foreground">
+          Telegram
+        </h3>
+        <p class="mt-1 text-xs text-muted-foreground">
+          Erstelle einen Bot bei
+          <a
+            href="https://t.me/BotFather"
+            target="_blank"
+            rel="noreferrer"
+            class="underline"
+          >@BotFather</a>
+          und füge hier den Token (Format
+          <code class="rounded bg-muted px-1 py-0.5">123456:ABC-DEF…</code>)
+          ein.
+        </p>
+      </header>
+
+      <!-- Token form -->
+      <form
+        class="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center"
+        @submit.prevent="createTelegramAccount"
+      >
+        <input
+          v-model="telegramTokenInput"
+          type="password"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="Bot-Token"
+          aria-label="Telegram Bot-Token"
+          class="flex-1 rounded-md border bg-background px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          :disabled="telegramCreating"
+        >
+        <Button
+          type="submit"
+          size="sm"
+          :disabled="telegramCreating || !telegramTokenInput.trim()"
+        >
+          {{ telegramCreating ? 'Prüfe…' : 'Hinzufügen' }}
+        </Button>
+      </form>
+      <p
+        v-if="telegramError"
+        class="text-sm text-destructive"
+      >
+        {{ telegramError }}
       </p>
+
+      <!-- Account list -->
+      <div v-if="loading" class="text-sm text-muted-foreground">Lädt…</div>
+      <div
+        v-else-if="telegramAccounts.length === 0"
+        class="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground"
+      >
+        Noch kein Telegram-Bot verknüpft.
+      </div>
+      <ul v-else class="space-y-2">
+        <li
+          v-for="account in telegramAccounts"
+          :key="account.id"
+          class="flex items-center justify-between rounded-lg border p-3"
+        >
+          <div class="flex items-center gap-3">
+            <BadgeCheck
+              v-if="account.is_active"
+              class="size-5 text-emerald-500"
+              aria-label="Aktiv"
+            />
+            <div>
+              <div class="font-medium">@{{ account.bot_username }}</div>
+              <div class="text-xs text-muted-foreground">
+                {{ account.is_active ? 'Aktiv' : 'Inaktiv' }} · seit
+                {{ new Date(account.created_at * 1000).toLocaleDateString() }}
+              </div>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <Button
+              v-if="!account.is_active"
+              size="sm"
+              variant="outline"
+              @click="activate(account)"
+            >
+              Aktivieren
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              :aria-label="`@${account.bot_username} entfernen`"
+              @click="removeAccount(account)"
+            >
+              <Trash2 class="size-4" />
+            </Button>
+          </div>
+        </li>
+      </ul>
     </section>
   </div>
 </template>
