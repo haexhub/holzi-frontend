@@ -66,6 +66,27 @@ async function toggleBookmark(id: number) {
   }
 }
 
+async function renameConversation(id: number, title: string) {
+  try {
+    await api.patch<Conversation>(`/api/conversations/${id}`, { title })
+    await loadConversations()
+  } catch (err: unknown) {
+    error.value = err instanceof Error ? err.message : 'Fehler beim Umbenennen.'
+  }
+}
+
+async function deleteConversation(id: number) {
+  try {
+    await api.delete<void>(`/api/conversations/${id}`)
+    conversations.value = conversations.value.filter((c) => c.id !== id)
+    if (activeId.value === id) {
+      newChat()
+    }
+  } catch (err: unknown) {
+    error.value = err instanceof Error ? err.message : 'Fehler beim Löschen.'
+  }
+}
+
 async function loadCredentialState() {
   try {
     const creds = await llm.list()
@@ -165,6 +186,8 @@ onMounted(() => {
         @select="selectConversation"
         @new-chat="newChat"
         @toggle-bookmark="toggleBookmark"
+        @rename="renameConversation"
+        @delete="deleteConversation"
       />
     </aside>
 

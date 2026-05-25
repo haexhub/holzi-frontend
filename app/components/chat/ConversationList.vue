@@ -1,6 +1,14 @@
 <script setup lang="ts">
-import { MessageSquarePlus, Star } from 'lucide-vue-next'
+import {
+  Check,
+  MessageSquarePlus,
+  Pencil,
+  Star,
+  Trash2,
+  X,
+} from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import type { Conversation } from '~/types/api'
 
 const props = defineProps<{
@@ -12,9 +20,14 @@ const emit = defineEmits<{
   select: [id: number]
   'new-chat': []
   'toggle-bookmark': [id: number]
+  rename: [id: number, title: string]
+  delete: [id: number]
 }>()
 
 const TTL_SOON_SECONDS = 7 * 24 * 60 * 60
+
+const editingId = ref<number | null>(null)
+const editingTitle = ref('')
 
 function fmt(ts: number): string {
   const d = new Date(ts * 1000)
@@ -24,6 +37,10 @@ function fmt(ts: number): string {
     hour: '2-digit',
     minute: '2-digit',
   })
+}
+
+function displayTitle(c: Conversation): string {
+  return c.title || `${c.channel} #${c.id}`
 }
 
 function expiresHint(c: Conversation): string | null {
@@ -49,6 +66,38 @@ function onRowKeydown(event: KeyboardEvent, id: number) {
     emit('select', id)
   }
 }
+
+function startRename(event: MouseEvent, c: Conversation) {
+  event.stopPropagation()
+  editingId.value = c.id
+  editingTitle.value = displayTitle(c)
+}
+
+function cancelRename() {
+  editingId.value = null
+  editingTitle.value = ''
+}
+
+function submitRename(c: Conversation) {
+  const title = editingTitle.value.trim()
+  if (!title || title === displayTitle(c)) {
+    cancelRename()
+    return
+  }
+  emit('rename', c.id, title)
+  cancelRename()
+}
+
+function confirmDelete(event: MouseEvent, c: Conversation) {
+  event.stopPropagation()
+  if (!window.confirm(`Konversation "${displayTitle(c)}" löschen?`)) {
+    return
+  }
+  if (editingId.value === c.id) {
+    cancelRename()
+  }
+  emit('delete', c.id)
+}
 </script>
 
 <template>
@@ -70,49 +119,99 @@ function onRowKeydown(event: KeyboardEvent, id: number) {
       <div
         v-for="c in props.conversations"
         :key="c.id"
-        role="button"
-        tabindex="0"
-        class="block w-full cursor-pointer rounded-md px-3 py-2 text-left text-sm transition-colors"
+        class="group rounded-md text-sm transition-colors"
         :class="
           c.id === props.activeId
             ? 'bg-accent text-accent-foreground'
             : 'hover:bg-muted'
         "
-        @click="emit('select', c.id)"
-        @keydown="onRowKeydown($event, c.id)"
       >
-        <div class="flex items-baseline justify-between gap-2">
-          <span class="truncate font-medium">
-            {{ c.title || `${c.channel} #${c.id}` }}
-          </span>
-          <span class="shrink-0 text-xs text-muted-foreground">
-            {{ fmt(c.updated_at) }}
-          </span>
-        </div>
-        <div class="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-          <button
+        <form
+          v-if="editingId === c.id"
+          class="flex items-center gap-1 p-2"
+          @submit.prevent="submitRename(c)"
+        >
+          <Input
+            v-model="editingTitle"
+            class="h-8 flex-1"
+            aria-label="Konversationstitel"
+            autofocus
+            @keydown.esc.prevent="cancelRename"
+          />
+          <Button type="submit" size="icon" variant="ghost" class="size-8">
+            <Check class="size-3.5" />
+          </Button>
+          <Button
             type="button"
-            class="rounded p-0.5 transition-colors hover:bg-background hover:text-foreground"
-            :class="c.bookmarked ? 'text-amber-500' : 'text-muted-foreground'"
-            :aria-label="c.bookmarked ? 'Lesezeichen entfernen' : 'Lesezeichen setzen'"
-            :title="c.bookmarked ? 'Lesezeichen entfernen' : 'Lesezeichen setzen'"
-            @click="onBookmarkClick($event, c.id)"
+            size="icon"
+            variant="ghost"
+            class="size-8"
+            @click="cancelRename"
           >
-            <Star
-              class="size-3.5"
-              :class="c.bookmarked ? 'fill-current' : ''"
-            />
-          </button>
-          <span class="rounded bg-secondary px-1.5 py-0.5">{{ c.channel }}</span>
-          <span v-if="c.message_count !== undefined">
-            {{ c.message_count }} Msg
-          </span>
-          <span
-            v-if="expiresHint(c)"
-            class="ml-auto text-amber-600 dark:text-amber-400"
-          >
-            {{ expiresHint(c) }}
-          </span>
+            <X class="size-3.5" />
+          </Button>
+        </form>
+        <div
+          v-else
+          role="button"
+          tabindex="0"
+          class="block w-full cursor-pointer rounded-md px-3 py-2 text-left"
+          @click="emit('select', c.id)"
+          @keydown="onRowKeydown($event, c.id)"
+        >
+          <div class="flex items-baseline justify-between gap-2">
+            <span class="truncate font-medium">
+              {{ displayTitle(c) }}
+            </span>
+            <span class="shrink-0 text-xs text-muted-foreground">
+              {{ fmt(c.updated_at) }}
+            </span>
+          </div>
+          <div class="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+            <button
+              type="button"
+              class="rounded p-0.5 transition-colors hover:bg-background hover:text-foreground"
+              :class="c.bookmarked ? 'text-amber-500' : 'text-muted-foreground'"
+              :aria-label="c.bookmarked ? 'Lesezeichen entfernen' : 'Lesezeichen setzen'"
+              :title="c.bookmarked ? 'Lesezeichen entfernen' : 'Lesezeichen setzen'"
+              @click="onBookmarkClick($event, c.id)"
+            >
+              <Star
+                class="size-3.5"
+                :class="c.bookmarked ? 'fill-current' : ''"
+              />
+            </button>
+            <span class="rounded bg-secondary px-1.5 py-0.5">{{ c.channel }}</span>
+            <span v-if="c.message_count !== undefined">
+              {{ c.message_count }} Msg
+            </span>
+            <span
+              v-if="expiresHint(c)"
+              class="text-amber-600 dark:text-amber-400"
+            >
+              {{ expiresHint(c) }}
+            </span>
+            <div
+              class="ml-auto flex items-center opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
+            >
+              <button
+                type="button"
+                class="rounded p-0.5 transition-colors hover:bg-background hover:text-foreground"
+                :aria-label="`${displayTitle(c)} umbenennen`"
+                @click="startRename($event, c)"
+              >
+                <Pencil class="size-3.5" />
+              </button>
+              <button
+                type="button"
+                class="rounded p-0.5 text-destructive transition-colors hover:bg-background hover:text-destructive"
+                :aria-label="`${displayTitle(c)} löschen`"
+                @click="confirmDelete($event, c)"
+              >
+                <Trash2 class="size-3.5" />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
