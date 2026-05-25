@@ -72,3 +72,32 @@ export interface OAuthStatusResponse {
   id: number
   status: 'pending' | 'authorized' | 'expired' | string
 }
+
+// --- Messenger accounts -------------------------------------------------
+// Mirrors src/hermes/routes/messenger.py until `pnpm run gen:api` is
+// re-run against a backend that ships these endpoints.
+
+export type MessengerProvider = 'signal' | 'telegram'
+
+export interface MessengerAccount {
+  id: number
+  provider: MessengerProvider | string
+  is_active: boolean
+  phone_number: string | null
+  bot_username: string | null
+  allowed_chat_ids: string | null
+  created_at: number
+  updated_at: number
+}
+
+export interface MessengerAccountListResponse {
+  accounts: MessengerAccount[]
+}
+
+export interface MessengerAccountActivateResponse {
+  account: MessengerAccount
+}
+
+export interface MessengerAccountDeleteResponse {
+  deleted: boolean
+}
