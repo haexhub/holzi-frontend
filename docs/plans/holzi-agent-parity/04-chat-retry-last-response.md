@@ -1,6 +1,6 @@
 # Plan 04: Retry Last Response
 
-Status: implemented on 2026-05-26. Backend + frontend changes done on `main` working trees; PRs pending review/merge.
+Status: implemented on 2026-05-26; PRs open, pending CodeRabbit review + merge. Backend [Holzi#36](https://github.com/haexhub/Holzi/pull/36); frontend [holzi-frontend#27](https://github.com/haexhub/holzi-frontend/pull/27).
 
 Verification:
 
