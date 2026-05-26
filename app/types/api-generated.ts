@@ -66,6 +66,30 @@ export interface paths {
         get: operations["api_get_conversation_api_conversations__conv_id__get"];
         put?: never;
         post?: never;
+        /** Api Delete Conversation */
+        delete: operations["api_delete_conversation_api_conversations__conv_id__delete"];
+        options?: never;
+        head?: never;
+        /** Api Update Conversation */
+        patch: operations["api_update_conversation_api_conversations__conv_id__patch"];
+        trace?: never;
+    };
+    "/api/conversations/{conv_id}/bookmark": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Api Toggle Bookmark Conversation
+         * @description Toggle the conversation's bookmarked flag. Bookmarked rows have
+         *     `expires_at = NULL` and survive the daily sweep; unbookmarking
+         *     re-arms the TTL from now.
+         */
+        post: operations["api_toggle_bookmark_conversation_api_conversations__conv_id__bookmark_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -180,6 +204,300 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/llm/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Credentials */
+        get: operations["list_credentials_api_llm_credentials_get"];
+        put?: never;
+        /** Create Credential */
+        post: operations["create_credential_api_llm_credentials_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/llm/credentials/{cred_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Credential */
+        delete: operations["delete_credential_api_llm_credentials__cred_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/llm/credentials/{cred_id}/model": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Credential Model */
+        patch: operations["update_credential_model_api_llm_credentials__cred_id__model_patch"];
+        trace?: never;
+    };
+    "/api/llm/credentials/{cred_id}/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Credential Models
+         * @description Resolve the provider's `/v1/models` for the given credential.
+         *
+         *     Single-shot per (provider, cred_id): the result is cached in
+         *     `provider_models._cache` for 10 minutes. The UI calls this when the
+         *     user opens the model dropdown — if it 502s, the UI shows the error
+         *     and the user can try a different credential or refresh.
+         */
+        get: operations["list_credential_models_api_llm_credentials__cred_id__models_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/llm/credentials/{cred_id}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Activate Credential */
+        patch: operations["activate_credential_api_llm_credentials__cred_id__activate_patch"];
+        trace?: never;
+    };
+    "/api/llm/credentials/oauth/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Oauth Start
+         * @description Spawn `claude auth login --claudeai`, return the verification URL.
+         *
+         *     Sweeps any existing `oauth_claude` row first so only one Claude
+         *     identity is ever in-flight — that mirrors Specifyr's pattern and is
+         *     the only sane shape for single-user.
+         */
+        post: operations["oauth_start_api_llm_credentials_oauth_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/llm/credentials/oauth/{cred_id}/code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Oauth Submit Code
+         * @description Pipe the user-pasted verification code into the held subprocess
+         *     and persist the resulting `.credentials.json` as ciphertext.
+         */
+        post: operations["oauth_submit_code_api_llm_credentials_oauth__cred_id__code_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/llm/credentials/oauth/{cred_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Oauth Status */
+        get: operations["oauth_status_api_llm_credentials_oauth__cred_id__status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/llm/credentials/oauth/{cred_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Oauth Cancel */
+        post: operations["oauth_cancel_api_llm_credentials_oauth__cred_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/messenger/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Accounts */
+        get: operations["list_accounts_api_messenger_accounts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/messenger/accounts/signal/link/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Signal Link Start
+         * @description Trigger signal-cli's QR-link-as-secondary-device flow and stream
+         *     the generated PNG back to the browser. Subsequent polls of
+         *     /link/poll discover the freshly-linked phone number from
+         *     signal-cli's account list and materialise it as a row.
+         */
+        post: operations["signal_link_start_api_messenger_accounts_signal_link_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/messenger/accounts/signal/link/poll": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Signal Link Poll
+         * @description Snapshot signal-cli's registered numbers and ensure every one of
+         *     them has a row in messenger_accounts. New rows are created inactive
+         *     — the frontend asks the user to confirm + activate.
+         */
+        post: operations["signal_link_poll_api_messenger_accounts_signal_link_poll_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/messenger/accounts/telegram": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Telegram Account
+         * @description Validate the bot token against Telegram's `getMe`, then persist a
+         *     new inactive row. The user activates it explicitly via PATCH.
+         *
+         *     Validation here doubles as the user-feedback signal: a bad token
+         *     short-circuits with a clean 400 instead of leaving a broken row in
+         *     the DB.
+         */
+        post: operations["create_telegram_account_api_messenger_accounts_telegram_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/messenger/accounts/{account_id}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Activate Account */
+        patch: operations["activate_account_api_messenger_accounts__account_id__activate_patch"];
+        trace?: never;
+    };
+    "/api/messenger/accounts/{account_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Account */
+        delete: operations["delete_account_api_messenger_accounts__account_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -253,6 +571,10 @@ export interface components {
             started_at: number;
             /** Updated At */
             updated_at: number;
+            /** Bookmarked */
+            bookmarked: boolean;
+            /** Expires At */
+            expires_at: number | null;
         };
         /** ConversationSummaryResponse */
         ConversationSummaryResponse: {
@@ -266,13 +588,68 @@ export interface components {
             started_at: number;
             /** Updated At */
             updated_at: number;
+            /** Bookmarked */
+            bookmarked: boolean;
+            /** Expires At */
+            expires_at: number | null;
             /** Message Count */
             message_count: number;
+        };
+        /** ConversationUpdateRequest */
+        ConversationUpdateRequest: {
+            /** Title */
+            title: string;
+        };
+        /** CreateTelegramRequest */
+        CreateTelegramRequest: {
+            /** Bot Token */
+            bot_token: string;
+            /** Allowed Chat Ids */
+            allowed_chat_ids?: number[] | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** LlmCredentialCreate */
+        LlmCredentialCreate: {
+            /**
+             * Provider
+             * @enum {string}
+             */
+            provider: "anthropic" | "openai" | "openrouter" | "google" | "custom";
+            /** Display Name */
+            display_name: string;
+            /** Base Url */
+            base_url?: string | null;
+            /** Api Key */
+            api_key: string;
+        };
+        /** LlmCredentialResponse */
+        LlmCredentialResponse: {
+            /** Id */
+            id: number;
+            /** Provider */
+            provider: string;
+            /** Mode */
+            mode: string;
+            /** Display Name */
+            display_name: string;
+            /** Base Url */
+            base_url: string | null;
+            /** Model */
+            model: string | null;
+            /** Is Active */
+            is_active: boolean;
+            /** Oauth Status */
+            oauth_status: string | null;
+            /** Oauth Authorized At */
+            oauth_authorized_at: number | null;
+            /** Created At */
+            created_at: number;
+            /** Updated At */
+            updated_at: number;
         };
         /** MessageResponse */
         MessageResponse: {
@@ -287,6 +664,45 @@ export interface components {
             content: string;
             /** Ts */
             ts: number;
+        };
+        /** MessengerAccountResponse */
+        MessengerAccountResponse: {
+            /** Id */
+            id: number;
+            /** Provider */
+            provider: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Phone Number */
+            phone_number: string | null;
+            /** Bot Username */
+            bot_username: string | null;
+            /** Allowed Chat Ids */
+            allowed_chat_ids: string | null;
+            /** Created At */
+            created_at: number;
+            /** Updated At */
+            updated_at: number;
+        };
+        /** ModelChoiceResponse */
+        ModelChoiceResponse: {
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+        };
+        /** ModelListResponse */
+        ModelListResponse: {
+            /** Models */
+            models: components["schemas"]["ModelChoiceResponse"][];
+        };
+        /**
+         * ModelUpdateRequest
+         * @description Body for `PATCH /credentials/{id}/model`. Pass `null` to clear.
+         */
+        ModelUpdateRequest: {
+            /** Model */
+            model?: string | null;
         };
         /** NoteCreate */
         NoteCreate: {
@@ -317,6 +733,25 @@ export interface components {
             /** Tags */
             tags?: string[];
         };
+        /** OAuthCodeRequest */
+        OAuthCodeRequest: {
+            /** Code */
+            code: string;
+        };
+        /** OAuthStartResponse */
+        OAuthStartResponse: {
+            /** Id */
+            id: number;
+            /** Url */
+            url: string;
+        };
+        /** OAuthStatusResponse */
+        OAuthStatusResponse: {
+            /** Id */
+            id: number;
+            /** Status */
+            status: string;
+        };
         /** ReminderCreate */
         ReminderCreate: {
             /** Due At */
@@ -343,6 +778,11 @@ export interface components {
             fired_at: number | null;
             /** Created At */
             created_at: number;
+        };
+        /** SignalLinkPollResponse */
+        SignalLinkPollResponse: {
+            /** Accounts */
+            accounts: components["schemas"]["MessengerAccountResponse"][];
         };
         /** TodoCreate */
         TodoCreate: {
@@ -435,6 +875,7 @@ export interface operations {
         parameters: {
             query?: {
                 channel?: string | null;
+                q?: string | null;
                 limit?: number;
             };
             header?: never;
@@ -483,6 +924,101 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ConversationDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_delete_conversation_api_conversations__conv_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conv_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_update_conversation_api_conversations__conv_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conv_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConversationUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_toggle_bookmark_conversation_api_conversations__conv_id__bookmark_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conv_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationResponse"];
                 };
             };
             /** @description Validation Error */
@@ -867,6 +1403,463 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_credentials_api_llm_credentials_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LlmCredentialResponse"][];
+                };
+            };
+        };
+    };
+    create_credential_api_llm_credentials_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LlmCredentialCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LlmCredentialResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_credential_api_llm_credentials__cred_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cred_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_credential_model_api_llm_credentials__cred_id__model_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cred_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModelUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LlmCredentialResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_credential_models_api_llm_credentials__cred_id__models_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cred_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    activate_credential_api_llm_credentials__cred_id__activate_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cred_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LlmCredentialResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    oauth_start_api_llm_credentials_oauth_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OAuthStartResponse"];
+                };
+            };
+        };
+    };
+    oauth_submit_code_api_llm_credentials_oauth__cred_id__code_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cred_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OAuthCodeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LlmCredentialResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    oauth_status_api_llm_credentials_oauth__cred_id__status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cred_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OAuthStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    oauth_cancel_api_llm_credentials_oauth__cred_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cred_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_accounts_api_messenger_accounts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    signal_link_start_api_messenger_accounts_signal_link_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    signal_link_poll_api_messenger_accounts_signal_link_poll_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignalLinkPollResponse"];
+                };
+            };
+        };
+    };
+    create_telegram_account_api_messenger_accounts_telegram_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTelegramRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    activate_account_api_messenger_accounts__account_id__activate_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_account_api_messenger_accounts__account_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
             };
             /** @description Validation Error */
             422: {
