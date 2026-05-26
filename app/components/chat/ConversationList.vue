@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { refDebounced } from '@vueuse/core'
 import {
   Check,
   MessageSquarePlus,
   Pencil,
+  Search,
   Star,
   Trash2,
   X,
@@ -22,12 +24,25 @@ const emit = defineEmits<{
   'toggle-bookmark': [id: number]
   rename: [id: number, title: string]
   delete: [id: number]
+  search: [query: string]
 }>()
 
 const TTL_SOON_SECONDS = 7 * 24 * 60 * 60
 
 const editingId = ref<number | null>(null)
 const editingTitle = ref('')
+
+const searchQuery = ref('')
+// 250 ms debounce — long enough that typing "refactor" doesn't fire eight
+// requests, short enough that the user sees results before reading them.
+const debouncedQuery = refDebounced(searchQuery, 250)
+watch(debouncedQuery, (q) => {
+  emit('search', q.trim())
+})
+
+function clearSearch() {
+  searchQuery.value = ''
+}
 
 function fmt(ts: number): string {
   const d = new Date(ts * 1000)
@@ -109,12 +124,35 @@ function confirmDelete(event: MouseEvent, c: Conversation) {
         Neu
       </Button>
     </div>
+    <div class="border-b p-2">
+      <div class="relative">
+        <Search
+          class="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
+        />
+        <Input
+          v-model="searchQuery"
+          type="search"
+          placeholder="Suchen…"
+          aria-label="Konversationen durchsuchen"
+          class="h-8 pl-7 pr-7 text-sm"
+        />
+        <button
+          v-if="searchQuery"
+          type="button"
+          class="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-foreground"
+          aria-label="Suche leeren"
+          @click="clearSearch"
+        >
+          <X class="size-3.5" />
+        </button>
+      </div>
+    </div>
     <div class="flex-1 overflow-y-auto p-2 space-y-1">
       <p
         v-if="props.conversations.length === 0"
         class="px-2 py-4 text-center text-sm text-muted-foreground"
       >
-        Keine Konversationen.
+        {{ searchQuery ? 'Keine Treffer.' : 'Keine Konversationen.' }}
       </p>
       <div
         v-for="c in props.conversations"
@@ -138,7 +176,13 @@ function confirmDelete(event: MouseEvent, c: Conversation) {
             autofocus
             @keydown.esc.prevent="cancelRename"
           />
-          <Button type="submit" size="icon" variant="ghost" class="size-8">
+          <Button
+            type="submit"
+            size="icon"
+            variant="ghost"
+            class="size-8"
+            aria-label="Titel speichern"
+          >
             <Check class="size-3.5" />
           </Button>
           <Button
@@ -146,6 +190,7 @@ function confirmDelete(event: MouseEvent, c: Conversation) {
             size="icon"
             variant="ghost"
             class="size-8"
+            aria-label="Umbenennen abbrechen"
             @click="cancelRename"
           >
             <X class="size-3.5" />
