@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { MessageSquarePlus } from 'lucide-vue-next'
+import { MessageSquarePlus, Star } from 'lucide-vue-next'
+import { computed } from 'vue'
 import { Button } from '@/components/ui/button'
 import type { Conversation } from '~/types/api'
 
@@ -11,7 +12,11 @@ const props = defineProps<{
 const emit = defineEmits<{
   select: [id: number]
   'new-chat': []
+  'toggle-bookmark': [id: number]
 }>()
+
+const TTL_SOON_SECONDS = 7 * 24 * 60 * 60
+const nowSec = computed(() => Math.floor(Date.now() / 1000))
 
 function fmt(ts: number): string {
   const d = new Date(ts * 1000)
@@ -21,6 +26,21 @@ function fmt(ts: number): string {
     hour: '2-digit',
     minute: '2-digit',
   })
+}
+
+function expiresHint(c: Conversation): string | null {
+  if (c.bookmarked) return null
+  if (c.expires_at == null) return null
+  const remaining = c.expires_at - nowSec.value
+  if (remaining > TTL_SOON_SECONDS) return null
+  if (remaining <= 0) return 'Läuft bald ab'
+  const days = Math.max(1, Math.ceil(remaining / 86_400))
+  return `Läuft in ${days} Tag${days === 1 ? '' : 'en'} ab`
+}
+
+function onBookmarkClick(event: MouseEvent, id: number) {
+  event.stopPropagation()
+  emit('toggle-bookmark', id)
 }
 </script>
 
@@ -60,10 +80,29 @@ function fmt(ts: number): string {
             {{ fmt(c.updated_at) }}
           </span>
         </div>
-        <div class="flex items-center gap-2 text-xs text-muted-foreground">
+        <div class="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+          <button
+            type="button"
+            class="rounded p-0.5 transition-colors hover:bg-background hover:text-foreground"
+            :class="c.bookmarked ? 'text-amber-500' : 'text-muted-foreground'"
+            :aria-label="c.bookmarked ? 'Lesezeichen entfernen' : 'Lesezeichen setzen'"
+            :title="c.bookmarked ? 'Lesezeichen entfernen' : 'Lesezeichen setzen'"
+            @click="onBookmarkClick($event, c.id)"
+          >
+            <Star
+              class="size-3.5"
+              :class="c.bookmarked ? 'fill-current' : ''"
+            />
+          </button>
           <span class="rounded bg-secondary px-1.5 py-0.5">{{ c.channel }}</span>
           <span v-if="c.message_count !== undefined">
             {{ c.message_count }} Msg
+          </span>
+          <span
+            v-if="expiresHint(c)"
+            class="ml-auto text-amber-600 dark:text-amber-400"
+          >
+            {{ expiresHint(c) }}
           </span>
         </div>
       </button>

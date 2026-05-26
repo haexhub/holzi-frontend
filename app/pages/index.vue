@@ -51,6 +51,21 @@ async function loadConversations() {
   }
 }
 
+async function toggleBookmark(id: number) {
+  try {
+    const updated = await api.post<Conversation>(
+      `/api/conversations/${id}/bookmark`,
+    )
+    // Patch the row in place so the sidebar order doesn't jump unless the
+    // backend also moved updated_at (it doesn't when bookmarking).
+    conversations.value = conversations.value.map((c) =>
+      c.id === id ? { ...c, ...updated } : c,
+    )
+  } catch (err: unknown) {
+    error.value = err instanceof Error ? err.message : 'Bookmark fehlgeschlagen.'
+  }
+}
+
 async function loadCredentialState() {
   try {
     const creds = await llm.list()
@@ -149,6 +164,7 @@ onMounted(() => {
         :active-id="activeId"
         @select="selectConversation"
         @new-chat="newChat"
+        @toggle-bookmark="toggleBookmark"
       />
     </aside>
 
