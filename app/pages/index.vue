@@ -21,7 +21,10 @@ import ThemeToggle from '~/components/ThemeToggle.vue'
 import { useApi } from '~/composables/useApi'
 import {
   cancelChatRun,
+  type ChatStreamCallbacks,
+  type ChatStreamResult,
   friendlyChatError,
+  retryLastResponse,
   sendChatMessage,
 } from '~/composables/useChatStream'
 import { useLlmCredentials } from '~/composables/useLlmCredentials'
@@ -150,6 +153,66 @@ function newChat() {
   cancelledConversationId.value = null
 }
 
+// id of the latest assistant message — the only turn that shows a Retry
+// control (null when the conversation has no assistant reply yet).
+const lastAssistantId = computed(() => {
+  for (let i = messages.value.length - 1; i >= 0; i--) {
+    const m = messages.value[i]
+    if (m && m.role === 'assistant') return m.id
+  }
+  return null
+})
+
+// Shared streaming flow for both a fresh send and a retry: the SSE
+// contract is identical, so only the request differs.
+async function runStream(
+  start: (callbacks: ChatStreamCallbacks) => Promise<ChatStreamResult>,
+) {
+  streaming.value = true
+  streamingText.value = ''
+  currentRunId.value = null
+  // Fresh activity supersedes any prior abort notice.
+  cancelledConversationId.value = null
+  error.value = null
+  try {
+    const result = await start({
+      onSession: (id) => {
+        activeId.value = id
+      },
+      onRun: (id) => {
+        currentRunId.value = id
+      },
+      onText: (chunk) => {
+        streamingText.value += chunk
+        nextTick(scrollToBottom)
+      },
+    })
+    if (result.cancelled) {
+      // Backend did not persist an assistant turn — refresh the
+      // conversation so the optimistic state is replaced by the
+      // canonical rows and the abgebrochen notice renders. Capture the
+      // id *before* selectConversation() so its "switched conversation"
+      // branch doesn't clear the notice we're about to set.
+      const cancelledId = result.conversationId
+      await selectConversation(cancelledId)
+      cancelledConversationId.value = cancelledId
+      await loadConversations()
+    }
+    else {
+      // Reload the full server-side conversation to get canonical ids,
+      // tool turns, and timestamps. Cheaper than diffing optimistic state.
+      await selectConversation(result.conversationId)
+      await loadConversations()
+    }
+  } catch (err: unknown) {
+    error.value = friendlyChatError(err)
+  } finally {
+    streaming.value = false
+    streamingText.value = ''
+    currentRunId.value = null
+  }
+}
+
 async function send(text: string) {
   if (streaming.value) return
   // Optimistic: render the user message immediately.
@@ -166,54 +229,27 @@ async function send(text: string) {
   await nextTick()
   scrollToBottom()
 
-  streaming.value = true
-  streamingText.value = ''
-  currentRunId.value = null
-  // Clear the cancel notice for whichever conversation is about to
-  // receive this send — fresh activity supersedes the prior abort.
-  cancelledConversationId.value = null
-  error.value = null
-  try {
-    const result = await sendChatMessage(
+  await runStream((callbacks) =>
+    sendChatMessage(
       { message: text, conversation_id: activeId.value ?? undefined },
-      {
-        onSession: (id) => {
-          activeId.value = id
-        },
-        onRun: (id) => {
-          currentRunId.value = id
-        },
-        onText: (chunk) => {
-          streamingText.value += chunk
-          nextTick(scrollToBottom)
-        },
-      },
-    )
-    if (result.cancelled) {
-      // Backend did not persist an assistant turn — refresh the
-      // conversation so the optimistic user message is replaced by
-      // the canonical row and the abgebrochen notice renders.
-      // Capture the conversation id *before* selectConversation() so
-      // its "switched conversation" branch doesn't clear the notice
-      // we're about to set.
-      const cancelledId = result.conversationId
-      await selectConversation(cancelledId)
-      cancelledConversationId.value = cancelledId
-      await loadConversations()
-    }
-    else {
-      // Reload the full server-side conversation to get canonical ids,
-      // tool turns, and timestamps. Cheaper than diffing the optimistic state.
-      await selectConversation(result.conversationId)
-      await loadConversations()
-    }
-  } catch (err: unknown) {
-    error.value = friendlyChatError(err)
-  } finally {
-    streaming.value = false
-    streamingText.value = ''
-    currentRunId.value = null
+      callbacks,
+    ),
+  )
+}
+
+async function retryLast() {
+  if (streaming.value || activeId.value === null) return
+  const conversationId = activeId.value
+  // Optimistically drop the trailing assistant/tool tail so the UI shows
+  // regeneration in place, mirroring what the backend does before re-running.
+  const lastUserIdx = messages.value.map((m) => m.role).lastIndexOf('user')
+  if (lastUserIdx >= 0) {
+    messages.value = messages.value.slice(0, lastUserIdx + 1)
   }
+  await nextTick()
+  scrollToBottom()
+
+  await runStream((callbacks) => retryLastResponse(conversationId, callbacks))
 }
 
 async function stopStreaming() {
@@ -291,6 +327,9 @@ onMounted(() => {
           v-for="m in messages"
           :key="m.id"
           :message="m"
+          :can-retry="!streaming && m.id === lastAssistantId"
+          :retry-disabled="streaming"
+          @retry="retryLast"
         />
         <ChatMessage
           v-if="streaming && streamingText"

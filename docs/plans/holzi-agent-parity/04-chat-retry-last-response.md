@@ -1,5 +1,23 @@
 # Plan 04: Retry Last Response
 
+Status: implemented on 2026-05-26. Backend + frontend changes done on `main` working trees; PRs pending review/merge.
+
+Verification:
+
+- `uv run pytest` in `/home/haex/Projekte/Holzi` (379 passing, including 6 retry-endpoint tests in `tests/test_api_chat.py` + 5 repo-helper tests in `tests/test_messages.py`)
+- `uv run ruff check src tests`
+- backend boot: `HERMES_AUTH_TOKEN=test-token-for-openapi HERMES_DB_PATH=$(mktemp --suffix=.db) uv run uvicorn hermes.main:app --host 127.0.0.1 --port 18082 --log-level warning`
+- frontend regen: `HERMES_AUTH_TOKEN=test-token-for-openapi HERMES_URL=http://127.0.0.1:18082 pnpm run gen:api`
+- `pnpm test` (56 passing, including 4 `retryLastResponse` tests)
+- `pnpm typecheck`
+
+Notes:
+
+- Persistence strategy is the "simplest" option from the plan: `POST /api/conversations/{id}/retry` finds the last user message (`messages.last_user_message`) and hard-deletes the assistant/tool tail after it (`messages.delete_after`, keyed on monotonic autoincrement ids), then re-runs the web agent over the surviving context. No `superseded_at` bookkeeping. The `messages` FTS index stays consistent via the existing `AFTER DELETE` trigger.
+- The endpoint reuses the `/api/chat` streaming path: the SSE generator was extracted into `_stream_web_agent_run(request, convo)`, so retry and send share one code path (run_id registration, `track_run`, cancel handling, error classification) — retry runs are persisted in `agent_runs` exactly like normal sends.
+- Channel guard mirrors `/api/chat`: retry is rejected (400) on non-web conversations, and (400) when the conversation has no user message to retry; unknown conversation → 404.
+- Frontend: `retryLastResponse(conversationId)` in `useChatStream` shares the SSE consumer with `sendChatMessage` (extracted `postChatStream`). `index.vue` shows a "Neu generieren" control on the latest assistant message only (`lastAssistantId`), disabled while a run is active; the page optimistically trims the assistant/tool tail so regeneration renders in place, then reloads the canonical conversation.
+
 Depends on: [03](./03-chat-cancel-and-run-state.md).
 
 ## Goal

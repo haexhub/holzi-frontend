@@ -59,18 +59,45 @@ export async function sendChatMessage(
   payload: { message: string; conversation_id?: number },
   callbacks: ChatStreamCallbacks = {},
 ): Promise<ChatStreamResult> {
+  return postChatStream('/api/chat', payload, callbacks)
+}
+
+/**
+ * Regenerate the latest assistant response in a conversation.
+ *
+ * Hits `POST /api/conversations/{id}/retry`, which drops the trailing
+ * assistant/tool turns and re-runs the agent. The response uses the exact
+ * same SSE contract as /api/chat, so it streams through the same consumer
+ * and returns the same shape — callers reuse their normal-send state.
+ */
+export async function retryLastResponse(
+  conversationId: number,
+  callbacks: ChatStreamCallbacks = {},
+): Promise<ChatStreamResult> {
+  return postChatStream(
+    `/api/conversations/${encodeURIComponent(conversationId)}/retry`,
+    null,
+    callbacks,
+  )
+}
+
+async function postChatStream(
+  url: string,
+  body: Record<string, unknown> | null,
+  callbacks: ChatStreamCallbacks,
+): Promise<ChatStreamResult> {
   const auth = useAuthStore()
   if (!auth.isAuthenticated) {
     throw new Error('not authenticated')
   }
 
-  const response = await fetch('/api/chat', {
+  const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${auth.token}`,
     },
-    body: JSON.stringify(payload),
+    ...(body !== null ? { body: JSON.stringify(body) } : {}),
     signal: callbacks.signal,
   })
 
