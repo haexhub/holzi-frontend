@@ -174,7 +174,10 @@ export async function sendChatMessage(
 export async function cancelChatRun(runId: string): Promise<void> {
   const auth = useAuthStore()
   if (!auth.isAuthenticated) {
-    throw new Error('not authenticated')
+    throw new ChatStreamError('unauthorized', {
+      code: 'unauthorized',
+      statusCode: 401,
+    })
   }
   const response = await fetch(`/api/chat/runs/${encodeURIComponent(runId)}/cancel`, {
     method: 'POST',
@@ -182,6 +185,17 @@ export async function cancelChatRun(runId: string): Promise<void> {
       Authorization: `Bearer ${auth.token}`,
     },
   })
+  // 401 mid-stream means the token expired while the user was typing —
+  // clear it so the next action redirects to /login, and surface the
+  // same `unauthorized` code as sendChatMessage so friendlyChatError
+  // shows the session-expired copy.
+  if (response.status === 401) {
+    auth.clear()
+    throw new ChatStreamError('unauthorized', {
+      code: 'unauthorized',
+      statusCode: 401,
+    })
+  }
   if (response.status === 204 || response.status === 404) {
     return
   }

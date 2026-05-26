@@ -39,10 +39,11 @@ const messages = ref<Message[]>([])
 const streaming = ref(false)
 const streamingText = ref('')
 const currentRunId = ref<string | null>(null)
-// Set to true when the most recent turn was user-cancelled, so the UI
-// can render an "abgebrochen" notice in place of a fake assistant
-// answer. Cleared as soon as the next send() begins.
-const lastCancelled = ref(false)
+// Conversation whose most recent turn was user-cancelled. Scoped to a
+// conversation so switching away and back doesn't leak the abgebrochen
+// notice into an unrelated chat. Cleared by selectConversation() or on
+// the next send into the same conversation.
+const cancelledConversationId = ref<number | null>(null)
 const error = ref<string | null>(null)
 const activePanel = ref<'notes' | 'todos' | 'reminders'>('notes')
 const messagesScroller = ref<HTMLElement | null>(null)
@@ -127,6 +128,11 @@ async function loadCredentialState() {
 }
 
 async function selectConversation(id: number) {
+  if (activeId.value !== id) {
+    // Switching to a different conversation — drop any cancel notice
+    // that belonged to the previous active one.
+    cancelledConversationId.value = null
+  }
   activeId.value = id
   try {
     const detail = await api.get<ConversationDetail>(`/api/conversations/${id}`)
@@ -141,6 +147,7 @@ async function selectConversation(id: number) {
 function newChat() {
   activeId.value = null
   messages.value = []
+  cancelledConversationId.value = null
 }
 
 async function send(text: string) {
@@ -162,7 +169,9 @@ async function send(text: string) {
   streaming.value = true
   streamingText.value = ''
   currentRunId.value = null
-  lastCancelled.value = false
+  // Clear the cancel notice for whichever conversation is about to
+  // receive this send — fresh activity supersedes the prior abort.
+  cancelledConversationId.value = null
   error.value = null
   try {
     const result = await sendChatMessage(
@@ -184,8 +193,12 @@ async function send(text: string) {
       // Backend did not persist an assistant turn — refresh the
       // conversation so the optimistic user message is replaced by
       // the canonical row and the abgebrochen notice renders.
-      lastCancelled.value = true
-      await selectConversation(result.conversationId)
+      // Capture the conversation id *before* selectConversation() so
+      // its "switched conversation" branch doesn't clear the notice
+      // we're about to set.
+      const cancelledId = result.conversationId
+      await selectConversation(cancelledId)
+      cancelledConversationId.value = cancelledId
       await loadConversations()
     }
     else {
@@ -293,7 +306,11 @@ onMounted(() => {
           </div>
         </div>
         <div
-          v-if="lastCancelled && !streaming"
+          v-if="
+            cancelledConversationId !== null
+              && cancelledConversationId === activeId
+              && !streaming
+          "
           class="flex justify-start text-xs italic text-muted-foreground"
         >
           Antwort abgebrochen.

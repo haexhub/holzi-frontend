@@ -915,6 +915,13 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Unknown or already-finished run_id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {

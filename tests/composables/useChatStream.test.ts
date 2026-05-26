@@ -259,6 +259,27 @@ describe('cancelChatRun', () => {
     mockFetch(new Response('', { status: 500 }))
     await expect(cancelChatRun('boom')).rejects.toThrow()
   })
+
+  it('throws a ChatStreamError with code=unauthorized when no token is set', async () => {
+    const auth = useAuthStore()
+    auth.clear()
+    await expect(cancelChatRun('r1')).rejects.toMatchObject({
+      name: 'ChatStreamError',
+      code: 'unauthorized',
+      statusCode: 401,
+    })
+  })
+
+  it('clears the token and throws unauthorized on a 401 response', async () => {
+    const auth = useAuthStore()
+    mockFetch(new Response('', { status: 401 }))
+    await expect(cancelChatRun('r1')).rejects.toMatchObject({
+      name: 'ChatStreamError',
+      code: 'unauthorized',
+      statusCode: 401,
+    })
+    expect(auth.isAuthenticated).toBe(false)
+  })
 })
 
 describe('friendlyChatError', () => {
