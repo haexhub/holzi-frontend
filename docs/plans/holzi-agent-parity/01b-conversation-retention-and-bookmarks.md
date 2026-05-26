@@ -1,15 +1,24 @@
 # Plan 01b: Conversation Retention And Bookmarks
 
-Status: implemented on 2026-05-26.
+Status: implemented on 2026-05-26. Backend [Holzi#32](https://github.com/haexhub/Holzi/pull/32), frontend [holzi-frontend#21](https://github.com/haexhub/holzi-frontend/pull/21).
 
 Verification:
 
-- `uv run pytest tests/test_conversations.py tests/test_scheduler.py tests/test_api_conversations.py`
-- `uv run ruff check src/hermes/config.py src/hermes/db.py src/hermes/schema.py src/hermes/scheduler.py src/hermes/main.py src/hermes/routes/api.py src/hermes/repository/conversations.py src/hermes/repository/models.py tests/test_conversations.py tests/test_scheduler.py tests/test_api_conversations.py`
+- `uv run pytest tests/test_conversations.py tests/test_scheduler.py tests/test_api_conversations.py tests/test_db.py` (340 passing)
+- `uv run ruff check src/hermes/ tests/`
 - backend boot (run from the Holzi repo root): `HERMES_AUTH_TOKEN=test-token-for-openapi HERMES_DB_PATH=$(mktemp --suffix=.db) uv run uvicorn hermes.main:app --host 127.0.0.1 --port 18082 --log-level warning`
 - frontend regen: `HERMES_AUTH_TOKEN=test-token-for-openapi HERMES_URL=http://127.0.0.1:18082 pnpm run gen:api`
-- `pnpm test`
+- `pnpm test` (44 passing)
 - `pnpm typecheck`
+
+Follow-ups (post-merge review):
+
+- Manual code review on the backend PR caught one MAJOR issue: the migration
+  added `expires_at` as nullable without backfilling existing rows, so the
+  sweep skipped every pre-migration conversation (NULL filter) and the
+  feature was silently inert on already-deployed DBs. Fix in the same PR
+  backfills `expires_at = updated_at + ttl_days * 86_400` for non-bookmarked
+  legacy rows during the migration, with a regression test in `test_db.py`.
 
 Depends on: [01](./01-conversation-lifecycle.md).
 
