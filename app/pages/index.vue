@@ -40,15 +40,26 @@ const messagesScroller = ref<HTMLElement | null>(null)
 // `null` while the credentials list is still loading — EmptyChatState
 // uses this to avoid flashing the "add credentials" CTA before we know.
 const hasCredentials = ref<boolean | null>(null)
+const searchQuery = ref('')
 
 async function loadConversations() {
   try {
-    conversations.value = await api.get<Conversation[]>('/api/conversations', {
-      channel: 'web',
-    })
+    const query: Record<string, unknown> = { channel: 'web' }
+    if (searchQuery.value) {
+      query.q = searchQuery.value
+    }
+    conversations.value = await api.get<Conversation[]>(
+      '/api/conversations',
+      query,
+    )
   } catch (err: unknown) {
     error.value = err instanceof Error ? err.message : 'Fehler beim Laden.'
   }
+}
+
+function onSearch(q: string) {
+  searchQuery.value = q
+  loadConversations()
 }
 
 async function toggleBookmark(id: number) {
@@ -188,6 +199,7 @@ onMounted(() => {
         @toggle-bookmark="toggleBookmark"
         @rename="renameConversation"
         @delete="deleteConversation"
+        @search="onSearch"
       />
     </aside>
 
