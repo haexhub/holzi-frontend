@@ -1,5 +1,25 @@
 # Plan 03b: Agent Runs And Observability
 
+Status: implemented on 2026-05-26. Backend [Holzi#35](https://github.com/haexhub/Holzi/pull/35); frontend ships only regenerated types (this PR).
+
+Verification:
+
+- `uv run pytest` in `/home/haex/Projekte/Holzi` (366 passing, including 17 new in `tests/test_api_runs.py`)
+- `uv run ruff check`
+- backend boot: `HERMES_AUTH_TOKEN=test-token-for-openapi HERMES_DB_PATH=$(mktemp --suffix=.db) uv run uvicorn hermes.main:app --host 127.0.0.1 --port 18082 --log-level warning`
+- frontend regen: `HERMES_AUTH_TOKEN=test-token-for-openapi HERMES_URL=http://127.0.0.1:18082 pnpm run gen:api`
+- `pnpm test` (52 passing)
+- `pnpm typecheck`
+
+Notes:
+
+- `agent_runs` is the persistent source of truth for chat history; the in-memory cancel registry on `app.state.chat_runs` is now a thin index over rows whose status is still `running`.
+- The web, signal, and telegram run paths all flow through `hermes.run_tracker.track_run`, which inserts the row, binds `run_id` / `conversation_id` / `channel` into structlog contextvars for the duration of the run, and finalises status + token counts in `finally`.
+- Token usage is best-effort: it is captured from the upstream `usage` block when present (OpenAI emits it only with `stream_options.include_usage`); the columns stay NULL otherwise.
+- Conversation FK uses `ON DELETE CASCADE`, so deleting a conversation also removes its run records. Bookmarked conversations preserve theirs.
+- `agent_run_events` (full SSE replay) intentionally stayed out of scope, as noted below.
+- The "Recent failures" UI panel itself is still deferred to [Plan 20](./20-onboarding-diagnostics-docs.md); this plan only exposes the data and the API.
+
 Depends on: [03](./03-chat-cancel-and-run-state.md).
 
 ## Goal
