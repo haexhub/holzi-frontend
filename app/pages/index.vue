@@ -41,19 +41,26 @@ const messagesScroller = ref<HTMLElement | null>(null)
 // uses this to avoid flashing the "add credentials" CTA before we know.
 const hasCredentials = ref<boolean | null>(null)
 const searchQuery = ref('')
+// Monotonic counter so a slow earlier search response can't overwrite
+// the result of a faster later one (debounced typing easily triggers
+// overlapping requests).
+let loadSeq = 0
 
 async function loadConversations() {
+  const seq = ++loadSeq
   try {
     const query: Record<string, unknown> = { channel: 'web' }
     if (searchQuery.value) {
       query.q = searchQuery.value
     }
-    conversations.value = await api.get<Conversation[]>(
-      '/api/conversations',
-      query,
-    )
+    const result = await api.get<Conversation[]>('/api/conversations', query)
+    if (seq === loadSeq) {
+      conversations.value = result
+    }
   } catch (err: unknown) {
-    error.value = err instanceof Error ? err.message : 'Fehler beim Laden.'
+    if (seq === loadSeq) {
+      error.value = err instanceof Error ? err.message : 'Fehler beim Laden.'
+    }
   }
 }
 
