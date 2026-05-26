@@ -1,10 +1,10 @@
 # Plan 03b: Agent Runs And Observability
 
-Status: implemented on 2026-05-26. Backend [Holzi#35](https://github.com/haexhub/Holzi/pull/35); frontend ships only regenerated types (this PR).
+Status: implemented and merged on 2026-05-26. Backend [Holzi#35](https://github.com/haexhub/Holzi/pull/35) (merged); frontend regenerated types + these docs in [holzi-frontend#25](https://github.com/haexhub/holzi-frontend/pull/25) (merged).
 
 Verification:
 
-- `uv run pytest` in `/home/haex/Projekte/Holzi` (366 passing, including 17 new in `tests/test_api_runs.py`)
+- `uv run pytest` in `/home/haex/Projekte/Holzi` (368 passing, including 18 in `tests/test_api_runs.py` + 1 streaming-usage test)
 - `uv run ruff check`
 - backend boot: `HERMES_AUTH_TOKEN=test-token-for-openapi HERMES_DB_PATH=$(mktemp --suffix=.db) uv run uvicorn hermes.main:app --host 127.0.0.1 --port 18082 --log-level warning`
 - frontend regen: `HERMES_AUTH_TOKEN=test-token-for-openapi HERMES_URL=http://127.0.0.1:18082 pnpm run gen:api`
@@ -18,6 +18,7 @@ Notes:
 - Token usage is best-effort: it is captured from the upstream `usage` block when present (OpenAI emits it only with `stream_options.include_usage`); the columns stay NULL otherwise.
 - Conversation FK uses `ON DELETE CASCADE`, so deleting a conversation also removes its run records. Bookmarked conversations preserve theirs.
 - `agent_run_events` (full SSE replay) intentionally stayed out of scope, as noted below.
+- Two CodeRabbit findings were fixed before merge: (1) the streaming request now sets `stream_options.include_usage=true` when usage metrics are requested, so OpenAI-compatible providers actually emit the terminal usage chunk; (2) `runs.finalize` guards on `status='running'` so a duplicate/concurrent finalize can't clobber a terminal row.
 - The "Recent failures" UI panel itself is still deferred to [Plan 20](./20-onboarding-diagnostics-docs.md); this plan only exposes the data and the API.
 
 Depends on: [03](./03-chat-cancel-and-run-state.md).
