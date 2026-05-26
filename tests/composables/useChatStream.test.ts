@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ChatStreamError, friendlyChatError, sendChatMessage } from '~/composables/useChatStream'
+import {
+  cancelChatRun,
+  ChatStreamError,
+  friendlyChatError,
+  sendChatMessage,
+} from '~/composables/useChatStream'
 import { useAuthStore } from '~/stores/auth'
 
 function sseBody(events: { event: string; data: unknown }[]): string {
@@ -147,6 +152,65 @@ describe('sendChatMessage', () => {
     expect(result.text).toBe('hello')
   })
 
+  it('fires onRun with the run_id from the run event', async () => {
+    mockFetch(
+      new Response(sseBody([
+        { event: 'session', data: { conversation_id: 1 } },
+        { event: 'run', data: { run_id: 'run-abc-123' } },
+        { event: 'text', data: { content: 'hi' } },
+        { event: 'done', data: {} },
+      ])),
+    )
+    const seenRuns: string[] = []
+    const result = await sendChatMessage(
+      { message: 'hi' },
+      { onRun: (id) => seenRuns.push(id) },
+    )
+    expect(seenRuns).toEqual(['run-abc-123'])
+    expect(result.runId).toBe('run-abc-123')
+    expect(result.cancelled).toBe(false)
+  })
+
+  it('returns cancelled=true and exits cleanly on a cancelled event', async () => {
+    mockFetch(
+      new Response(sseBody([
+        { event: 'session', data: { conversation_id: 1 } },
+        { event: 'run', data: { run_id: 'r1' } },
+        { event: 'text', data: { content: 'partial' } },
+        { event: 'cancelled', data: {} },
+      ])),
+    )
+    const result = await sendChatMessage({ message: 'hi' })
+    expect(result.cancelled).toBe(true)
+    expect(result.conversationId).toBe(1)
+    expect(result.runId).toBe('r1')
+    // Partial text is surfaced so the caller can render what arrived
+    // before the cancel, but the caller decides whether to persist it.
+    expect(result.text).toBe('partial')
+  })
+
+  it('treats cancelled as terminal — anything after it is ignored', async () => {
+    // Defensive: even if the backend ever followed `cancelled` with stale
+    // events (it shouldn't), the composable must not append them.
+    mockFetch(
+      new Response(sseBody([
+        { event: 'session', data: { conversation_id: 1 } },
+        { event: 'run', data: { run_id: 'r1' } },
+        { event: 'cancelled', data: {} },
+        { event: 'text', data: { content: 'too late' } },
+        { event: 'done', data: {} },
+      ])),
+    )
+    const chunks: string[] = []
+    const result = await sendChatMessage(
+      { message: 'hi' },
+      { onText: (c) => chunks.push(c) },
+    )
+    expect(result.cancelled).toBe(true)
+    expect(result.text).toBe('')
+    expect(chunks).toEqual([])
+  })
+
   it('passes conversation_id in the request body when provided', async () => {
     const spy = mockFetch(
       new Response(sseBody([
@@ -157,6 +221,64 @@ describe('sendChatMessage', () => {
     await sendChatMessage({ message: 'hi', conversation_id: 99 })
     const body = JSON.parse((spy.mock.calls[0][1] as RequestInit).body as string)
     expect(body.conversation_id).toBe(99)
+  })
+})
+
+describe('cancelChatRun', () => {
+  beforeEach(() => {
+    const auth = useAuthStore()
+    auth.setToken('test-token')
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('POSTs to /api/chat/runs/{id}/cancel with the bearer token', async () => {
+    const spy = mockFetch(new Response(null, { status: 204 }))
+    await cancelChatRun('run-xyz')
+    expect(spy).toHaveBeenCalledWith(
+      '/api/chat/runs/run-xyz/cancel',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer test-token',
+        }),
+      }),
+    )
+  })
+
+  it('resolves silently on 404 (the run already finished)', async () => {
+    // The race between "user clicks Stop" and "stream ends" is normal;
+    // a 404 here just means the run already cleaned itself up.
+    mockFetch(new Response('', { status: 404 }))
+    await expect(cancelChatRun('gone')).resolves.toBeUndefined()
+  })
+
+  it('throws on other non-2xx responses', async () => {
+    mockFetch(new Response('', { status: 500 }))
+    await expect(cancelChatRun('boom')).rejects.toThrow()
+  })
+
+  it('throws a ChatStreamError with code=unauthorized when no token is set', async () => {
+    const auth = useAuthStore()
+    auth.clear()
+    await expect(cancelChatRun('r1')).rejects.toMatchObject({
+      name: 'ChatStreamError',
+      code: 'unauthorized',
+      statusCode: 401,
+    })
+  })
+
+  it('clears the token and throws unauthorized on a 401 response', async () => {
+    const auth = useAuthStore()
+    mockFetch(new Response('', { status: 401 }))
+    await expect(cancelChatRun('r1')).rejects.toMatchObject({
+      name: 'ChatStreamError',
+      code: 'unauthorized',
+      statusCode: 401,
+    })
+    expect(auth.isAuthenticated).toBe(false)
   })
 })
 

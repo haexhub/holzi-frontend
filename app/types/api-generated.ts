@@ -38,6 +38,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/chat/runs/{run_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Api Chat Cancel Run
+         * @description Cooperatively cancel an in-flight /api/chat run.
+         *
+         *     Returns 204 once the cancellation signal is delivered. The actual
+         *     `cancelled` SSE event is emitted on the streaming response when the
+         *     agent reaches the next safe step. Unknown / already-finished run IDs
+         *     return 404 — we don't pretend a cancel succeeded for a run we no
+         *     longer track.
+         */
+        post: operations["api_chat_cancel_run_api_chat_runs__run_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/conversations": {
         parameters: {
             query?: never;
@@ -867,6 +893,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    api_chat_cancel_run_api_chat_runs__run_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown or already-finished run_id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

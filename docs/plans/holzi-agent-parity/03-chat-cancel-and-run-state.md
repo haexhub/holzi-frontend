@@ -1,5 +1,32 @@
 # Plan 03: Chat Cancel And Run State
 
+Status: implemented on 2026-05-26. Backend Holzi PR pending, frontend
+holzi-frontend PR pending (to be linked on merge).
+
+Verification:
+
+- `uv run pytest` in `/home/haex/Projekte/Holzi` (349 passing)
+- `uv run ruff check src/ tests/`
+- backend boot: `HERMES_AUTH_TOKEN=test-token-for-openapi HERMES_DB_PATH=$(mktemp --suffix=.db) uv run uvicorn hermes.main:app --host 127.0.0.1 --port 18082 --log-level warning`
+- frontend regen: `HERMES_AUTH_TOKEN=test-token-for-openapi HERMES_URL=http://127.0.0.1:18082 pnpm run gen:api`
+- `pnpm test` (50 passing)
+- `pnpm typecheck`
+
+Notes:
+
+- `cancelled` is the only terminal SSE event for a user-cancelled turn
+  (no trailing `done`). `useChatStream` enforces this on the client too:
+  any events after `cancelled` are dropped.
+- The in-memory cancel registry on `app.state.chat_runs` documents the
+  single-worker / single-container deployment invariant in
+  `src/hermes/agent.py`. `main.py` refuses to start when
+  `UVICORN_WORKERS` / `GUNICORN_WORKERS` / `WEB_CONCURRENCY` is set > 1.
+- ASGITransport in httpx 0.28 buffers the response body before returning
+  `client.stream(...)`, so mid-flight HTTP cancel isn't testable end-to-
+  end. The backend test instead triggers the cancel from inside the
+  upstream mock; the cancel endpoint itself is covered by a focused
+  direct test.
+
 Depends on: none. Introduces `run_id`, which is later persisted by
 [Plan 03b](./03b-agent-runs-and-observability.md).
 
