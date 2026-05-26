@@ -3,23 +3,30 @@ import { useAuthStore } from '~/stores/auth'
 /**
  * Subscribe to /api/chat's SSE stream.
  *
- * The hermes endpoint emits three event types over `text/event-stream`:
- *   - `session` → { conversation_id: number }
- *   - `text`    → { content: string }   (final assistant message)
- *   - `done`    → {}
+ * The hermes endpoint emits these event types over `text/event-stream`:
+ *   - `session`   → { conversation_id: number }
+ *   - `run`       → { run_id: string }     (handle for cancelChatRun)
+ *   - `text`      → { content: string }    (assistant delta)
+ *   - `cancelled` → {}                     (terminal — user clicked Stop)
+ *   - `done`      → {}                     (terminal — turn finished cleanly)
  * Plus on failure:
- *   - `error`   → { code, status_code, message }
+ *   - `error`     → { code, status_code, message }
  *
- * Returns the conversation_id from the `session` event and the assembled
- * assistant text once `done` arrives. Throws on `error` or non-2xx.
+ * Returns the conversation_id, run_id, assembled text, and a `cancelled`
+ * flag. `cancelled` is terminal: any events after it on the wire are
+ * ignored, so callers can rely on the result reflecting state at the
+ * moment of cancellation.
  */
 export interface ChatStreamResult {
   conversationId: number
+  runId: string | null
   text: string
+  cancelled: boolean
 }
 
 export interface ChatStreamCallbacks {
   onSession?: (conversationId: number) => void
+  onRun?: (runId: string) => void
   onText?: (chunk: string) => void
   signal?: AbortSignal
 }
@@ -86,10 +93,12 @@ export async function sendChatMessage(
   const decoder = new TextDecoder('utf-8')
   let buffer = ''
   let conversationId: number | null = null
+  let runId: string | null = null
   let assistantText = ''
+  let cancelled = false
   let streamError: ChatStreamError | null = null
 
-  while (true) {
+  outer: while (true) {
     const { value, done } = await reader.read()
     if (done) break
     buffer += decoder.decode(value, { stream: true })
@@ -108,12 +117,25 @@ export async function sendChatMessage(
           }
           break
         }
+        case 'run': {
+          runId = (data as { run_id?: string }).run_id ?? null
+          if (runId !== null) {
+            callbacks.onRun?.(runId)
+          }
+          break
+        }
         case 'text': {
           const chunk = (data as { content?: string }).content ?? ''
           assistantText += chunk
           callbacks.onText?.(chunk)
           break
         }
+        case 'cancelled':
+          // Terminal: stop reading and let the caller render the turn
+          // as aborted. Discard anything still in the buffer — the
+          // backend contract is that `cancelled` is the last event.
+          cancelled = true
+          break outer
         case 'done':
           break
         case 'error': {
@@ -138,7 +160,36 @@ export async function sendChatMessage(
   if (conversationId === null) {
     throw new ChatStreamError('chat stream ended without a session event')
   }
-  return { conversationId, text: assistantText }
+  return { conversationId, runId, text: assistantText, cancelled }
+}
+
+
+/**
+ * Best-effort cancel of an in-flight chat run.
+ *
+ * Resolves on 204 (cancel delivered) or 404 (run already finished, which
+ * is a normal race when the user clicks Stop right as the stream ends).
+ * Throws on other failures so the caller can surface a real problem.
+ */
+export async function cancelChatRun(runId: string): Promise<void> {
+  const auth = useAuthStore()
+  if (!auth.isAuthenticated) {
+    throw new Error('not authenticated')
+  }
+  const response = await fetch(`/api/chat/runs/${encodeURIComponent(runId)}/cancel`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${auth.token}`,
+    },
+  })
+  if (response.status === 204 || response.status === 404) {
+    return
+  }
+  const detail = await response.text().catch(() => '')
+  throw new ChatStreamError(
+    `cancel failed: ${response.status} ${detail}`,
+    { code: 'request_failed', statusCode: response.status },
+  )
 }
 
 /**

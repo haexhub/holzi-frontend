@@ -19,7 +19,11 @@ import RemindersPanel from '~/components/panels/RemindersPanel.vue'
 import TodosPanel from '~/components/panels/TodosPanel.vue'
 import ThemeToggle from '~/components/ThemeToggle.vue'
 import { useApi } from '~/composables/useApi'
-import { friendlyChatError, sendChatMessage } from '~/composables/useChatStream'
+import {
+  cancelChatRun,
+  friendlyChatError,
+  sendChatMessage,
+} from '~/composables/useChatStream'
 import { useLlmCredentials } from '~/composables/useLlmCredentials'
 import { useAuthStore } from '~/stores/auth'
 import type { Conversation, ConversationDetail, Message } from '~/types/api'
@@ -34,6 +38,11 @@ const activeId = ref<number | null>(null)
 const messages = ref<Message[]>([])
 const streaming = ref(false)
 const streamingText = ref('')
+const currentRunId = ref<string | null>(null)
+// Set to true when the most recent turn was user-cancelled, so the UI
+// can render an "abgebrochen" notice in place of a fake assistant
+// answer. Cleared as soon as the next send() begins.
+const lastCancelled = ref(false)
 const error = ref<string | null>(null)
 const activePanel = ref<'notes' | 'todos' | 'reminders'>('notes')
 const messagesScroller = ref<HTMLElement | null>(null)
@@ -152,6 +161,8 @@ async function send(text: string) {
 
   streaming.value = true
   streamingText.value = ''
+  currentRunId.value = null
+  lastCancelled.value = false
   error.value = null
   try {
     const result = await sendChatMessage(
@@ -160,21 +171,45 @@ async function send(text: string) {
         onSession: (id) => {
           activeId.value = id
         },
+        onRun: (id) => {
+          currentRunId.value = id
+        },
         onText: (chunk) => {
           streamingText.value += chunk
           nextTick(scrollToBottom)
         },
       },
     )
-    // Reload the full server-side conversation to get canonical ids,
-    // tool turns, and timestamps. Cheaper than diffing the optimistic state.
-    await selectConversation(result.conversationId)
-    await loadConversations()
+    if (result.cancelled) {
+      // Backend did not persist an assistant turn — refresh the
+      // conversation so the optimistic user message is replaced by
+      // the canonical row and the abgebrochen notice renders.
+      lastCancelled.value = true
+      await selectConversation(result.conversationId)
+      await loadConversations()
+    }
+    else {
+      // Reload the full server-side conversation to get canonical ids,
+      // tool turns, and timestamps. Cheaper than diffing the optimistic state.
+      await selectConversation(result.conversationId)
+      await loadConversations()
+    }
   } catch (err: unknown) {
     error.value = friendlyChatError(err)
   } finally {
     streaming.value = false
     streamingText.value = ''
+    currentRunId.value = null
+  }
+}
+
+async function stopStreaming() {
+  const runId = currentRunId.value
+  if (!runId) return
+  try {
+    await cancelChatRun(runId)
+  } catch (err: unknown) {
+    error.value = friendlyChatError(err)
   }
 }
 
@@ -258,6 +293,12 @@ onMounted(() => {
           </div>
         </div>
         <div
+          v-if="lastCancelled && !streaming"
+          class="flex justify-start text-xs italic text-muted-foreground"
+        >
+          Antwort abgebrochen.
+        </div>
+        <div
           v-if="error"
           role="alert"
           class="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
@@ -275,7 +316,12 @@ onMounted(() => {
         </div>
       </div>
 
-      <ChatComposer :disabled="streaming" @send="send" />
+      <ChatComposer
+        :streaming="streaming"
+        :can-stop="currentRunId !== null"
+        @send="send"
+        @stop="stopStreaming"
+      />
     </main>
 
     <!-- Right panel: notes/todos/reminders -->

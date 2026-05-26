@@ -48,8 +48,9 @@ Completed:
 - [01](./01-conversation-lifecycle.md) — conversation lifecycle (2026-05-25)
 - [01b](./01b-conversation-retention-and-bookmarks.md) — retention + bookmarks (2026-05-26)
 - [02](./02-conversation-search-organization.md) — search and organization (2026-05-26; follow-up [Holzi#33](https://github.com/haexhub/Holzi/pull/33) merged)
+- [03](./03-chat-cancel-and-run-state.md) — chat cancel and run state (2026-05-26)
 
-Next up: [03 — chat cancel and run state](./03-chat-cancel-and-run-state.md).
+Next up: [03b — agent runs and observability](./03b-agent-runs-and-observability.md).
 
 ## Recommended Order
 
