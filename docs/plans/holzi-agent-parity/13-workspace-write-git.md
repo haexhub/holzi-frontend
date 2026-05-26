@@ -68,7 +68,7 @@ Conflict Card UI until bind-mount mode is actually supported.
 Every workspace write produces a git commit on the current branch with a
 message in the form:
 
-```
+```text
 agent[conv-42]: edit src/foo.py
 user[conv-42]: rename README.md
 ```
