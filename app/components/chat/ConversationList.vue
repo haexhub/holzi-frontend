@@ -176,7 +176,13 @@ function confirmDelete(event: MouseEvent, c: Conversation) {
             autofocus
             @keydown.esc.prevent="cancelRename"
           />
-          <Button type="submit" size="icon" variant="ghost" class="size-8">
+          <Button
+            type="submit"
+            size="icon"
+            variant="ghost"
+            class="size-8"
+            aria-label="Titel speichern"
+          >
             <Check class="size-3.5" />
           </Button>
           <Button
@@ -184,6 +190,7 @@ function confirmDelete(event: MouseEvent, c: Conversation) {
             size="icon"
             variant="ghost"
             class="size-8"
+            aria-label="Umbenennen abbrechen"
             @click="cancelRename"
           >
             <X class="size-3.5" />
