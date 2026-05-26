@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { MessageSquarePlus, Star } from 'lucide-vue-next'
-import { computed } from 'vue'
 import { Button } from '@/components/ui/button'
 import type { Conversation } from '~/types/api'
 
@@ -16,7 +15,6 @@ const emit = defineEmits<{
 }>()
 
 const TTL_SOON_SECONDS = 7 * 24 * 60 * 60
-const nowSec = computed(() => Math.floor(Date.now() / 1000))
 
 function fmt(ts: number): string {
   const d = new Date(ts * 1000)
@@ -31,7 +29,9 @@ function fmt(ts: number): string {
 function expiresHint(c: Conversation): string | null {
   if (c.bookmarked) return null
   if (c.expires_at == null) return null
-  const remaining = c.expires_at - nowSec.value
+  // Recomputed on each re-render (triggered by conversation updates);
+  // sufficient for a 7-day window hint without a wall-clock timer.
+  const remaining = c.expires_at - Math.floor(Date.now() / 1000)
   if (remaining > TTL_SOON_SECONDS) return null
   if (remaining <= 0) return 'Läuft bald ab'
   const days = Math.max(1, Math.ceil(remaining / 86_400))
@@ -41,6 +41,13 @@ function expiresHint(c: Conversation): string | null {
 function onBookmarkClick(event: MouseEvent, id: number) {
   event.stopPropagation()
   emit('toggle-bookmark', id)
+}
+
+function onRowKeydown(event: KeyboardEvent, id: number) {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault()
+    emit('select', id)
+  }
 }
 </script>
 
@@ -60,17 +67,19 @@ function onBookmarkClick(event: MouseEvent, id: number) {
       >
         Keine Konversationen.
       </p>
-      <button
+      <div
         v-for="c in props.conversations"
         :key="c.id"
-        type="button"
-        class="block w-full rounded-md px-3 py-2 text-left text-sm transition-colors"
+        role="button"
+        tabindex="0"
+        class="block w-full cursor-pointer rounded-md px-3 py-2 text-left text-sm transition-colors"
         :class="
           c.id === props.activeId
             ? 'bg-accent text-accent-foreground'
             : 'hover:bg-muted'
         "
         @click="emit('select', c.id)"
+        @keydown="onRowKeydown($event, c.id)"
       >
         <div class="flex items-baseline justify-between gap-2">
           <span class="truncate font-medium">
@@ -105,7 +114,7 @@ function onBookmarkClick(event: MouseEvent, id: number) {
             {{ expiresHint(c) }}
           </span>
         </div>
-      </button>
+      </div>
     </div>
   </div>
 </template>

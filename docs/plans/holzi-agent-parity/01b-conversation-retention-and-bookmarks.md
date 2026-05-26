@@ -6,7 +6,7 @@ Verification:
 
 - `uv run pytest tests/test_conversations.py tests/test_scheduler.py tests/test_api_conversations.py`
 - `uv run ruff check src/hermes/config.py src/hermes/db.py src/hermes/schema.py src/hermes/scheduler.py src/hermes/main.py src/hermes/routes/api.py src/hermes/repository/conversations.py src/hermes/repository/models.py tests/test_conversations.py tests/test_scheduler.py tests/test_api_conversations.py`
-- backend boot: `cd /home/haex/Projekte/Holzi && HERMES_AUTH_TOKEN=test-token-for-openapi HERMES_DB_PATH=$(mktemp --suffix=.db) uv run uvicorn hermes.main:app --host 127.0.0.1 --port 18082 --log-level warning`
+- backend boot (run from the Holzi repo root): `HERMES_AUTH_TOKEN=test-token-for-openapi HERMES_DB_PATH=$(mktemp --suffix=.db) uv run uvicorn hermes.main:app --host 127.0.0.1 --port 18082 --log-level warning`
 - frontend regen: `HERMES_AUTH_TOKEN=test-token-for-openapi HERMES_URL=http://127.0.0.1:18082 pnpm run gen:api`
 - `pnpm test`
 - `pnpm typecheck`
