@@ -1,6 +1,6 @@
 # Plan 10: Reasoning And Subagent Cards
 
-Status: implemented on 2026-05-27.
+Status: implemented and merged on 2026-05-27 (cross-repo [Holzi#40](https://github.com/haexhub/Holzi/pull/40) + [holzi-frontend#34](https://github.com/haexhub/holzi-frontend/pull/34)).
 
 Scope note: reasoning is wired end-to-end (provider → SSE → persisted →
 card). Subagent events are defined as the wire contract + rendered by
