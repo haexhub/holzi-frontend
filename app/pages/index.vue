@@ -23,6 +23,7 @@ import {
   cancelChatRun,
   type ChatStreamCallbacks,
   type ChatStreamResult,
+  editAndRegenerate,
   friendlyChatError,
   retryLastResponse,
   sendChatMessage,
@@ -252,6 +253,24 @@ async function retryLast() {
   await runStream((callbacks) => retryLastResponse(conversationId, callbacks))
 }
 
+async function editMessage(messageId: number, content: string) {
+  if (streaming.value || activeId.value === null) return
+  const conversationId = activeId.value
+  // Optimistically rewrite the edited turn and drop everything after it,
+  // mirroring what the backend does before re-running.
+  const idx = messages.value.findIndex((m) => m.id === messageId)
+  const target = messages.value[idx]
+  if (target) {
+    messages.value = [...messages.value.slice(0, idx), { ...target, content }]
+  }
+  await nextTick()
+  scrollToBottom()
+
+  await runStream((callbacks) =>
+    editAndRegenerate(conversationId, messageId, content, callbacks),
+  )
+}
+
 async function stopStreaming() {
   const runId = currentRunId.value
   if (!runId) return
@@ -329,7 +348,10 @@ onMounted(() => {
           :message="m"
           :can-retry="!streaming && m.id === lastAssistantId"
           :retry-disabled="streaming"
+          :can-edit="!streaming && m.role === 'user' && m.id > 0"
+          :edit-disabled="streaming"
           @retry="retryLast"
+          @edit="(content) => editMessage(m.id, content)"
         />
         <ChatMessage
           v-if="streaming && streamingText"

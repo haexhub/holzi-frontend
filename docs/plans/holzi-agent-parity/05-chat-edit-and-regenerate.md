@@ -1,5 +1,40 @@
 # Plan 05: Edit And Regenerate
 
+Status: implemented on 2026-05-27; PRs open, pending CodeRabbit review + merge.
+Backend [Holzi#37](https://github.com/haexhub/Holzi/pull/37); frontend
+[holzi-frontend#28](https://github.com/haexhub/holzi-frontend/pull/28).
+
+Verification:
+
+- In backend repo root (`Holzi/`): `uv run pytest` (393 passing, including 9
+  edit-endpoint tests in `tests/test_api_chat.py` + 5 repo-helper tests in
+  `tests/test_messages.py`)
+- `uv run ruff check src tests`
+- backend boot: `HERMES_AUTH_TOKEN=test-token-for-openapi HERMES_DB_PATH=$(mktemp --suffix=.db) uv run uvicorn hermes.main:app --host 127.0.0.1 --port 18082 --log-level warning`
+- frontend regen, in frontend repo root (`holzi-frontend/`): `HERMES_AUTH_TOKEN=test-token-for-openapi HERMES_URL=http://127.0.0.1:18082 pnpm run gen:api`
+- `pnpm test` (60 passing, including 4 `editAndRegenerate` tests)
+- `pnpm typecheck`
+
+Notes:
+
+- Reuses the plan-04 delete-then-rerun mechanic, keyed on a specific message id
+  instead of the last user message: `POST /api/conversations/{id}/messages/{message_id}/edit-and-regenerate`
+  rewrites the user message in place (`messages.update_content`, keeping role +
+  ts so the turn stays in chronological position), then `delete_after(after_id=message_id)`
+  drops the entire tail, and `_stream_web_agent_run` regenerates over the
+  surviving context. The FTS index follows the in-place edit via the existing
+  `AFTER UPDATE` trigger on `messages`.
+- Validation mirrors `/api/chat` + `/retry`: unknown conversation → 404; non-web
+  channel → 400; message not found *or belonging to another conversation* → 404
+  (the path's `conv_id` is authoritative, so clients can't edit across threads);
+  non-`user` role → 400; empty content → 400.
+- Frontend: `editAndRegenerate(conversationId, messageId, content)` in
+  `useChatStream` shares the SSE consumer with `sendChatMessage`/`retryLastResponse`.
+  `ChatMessage.vue` shows a "Bearbeiten" control on every persisted user turn
+  (disabled while a run is active) that opens an inline textarea warning that
+  later messages will be regenerated; `index.vue` optimistically rewrites the
+  edited turn and trims the tail, then reloads the canonical conversation.
+
 Depends on: [04](./04-chat-retry-last-response.md) — reuses the
 delete-then-rerun mechanic on a specific message instead of the last one.
 

@@ -51,8 +51,9 @@ Completed:
 - [03](./03-chat-cancel-and-run-state.md) — chat cancel and run state (2026-05-26)
 - [03b](./03b-agent-runs-and-observability.md) — agent runs and observability (2026-05-26)
 - [04](./04-chat-retry-last-response.md) — chat retry last response (2026-05-26)
+- [05](./05-chat-edit-and-regenerate.md) — chat edit and regenerate (2026-05-27)
 
-Next up: [05 — chat edit and regenerate](./05-chat-edit-and-regenerate.md).
+Next up: [06 — streaming resilience and queued sends](./06-streaming-resilience-and-queueing.md).
 
 ## Recommended Order
 
