@@ -52,8 +52,9 @@ Completed:
 - [03b](./03b-agent-runs-and-observability.md) — agent runs and observability (2026-05-26)
 - [04](./04-chat-retry-last-response.md) — chat retry last response (2026-05-26)
 - [05](./05-chat-edit-and-regenerate.md) — chat edit and regenerate (2026-05-27)
+- [06](./06-streaming-resilience-and-queueing.md) — streaming resilience and queued sends (2026-05-27; frontend-only [holzi-frontend#29](https://github.com/haexhub/holzi-frontend/pull/29) merged)
 
-Next up: [06 — streaming resilience and queued sends](./06-streaming-resilience-and-queueing.md).
+Next up: [07 — chat rendering polish](./07-chat-rendering-polish.md).
 
 ## Recommended Order
 

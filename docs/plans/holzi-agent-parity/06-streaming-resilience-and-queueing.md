@@ -1,5 +1,39 @@
 # Plan 06: Streaming Resilience And Queueing
 
+Status: implemented and merged on 2026-05-27. Frontend-only
+([holzi-frontend#29](https://github.com/haexhub/holzi-frontend/pull/29),
+merged); no backend changes this session. The full SSE resume protocol
+(`reconnecting` state) stays deferred — see Notes.
+
+CodeRabbit: unavailable for this PR — the org ran out of usage credits, so
+the automatic review never completed and a re-trigger only re-acked. Per the
+CR-rate-limit fallback the changes were self-reviewed on the PR; that review
+caught one real gap (a user-cancelled turn stranded queued follow-ups with no
+send path), fixed in 69a3788 before merge.
+
+Verification (frontend repo root, `holzi-frontend/`):
+
+- `pnpm test` (67 passing, incl. 5 `useChatQueue` FIFO-order tests and the new
+  `useChatStream` reader-failure + terminal-`error` tests)
+- `pnpm typecheck`
+
+Notes:
+
+- Stream lifecycle now tracked as an explicit `StreamState`
+  (`idle`/`streaming`/`failed`/`cancelled`) in `useChatStream.ts`, replacing
+  the bare `streaming` boolean in `index.vue`. Only `streaming` gates sending.
+- `reconnecting` is defined in the union but intentionally unreachable: a real
+  resume needs server-side event buffering + `Last-Event-ID`, which is out of
+  scope here (the plan's own "no full resume protocol"). Kept in the type so
+  the state set is stable when a future resume plan lands.
+- Follow-ups typed during a turn go into a visible local FIFO queue
+  (`useChatQueue`), render as dimmed pending user bubbles, and flush one-by-one
+  only after a clean `done`. A dropped (`failed`) or user-cancelled
+  (`cancelled`) turn keeps them visible and unsent, with an explicit
+  "Warteschlange jetzt senden" retry path (`queueStalled`).
+- The SSE `error` event is now terminal in the consumer, mirroring `cancelled`
+  — post-error deltas are ignored rather than rendered as a successful turn.
+
 Depends on: [03](./03-chat-cancel-and-run-state.md) (stream state machine).
 
 ## Goal
