@@ -1,6 +1,6 @@
 # Plan 01: Conversation Lifecycle
 
-Status: implemented on 2026-05-25.
+Status: implemented and merged on 2026-05-25.
 
 Verification:
 

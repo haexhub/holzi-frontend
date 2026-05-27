@@ -1,6 +1,6 @@
 # Plan 03: Chat Cancel And Run State
 
-Status: implemented on 2026-05-26. Backend [Holzi#34](https://github.com/haexhub/Holzi/pull/34), frontend [holzi-frontend#23](https://github.com/haexhub/holzi-frontend/pull/23).
+Status: implemented and merged on 2026-05-26. Backend [Holzi#34](https://github.com/haexhub/Holzi/pull/34) (merged), frontend [holzi-frontend#23](https://github.com/haexhub/holzi-frontend/pull/23) (merged).
 
 Verification:
 

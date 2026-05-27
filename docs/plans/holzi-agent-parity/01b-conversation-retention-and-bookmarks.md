@@ -1,6 +1,6 @@
 # Plan 01b: Conversation Retention And Bookmarks
 
-Status: implemented on 2026-05-26. Backend [Holzi#32](https://github.com/haexhub/Holzi/pull/32), frontend [holzi-frontend#21](https://github.com/haexhub/holzi-frontend/pull/21).
+Status: implemented and merged on 2026-05-26. Backend [Holzi#32](https://github.com/haexhub/Holzi/pull/32) (merged), frontend [holzi-frontend#21](https://github.com/haexhub/holzi-frontend/pull/21) (merged).
 
 Verification:
 

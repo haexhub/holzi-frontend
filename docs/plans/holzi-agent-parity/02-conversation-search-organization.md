@@ -1,6 +1,6 @@
 # Plan 02: Conversation Search And Organization
 
-Status: implemented on 2026-05-26. Search-semantics follow-up filed as
+Status: implemented and merged on 2026-05-26. Search-semantics follow-up filed as
 [Holzi#33](https://github.com/haexhub/Holzi/pull/33).
 
 Verification:
