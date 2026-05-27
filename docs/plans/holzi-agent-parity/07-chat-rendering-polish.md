@@ -1,5 +1,22 @@
 # Plan 07: Chat Rendering Polish
 
+Status: implemented on 2026-05-27, pending merge. Frontend-only; no backend
+changes — `MessageResponse.ts` already ships the timestamp. Stack (confirmed
+with the user, chosen for a polished result over minimal bundle):
+`markdown-it` + `@shikijs/markdown-it` (shiki, dual github-light/dark themes) +
+`@vscode/markdown-it-katex` + `katex` + `dompurify` + `mermaid` (lazy-loaded).
+KaTeX math was added to scope at the user's request (parity with hermes-webui);
+it was not in the original plan. Streaming bubbles stay plain text and are
+upgraded to rendered Markdown once the turn is persisted.
+
+Verification (frontend repo root, `holzi-frontend/`):
+
+- `pnpm test` (81 passing, incl. new `tests/utils/markdown.test.ts` and
+  `tests/components/{RenderedMarkdown,ChatMessage}.test.ts` — the project's
+  first component tests, enabled by adding `@vitejs/plugin-vue` to vitest)
+- `pnpm typecheck`
+- `pnpm build` (verified shiki/mermaid/katex bundle and code-split cleanly)
+
 ## Goal
 
 Render assistant output like a serious work surface: Markdown, syntax

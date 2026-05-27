@@ -10,7 +10,7 @@ export default defineNuxtConfig({
 
   modules: ['shadcn-nuxt', '@pinia/nuxt', '@vueuse/nuxt'],
 
-  css: ['~/assets/css/tailwind.css'],
+  css: ['~/assets/css/tailwind.css', 'katex/dist/katex.min.css'],
 
   vite: {
     plugins: [tailwindcss()],
