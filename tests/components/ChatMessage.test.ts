@@ -32,6 +32,31 @@ describe('ChatMessage.vue', () => {
     expect(wrapper.find('.rm-stub').text()).toBe('# Hi')
   })
 
+  it('renders attachment chips on a user message', () => {
+    const wrapper = mount(ChatMessage, {
+      props: {
+        message: {
+          role: 'user',
+          content: 'see attached',
+          attachments: [
+            {
+              id: 1,
+              conversation_id: 7,
+              message_id: 3,
+              filename: 'server.log',
+              content_type: 'text/plain',
+              size: 4096,
+              created_at: 0,
+            },
+          ],
+        },
+      },
+      global: { stubs },
+    })
+    expect(wrapper.text()).toContain('server.log')
+    expect(wrapper.text()).toContain('4.0 KB')
+  })
+
   it('renders user messages as plain text, not Markdown', () => {
     const wrapper = mount(ChatMessage, {
       props: { message: { role: 'user', content: '# not a heading' } },

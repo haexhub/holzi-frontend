@@ -124,7 +124,14 @@ export interface paths {
         /** Api List Conversations */
         get: operations["api_list_conversations_api_conversations_get"];
         put?: never;
-        post?: never;
+        /**
+         * Api Create Conversation
+         * @description Create an empty web conversation. The web UI needs this to attach
+         *     files to the very first message: uploads are tied to a conversation id
+         *     at upload time (Plan 11), so the conversation must exist before the
+         *     first send.
+         */
+        post: operations["api_create_conversation_api_conversations_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -148,6 +155,23 @@ export interface paths {
         head?: never;
         /** Api Update Conversation */
         patch: operations["api_update_conversation_api_conversations__conv_id__patch"];
+        trace?: never;
+    };
+    "/api/conversations/{conv_id}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Api Upload Attachment */
+        post: operations["api_upload_attachment_api_conversations__conv_id__attachments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/conversations/{conv_id}/bookmark": {
@@ -758,6 +782,28 @@ export interface components {
             version: number;
             data: components["schemas"]["ApprovalRequiredData"];
         };
+        /** AttachmentResponse */
+        AttachmentResponse: {
+            /** Id */
+            id: number;
+            /** Conversation Id */
+            conversation_id: number;
+            /** Message Id */
+            message_id?: number | null;
+            /** Filename */
+            filename: string;
+            /** Content Type */
+            content_type: string;
+            /** Size */
+            size: number;
+            /** Created At */
+            created_at: number;
+        };
+        /** Body_api_upload_attachment_api_conversations__conv_id__attachments_post */
+        Body_api_upload_attachment_api_conversations__conv_id__attachments_post: {
+            /** File */
+            file: string;
+        };
         /** CancelledEvent */
         CancelledEvent: {
             /**
@@ -779,6 +825,11 @@ export interface components {
          *     Referenced from /api/chat's 200 response; never instantiated at runtime.
          */
         ChatStreamEnvelope: components["schemas"]["SessionEvent"] | components["schemas"]["RunEvent"] | components["schemas"]["TextEvent"] | components["schemas"]["ToolCallEvent"] | components["schemas"]["ToolResultEvent"] | components["schemas"]["ApprovalRequiredEvent"] | components["schemas"]["ReasoningEvent"] | components["schemas"]["SubagentStartEvent"] | components["schemas"]["SubagentTextEvent"] | components["schemas"]["SubagentDoneEvent"] | components["schemas"]["DoneEvent"] | components["schemas"]["CancelledEvent"] | components["schemas"]["ErrorEvent"];
+        /** ConversationCreateRequest */
+        ConversationCreateRequest: {
+            /** Message */
+            message?: string | null;
+        };
         /** ConversationDetailResponse */
         ConversationDetailResponse: {
             conversation: components["schemas"]["ConversationResponse"];
@@ -940,6 +991,8 @@ export interface components {
             tool_call?: components["schemas"]["ToolCallView"] | null;
             /** Reasoning */
             reasoning?: string | null;
+            /** Attachments */
+            attachments?: components["schemas"]["AttachmentResponse"][];
         };
         /** MessengerAccountResponse */
         MessengerAccountResponse: {
@@ -1562,6 +1615,39 @@ export interface operations {
             };
         };
     };
+    api_create_conversation_api_conversations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConversationCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     api_get_conversation_api_conversations__conv_id__get: {
         parameters: {
             query?: {
@@ -1646,6 +1732,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ConversationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_upload_attachment_api_conversations__conv_id__attachments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conv_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_api_upload_attachment_api_conversations__conv_id__attachments_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttachmentResponse"];
                 };
             };
             /** @description Validation Error */

@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Brain } from 'lucide-vue-next'
+import AttachmentChip from '~/components/chat/AttachmentChip.vue'
 import ChatComposer from '~/components/chat/ChatComposer.vue'
 import ChatMessage from '~/components/chat/ChatMessage.vue'
 import ToolCallCard from '~/components/chat/ToolCallCard.vue'
@@ -40,7 +41,7 @@ import {
 import { useLlmCredentials } from '~/composables/useLlmCredentials'
 import { useReasoningPreference } from '~/composables/useReasoningPreference'
 import { useAuthStore } from '~/stores/auth'
-import type { Conversation, ConversationDetail, Message } from '~/types/api'
+import type { Attachment, Conversation, ConversationDetail, Message } from '~/types/api'
 
 const auth = useAuthStore()
 const api = useApi()
@@ -379,19 +380,73 @@ async function runStream(
 function flushQueue() {
   if (isStreaming.value) return
   const next = queue.dequeue()
-  if (next) void send(next.content)
+  if (next) void send({ text: next.content, files: next.files })
 }
 
-async function send(text: string) {
+// Upload each picked file to the conversation, returning the persisted
+// attachment metadata in order. The backend validates type/size and ties
+// each upload to the conversation (Plan 11).
+async function uploadAttachments(
+  conversationId: number,
+  files: File[],
+): Promise<Attachment[]> {
+  const out: Attachment[] = []
+  for (const file of files) {
+    const fd = new FormData()
+    fd.append('file', file)
+    out.push(
+      await api.post<Attachment>(
+        `/api/conversations/${conversationId}/attachments`,
+        fd,
+      ),
+    )
+  }
+  return out
+}
+
+function uploadErrorMessage(err: unknown): string {
+  const e = err as { statusCode?: number; data?: { detail?: string } }
+  if (e?.statusCode === 413) return 'Datei zu groß (max. 25 MB).'
+  if (e?.statusCode === 415) return 'Dateityp wird nicht unterstützt.'
+  return e?.data?.detail
+    ? `Upload fehlgeschlagen: ${e.data.detail}`
+    : 'Upload fehlgeschlagen.'
+}
+
+async function send(payload: { text: string; files: File[] }) {
+  const text = payload.text
+  const files = payload.files ?? []
   if (isStreaming.value) {
-    // A turn is already in flight — hold this follow-up in the visible
-    // queue. flushQueue() sends it once the current turn finishes cleanly.
-    queue.enqueue(text)
+    // A turn is already in flight — hold this follow-up (and its files) in
+    // the visible queue. flushQueue() sends it once the turn finishes.
+    queue.enqueue(text, files)
     await nextTick()
     scrollToBottom()
     return
   }
-  // Optimistic: render the user message immediately.
+
+  // Attachments must reference an existing conversation, so create one
+  // up front when this is the first message of a fresh chat, then upload.
+  let conversationId = activeId.value
+  let uploaded: Attachment[] = []
+  if (files.length > 0) {
+    try {
+      if (conversationId === null) {
+        const convo = await api.post<Conversation>('/api/conversations', {
+          message: text,
+        })
+        conversationId = convo.id
+        activeId.value = convo.id
+        await loadConversations()
+      }
+      uploaded = await uploadAttachments(conversationId, files)
+    } catch (err: unknown) {
+      error.value = uploadErrorMessage(err)
+      return
+    }
+  }
+
+  // Optimistic: render the user message (with its chips) immediately.
   const optimisticUserId = -Date.now()
   messages.value = [
     ...messages.value,
@@ -400,6 +455,7 @@ async function send(text: string) {
       role: 'user',
       content: text,
       ts: Math.floor(Date.now() / 1000),
+      attachments: uploaded,
     },
   ]
   await nextTick()
@@ -407,7 +463,11 @@ async function send(text: string) {
 
   await runStream((callbacks) =>
     sendChatMessage(
-      { message: text, conversation_id: activeId.value ?? undefined },
+      {
+        message: text,
+        conversation_id: conversationId ?? undefined,
+        attachment_ids: uploaded.map((a) => a.id),
+      },
       callbacks,
     ),
   )
@@ -638,6 +698,18 @@ onMounted(() => {
             class="max-w-[80%] rounded-2xl border border-dashed border-primary/40 bg-primary/10 px-4 py-2 text-sm whitespace-pre-wrap break-words text-foreground"
           >
             {{ q.content }}
+          </div>
+          <div
+            v-if="q.files.length"
+            class="mt-1 flex max-w-[80%] flex-wrap justify-end gap-1.5"
+          >
+            <AttachmentChip
+              v-for="(f, i) in q.files"
+              :key="`${q.id}-${i}`"
+              :filename="f.name"
+              :content-type="f.type || 'application/octet-stream'"
+              :size="f.size"
+            />
           </div>
           <span class="mt-1 text-xs italic text-muted-foreground">
             {{ isStreaming ? 'In Warteschlange…' : 'Wartet — nicht gesendet' }}

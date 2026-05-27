@@ -9,6 +9,8 @@ export interface QueuedMessage {
   /** Local-only id, stable for the lifetime of the queue entry. */
   id: number
   content: string
+  /** Files picked alongside this follow-up, uploaded when it is sent. */
+  files: File[]
 }
 
 /**
@@ -22,8 +24,8 @@ export function useChatQueue() {
   const items = ref<QueuedMessage[]>([])
   let seq = 0
 
-  function enqueue(content: string): QueuedMessage {
-    const item: QueuedMessage = { id: ++seq, content }
+  function enqueue(content: string, files: File[] = []): QueuedMessage {
+    const item: QueuedMessage = { id: ++seq, content, files }
     items.value = [...items.value, item]
     return item
   }

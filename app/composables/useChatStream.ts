@@ -117,7 +117,13 @@ export class ChatStreamError extends Error {
 }
 
 export async function sendChatMessage(
-  payload: { message: string; conversation_id?: number },
+  payload: {
+    message: string
+    conversation_id?: number
+    // Ids of files already uploaded to this conversation (Plan 11). The
+    // backend links them to the user message and inlines text content.
+    attachment_ids?: number[]
+  },
   callbacks: ChatStreamCallbacks = {},
 ): Promise<ChatStreamResult> {
   return postChatStream('/api/chat', payload, callbacks)
