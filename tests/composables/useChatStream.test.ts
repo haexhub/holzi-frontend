@@ -9,9 +9,14 @@ import {
 } from '~/composables/useChatStream'
 import { useAuthStore } from '~/stores/auth'
 
+// Mirrors the real wire format: the SSE `event:` line carries the event name
+// and the `data:` line is the full versioned envelope `{ event, version, data }`.
 function sseBody(events: { event: string; data: unknown }[]): string {
   return events
-    .map((e) => `event: ${e.event}\ndata: ${JSON.stringify(e.data)}\n\n`)
+    .map((e) => {
+      const envelope = { event: e.event, version: 1, data: e.data }
+      return `event: ${e.event}\ndata: ${JSON.stringify(envelope)}\n\n`
+    })
     .join('')
 }
 
@@ -169,10 +174,12 @@ describe('sendChatMessage', () => {
     // Build a ReadableStream that delivers the SSE bytes in awkward fragments
     // to mimic real network behaviour (block boundaries mid-line).
     const enc = new TextEncoder()
-    const full =
-      'event: session\ndata: {"conversation_id":3}\n\nevent: text\nd' +
-      'ata: {"content":"hel"}\n\nevent: text\ndata: {"content":"lo"}' +
-      '\n\nevent: done\ndata: {}\n\n'
+    const full = sseBody([
+      { event: 'session', data: { conversation_id: 3 } },
+      { event: 'text', data: { content: 'hel' } },
+      { event: 'text', data: { content: 'lo' } },
+      { event: 'done', data: {} },
+    ])
     const stream = new ReadableStream({
       start(controller) {
         const piece = 40
@@ -245,6 +252,62 @@ describe('sendChatMessage', () => {
     expect(result.cancelled).toBe(true)
     expect(result.text).toBe('')
     expect(chunks).toEqual([])
+  })
+
+  it('fires onToolCall and onToolResult with the envelope payloads', async () => {
+    mockFetch(
+      new Response(sseBody([
+        { event: 'session', data: { conversation_id: 5 } },
+        { event: 'run', data: { run_id: 'r1' } },
+        {
+          event: 'tool_call',
+          data: {
+            call_id: 'call_1',
+            name: 'notes.find',
+            arguments: { query: 'status' },
+            status: 'running',
+          },
+        },
+        {
+          event: 'tool_result',
+          data: { call_id: 'call_1', status: 'success', result: 'found 3', error: null },
+        },
+        { event: 'text', data: { content: 'here you go' } },
+        { event: 'done', data: {} },
+      ])),
+    )
+    const calls: unknown[] = []
+    const results: unknown[] = []
+    const result = await sendChatMessage(
+      { message: 'go' },
+      {
+        onToolCall: (c) => calls.push(c),
+        onToolResult: (r) => results.push(r),
+      },
+    )
+    expect(calls).toEqual([
+      { call_id: 'call_1', name: 'notes.find', arguments: { query: 'status' }, status: 'running' },
+    ])
+    expect(results).toEqual([
+      { call_id: 'call_1', status: 'success', result: 'found 3', error: null },
+    ])
+    expect(result.text).toBe('here you go')
+  })
+
+  it('ignores an unrecognised event without breaking the stream', async () => {
+    // Forward compatibility: a newer backend may add event types we don't
+    // know yet. They must fall through harmlessly, not abort the turn.
+    mockFetch(
+      new Response(sseBody([
+        { event: 'session', data: { conversation_id: 1 } },
+        { event: 'reasoning', data: { thought: 'hmm' } },
+        { event: 'text', data: { content: 'answer' } },
+        { event: 'done', data: {} },
+      ])),
+    )
+    const result = await sendChatMessage({ message: 'hi' })
+    expect(result.text).toBe('answer')
+    expect(result.conversationId).toBe(1)
   })
 
   it('passes conversation_id in the request body when provided', async () => {

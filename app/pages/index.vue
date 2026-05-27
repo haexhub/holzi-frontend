@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import ChatComposer from '~/components/chat/ChatComposer.vue'
 import ChatMessage from '~/components/chat/ChatMessage.vue'
+import ToolCallCard from '~/components/chat/ToolCallCard.vue'
 import ConversationList from '~/components/chat/ConversationList.vue'
 import EmptyChatState from '~/components/chat/EmptyChatState.vue'
 import NotesPanel from '~/components/panels/NotesPanel.vue'
@@ -59,6 +60,18 @@ const queueStalled = computed(
     && (streamState.value === 'failed' || streamState.value === 'cancelled'),
 )
 const streamingText = ref('')
+// Tool cards for the turn in flight, keyed by call_id and flipped from
+// running → success/error as results arrive. Cleared when the turn ends; the
+// canonical reload then re-renders the persisted cards.
+interface StreamingToolCall {
+  call_id: string
+  name: string
+  arguments: Record<string, unknown>
+  status: 'running' | 'success' | 'error'
+  result: string | null
+  error: string | null
+}
+const streamingToolCalls = ref<StreamingToolCall[]>([])
 const currentRunId = ref<string | null>(null)
 // Conversation whose most recent turn was user-cancelled. Scoped to a
 // conversation so switching away and back doesn't leak the abgebrochen
@@ -193,6 +206,7 @@ async function runStream(
 ) {
   streamState.value = 'streaming'
   streamingText.value = ''
+  streamingToolCalls.value = []
   currentRunId.value = null
   // Fresh activity supersedes any prior abort notice.
   cancelledConversationId.value = null
@@ -208,6 +222,28 @@ async function runStream(
       },
       onText: (chunk) => {
         streamingText.value += chunk
+        nextTick(scrollToBottom)
+      },
+      onToolCall: (call) => {
+        streamingToolCalls.value = [
+          ...streamingToolCalls.value,
+          {
+            call_id: call.call_id,
+            name: call.name,
+            arguments: call.arguments ?? {},
+            status: 'running',
+            result: null,
+            error: null,
+          },
+        ]
+        nextTick(scrollToBottom)
+      },
+      onToolResult: (res) => {
+        streamingToolCalls.value = streamingToolCalls.value.map((tc) =>
+          tc.call_id === res.call_id
+            ? { ...tc, status: res.status, result: res.result ?? null, error: res.error ?? null }
+            : tc,
+        )
         nextTick(scrollToBottom)
       },
     })
@@ -234,6 +270,7 @@ async function runStream(
     error.value = friendlyChatError(err)
   } finally {
     streamingText.value = ''
+    streamingToolCalls.value = []
     currentRunId.value = null
     streamState.value =
       outcome === 'cancelled' ? 'cancelled' : outcome === 'failed' ? 'failed' : 'idle'
@@ -400,12 +437,24 @@ onMounted(() => {
           @retry="retryLast"
           @edit="(content) => editMessage(m.id, content)"
         />
+        <!-- Live tool cards for the turn in flight (shown before the final
+             assistant text, mirroring the order they're emitted). -->
+        <div
+          v-for="tc in streamingToolCalls"
+          :key="`live-${tc.call_id}`"
+          class="flex w-full flex-col items-start"
+        >
+          <ToolCallCard :tool-call="tc" />
+        </div>
         <ChatMessage
           v-if="isStreaming && streamingText"
           :message="{ role: 'assistant', content: streamingText }"
           plain
         />
-        <div v-if="isStreaming && !streamingText" class="flex justify-start">
+        <div
+          v-if="isStreaming && !streamingText && streamingToolCalls.length === 0"
+          class="flex justify-start"
+        >
           <div class="rounded-2xl bg-muted px-4 py-2 text-sm text-muted-foreground">
             <span class="inline-flex gap-1">
               <span class="size-1.5 animate-bounce rounded-full bg-current" />
