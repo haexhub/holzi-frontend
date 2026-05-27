@@ -5,6 +5,7 @@ import type { Message } from '~/types/api'
 import RenderedMarkdown from '~/components/chat/RenderedMarkdown.vue'
 import ToolCallCard from '~/components/chat/ToolCallCard.vue'
 import ReasoningCard from '~/components/chat/ReasoningCard.vue'
+import AttachmentChip from '~/components/chat/AttachmentChip.vue'
 
 const props = defineProps<{
   // `ts` is optional: persisted messages carry it; the in-flight streaming
@@ -14,6 +15,7 @@ const props = defineProps<{
     ts?: number
     tool_call?: Message['tool_call']
     reasoning?: Message['reasoning']
+    attachments?: Message['attachments']
   }
   // When true (set by the page on the latest assistant turn), show a
   // Retry control that regenerates this response.
@@ -41,6 +43,9 @@ const renderMarkdown = computed(() => isAssistant.value && !props.plain)
 
 // The card view of a persisted tool turn (null on the legacy plain-text path).
 const toolCall = computed(() => props.message.tool_call ?? null)
+
+// Files attached to a user turn (Plan 11), rendered as chips under the bubble.
+const attachments = computed(() => props.message.attachments ?? [])
 
 // Persisted reasoning for an assistant turn (live reasoning is rendered by the
 // page from the stream, not here). Shown above the bubble in a collapsed card.
@@ -156,6 +161,19 @@ function confirmEdit() {
         </span>
         <RenderedMarkdown v-if="renderMarkdown" :content="message.content" />
         <template v-else>{{ message.content }}</template>
+      </div>
+      <!-- Attachment chips on a user turn, under the bubble. -->
+      <div
+        v-if="isUser && attachments.length"
+        class="mt-1 flex max-w-[80%] flex-wrap justify-end gap-1.5"
+      >
+        <AttachmentChip
+          v-for="a in attachments"
+          :key="a.id"
+          :filename="a.filename"
+          :content-type="a.content_type"
+          :size="a.size"
+        />
       </div>
       <span
         v-if="timestamp"

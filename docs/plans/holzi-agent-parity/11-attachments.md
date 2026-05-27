@@ -1,5 +1,31 @@
 # Plan 11: Attachments
 
+Status: implemented and merged on 2026-05-27. Backend
+[Holzi#42](https://github.com/haexhub/Holzi/pull/42), frontend
+[holzi-frontend#36](https://github.com/haexhub/holzi-frontend/pull/36).
+Does **not** depend on Plan 11b (sandbox): attachments only read bytes into
+the agent context, they don't execute code.
+
+Verification:
+
+- backend: `uv run pytest` (443 passing; new `tests/test_api_attachments.py`)
+  + `uv run ruff check src/hermes/ tests/`
+- regen: `HERMES_AUTH_TOKEN=test-token-for-openapi HERMES_URL=http://127.0.0.1:18082 pnpm run gen:api`
+- frontend: `pnpm test` (114 passing) + `pnpm typecheck`
+
+Implementation notes (where they diverged from the sketch below):
+
+- Text/code/markdown/log files are inlined into the agent context at
+  request-build time in `run_agent` (kept out of the stored message
+  `content` so the UI bubble stays clean); images + PDF are stored and
+  surfaced as chips + metadata only — no provider image inputs yet.
+- Limits: 25 MB/file; allowlist = `text/*` + a few textual `application/*`
+  + png/jpeg/gif/webp + pdf. On-disk name is an opaque token, so the
+  uploaded filename can never influence the path (no traversal).
+- Added `POST /api/conversations` (create empty web thread) so the web UI
+  can attach to the very first message — uploads are tied to a conversation
+  id at upload time.
+
 Depends on: [01b](./01b-conversation-retention-and-bookmarks.md) — uses the
 per-conversation scratch directory and the lifecycle/cleanup signal defined
 there.
