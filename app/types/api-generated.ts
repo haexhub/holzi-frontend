@@ -778,7 +778,7 @@ export interface components {
          *     named component in the OpenAPI schema (and thus the generated TS types).
          *     Referenced from /api/chat's 200 response; never instantiated at runtime.
          */
-        ChatStreamEnvelope: components["schemas"]["SessionEvent"] | components["schemas"]["RunEvent"] | components["schemas"]["TextEvent"] | components["schemas"]["ToolCallEvent"] | components["schemas"]["ToolResultEvent"] | components["schemas"]["ApprovalRequiredEvent"] | components["schemas"]["DoneEvent"] | components["schemas"]["CancelledEvent"] | components["schemas"]["ErrorEvent"];
+        ChatStreamEnvelope: components["schemas"]["SessionEvent"] | components["schemas"]["RunEvent"] | components["schemas"]["TextEvent"] | components["schemas"]["ToolCallEvent"] | components["schemas"]["ToolResultEvent"] | components["schemas"]["ApprovalRequiredEvent"] | components["schemas"]["ReasoningEvent"] | components["schemas"]["SubagentStartEvent"] | components["schemas"]["SubagentTextEvent"] | components["schemas"]["SubagentDoneEvent"] | components["schemas"]["DoneEvent"] | components["schemas"]["CancelledEvent"] | components["schemas"]["ErrorEvent"];
         /** ConversationDetailResponse */
         ConversationDetailResponse: {
             conversation: components["schemas"]["ConversationResponse"];
@@ -938,6 +938,8 @@ export interface components {
             /** Ts */
             ts: number;
             tool_call?: components["schemas"]["ToolCallView"] | null;
+            /** Reasoning */
+            reasoning?: string | null;
         };
         /** MessengerAccountResponse */
         MessengerAccountResponse: {
@@ -1026,6 +1028,34 @@ export interface components {
             /** Status */
             status: string;
         };
+        /**
+         * ReasoningData
+         * @description An incremental chunk of the model's reasoning / "thinking" output.
+         *
+         *     Streamed like ``text`` (one event per delta, the client concatenates),
+         *     but kept distinct so the UI can render it in a separate, collapsible card
+         *     instead of mixing it into the answer. Only emitted when the provider
+         *     actually exposes reasoning (e.g. an OpenAI-compatible ``reasoning_content``
+         *     delta); a provider that emits none leaves the normal chat untouched.
+         */
+        ReasoningData: {
+            /** Content */
+            content: string;
+        };
+        /** ReasoningEvent */
+        ReasoningEvent: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event: "reasoning";
+            /**
+             * Version
+             * @default 1
+             */
+            version: number;
+            data: components["schemas"]["ReasoningData"];
+        };
         /** ReminderCreate */
         ReminderCreate: {
             /** Due At */
@@ -1095,6 +1125,94 @@ export interface components {
         SignalLinkPollResponse: {
             /** Accounts */
             accounts: components["schemas"]["MessengerAccountResponse"][];
+        };
+        /**
+         * SubagentDoneData
+         * @description A subagent finished. ``result`` is set on success, ``error`` on
+         *     failure; ``status`` says which.
+         */
+        SubagentDoneData: {
+            /** Subagent Id */
+            subagent_id: string;
+            /**
+             * Status
+             * @default success
+             * @enum {string}
+             */
+            status: "success" | "error";
+            /** Result */
+            result?: string | null;
+            /** Error */
+            error?: string | null;
+        };
+        /** SubagentDoneEvent */
+        SubagentDoneEvent: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event: "subagent_done";
+            /**
+             * Version
+             * @default 1
+             */
+            version: number;
+            data: components["schemas"]["SubagentDoneData"];
+        };
+        /**
+         * SubagentStartData
+         * @description A subagent began working. ``subagent_id`` groups all events for one
+         *     subagent run; ``name`` is its human label and ``prompt`` the optional task
+         *     it was handed. Holzi does not orchestrate subagents yet — these types
+         *     define the wire contract so a future orchestrator only has to emit them
+         *     and the UI already groups + renders them.
+         */
+        SubagentStartData: {
+            /** Subagent Id */
+            subagent_id: string;
+            /** Name */
+            name: string;
+            /** Prompt */
+            prompt?: string | null;
+        };
+        /** SubagentStartEvent */
+        SubagentStartEvent: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event: "subagent_start";
+            /**
+             * Version
+             * @default 1
+             */
+            version: number;
+            data: components["schemas"]["SubagentStartData"];
+        };
+        /**
+         * SubagentTextData
+         * @description An incremental output chunk from a running subagent, grouped by
+         *     ``subagent_id`` (mirrors ``text`` but namespaced to a subagent).
+         */
+        SubagentTextData: {
+            /** Subagent Id */
+            subagent_id: string;
+            /** Content */
+            content: string;
+        };
+        /** SubagentTextEvent */
+        SubagentTextEvent: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event: "subagent_text";
+            /**
+             * Version
+             * @default 1
+             */
+            version: number;
+            data: components["schemas"]["SubagentTextData"];
         };
         /** TextData */
         TextData: {

@@ -1,5 +1,13 @@
 import { useAuthStore } from '~/stores/auth'
-import type { ApprovalRequiredData, ToolCallData, ToolResultData } from '~/types/api'
+import type {
+  ApprovalRequiredData,
+  ReasoningData,
+  SubagentDoneData,
+  SubagentStartData,
+  SubagentTextData,
+  ToolCallData,
+  ToolResultData,
+} from '~/types/api'
 
 /**
  * Subscribe to /api/chat's SSE stream.
@@ -16,6 +24,10 @@ import type { ApprovalRequiredData, ToolCallData, ToolResultData } from '~/types
  *   - `approval_required` → { approval_id, call_id, name, arguments, reason }
  *                      (non-terminal — stream stays open until the user
  *                       resolves it via resolveApproval)
+ *   - `reasoning`   → { content: string }    (thinking delta; concatenated)
+ *   - `subagent_start` → { subagent_id, name, prompt? }
+ *   - `subagent_text`  → { subagent_id, content }   (subagent output delta)
+ *   - `subagent_done`  → { subagent_id, status, result?, error? }
  *   - `cancelled`   → {}                     (terminal — user clicked Stop)
  *   - `done`        → {}                     (terminal — turn finished cleanly)
  * Plus on failure:
@@ -69,6 +81,14 @@ export interface ChatStreamCallbacks {
   // render an approval card; the stream keeps running (heartbeats only) until
   // resolveApproval() delivers the verdict.
   onApproval?: (approval: ApprovalRequiredData) => void
+  // A reasoning/"thinking" delta. Concatenated into the turn's reasoning card.
+  onReasoning?: (chunk: string) => void
+  // Subagent activity, grouped by subagent_id. Holzi doesn't emit these yet
+  // (no orchestration); wired so the cards render the moment a future
+  // orchestrator does.
+  onSubagentStart?: (start: SubagentStartData) => void
+  onSubagentText?: (text: SubagentTextData) => void
+  onSubagentDone?: (done: SubagentDoneData) => void
   signal?: AbortSignal
 }
 
@@ -233,6 +253,23 @@ async function postChatStream(
         }
         case 'approval_required': {
           callbacks.onApproval?.(payload as ApprovalRequiredData)
+          break
+        }
+        case 'reasoning': {
+          const chunk = (payload as { content?: string }).content ?? ''
+          callbacks.onReasoning?.(chunk)
+          break
+        }
+        case 'subagent_start': {
+          callbacks.onSubagentStart?.(payload as SubagentStartData)
+          break
+        }
+        case 'subagent_text': {
+          callbacks.onSubagentText?.(payload as SubagentTextData)
+          break
+        }
+        case 'subagent_done': {
+          callbacks.onSubagentDone?.(payload as SubagentDoneData)
           break
         }
         case 'cancelled':

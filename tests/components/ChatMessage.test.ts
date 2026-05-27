@@ -15,6 +15,11 @@ const stubs = {
     props: ['toolCall'],
     template: '<div class="tcc-stub">{{ toolCall.name }}</div>',
   },
+  ReasoningCard: {
+    name: 'ReasoningCard',
+    props: ['content', 'streaming'],
+    template: '<div class="rc-stub">{{ content }}</div>',
+  },
 }
 
 describe('ChatMessage.vue', () => {
@@ -93,6 +98,36 @@ describe('ChatMessage.vue', () => {
     })
     expect(wrapper.find('div').exists()).toBe(false)
     expect(wrapper.text()).toBe('')
+  })
+
+  it('renders a persisted reasoning card above an assistant answer', () => {
+    const wrapper = mount(ChatMessage, {
+      props: {
+        message: {
+          role: 'assistant',
+          content: 'The answer is 42.',
+          reasoning: 'I worked through the math.',
+        },
+      },
+      global: { stubs },
+    })
+    const card = wrapper.find('.rc-stub')
+    expect(card.exists()).toBe(true)
+    expect(card.text()).toBe('I worked through the math.')
+    // The answer bubble still renders alongside the reasoning card.
+    expect(wrapper.find('.rm-stub').text()).toBe('The answer is 42.')
+  })
+
+  it('renders a reasoning-only assistant turn (no text bubble) instead of hiding it', () => {
+    const wrapper = mount(ChatMessage, {
+      props: {
+        message: { role: 'assistant', content: '', reasoning: 'thinking aloud' },
+      },
+      global: { stubs },
+    })
+    expect(wrapper.find('.rc-stub').exists()).toBe(true)
+    // No empty answer bubble.
+    expect(wrapper.find('.rm-stub').exists()).toBe(false)
   })
 
   it('still renders a legacy tool message without tool_call as plain text', () => {

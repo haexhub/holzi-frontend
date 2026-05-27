@@ -10,10 +10,13 @@ import {
 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import { Brain } from 'lucide-vue-next'
 import ChatComposer from '~/components/chat/ChatComposer.vue'
 import ChatMessage from '~/components/chat/ChatMessage.vue'
 import ToolCallCard from '~/components/chat/ToolCallCard.vue'
 import ApprovalCard from '~/components/chat/ApprovalCard.vue'
+import ReasoningCard from '~/components/chat/ReasoningCard.vue'
+import SubagentCard from '~/components/chat/SubagentCard.vue'
 import ConversationList from '~/components/chat/ConversationList.vue'
 import EmptyChatState from '~/components/chat/EmptyChatState.vue'
 import NotesPanel from '~/components/panels/NotesPanel.vue'
@@ -35,6 +38,7 @@ import {
   type StreamState,
 } from '~/composables/useChatStream'
 import { useLlmCredentials } from '~/composables/useLlmCredentials'
+import { useReasoningPreference } from '~/composables/useReasoningPreference'
 import { useAuthStore } from '~/stores/auth'
 import type { Conversation, ConversationDetail, Message } from '~/types/api'
 
@@ -42,6 +46,7 @@ const auth = useAuthStore()
 const api = useApi()
 const llm = useLlmCredentials()
 const router = useRouter()
+const { showReasoningByDefault, setShowReasoningByDefault } = useReasoningPreference()
 
 const conversations = ref<Conversation[]>([])
 const activeId = ref<number | null>(null)
@@ -87,6 +92,22 @@ interface PendingApproval {
   status: 'pending' | 'submitting' | 'allowed' | 'denied'
 }
 const pendingApprovals = ref<PendingApproval[]>([])
+// Reasoning streamed for the turn in flight (concatenated deltas). Cleared
+// when the turn ends; the reload then renders the persisted reasoning card.
+const streamingReasoning = ref('')
+// Subagent activity for the turn in flight, grouped by subagent_id. Holzi
+// doesn't emit subagent events yet, but the wiring is here so they render the
+// moment a future orchestrator does. Live-only (not persisted).
+interface StreamingSubagent {
+  subagent_id: string
+  name: string
+  prompt: string | null
+  status: 'running' | 'success' | 'error'
+  text: string
+  result: string | null
+  error: string | null
+}
+const streamingSubagents = ref<StreamingSubagent[]>([])
 const currentRunId = ref<string | null>(null)
 // Conversation whose most recent turn was user-cancelled. Scoped to a
 // conversation so switching away and back doesn't leak the abgebrochen
@@ -223,6 +244,8 @@ async function runStream(
   streamingText.value = ''
   streamingToolCalls.value = []
   pendingApprovals.value = []
+  streamingReasoning.value = ''
+  streamingSubagents.value = []
   currentRunId.value = null
   // Fresh activity supersedes any prior abort notice.
   cancelledConversationId.value = null
@@ -276,6 +299,41 @@ async function runStream(
         ]
         nextTick(scrollToBottom)
       },
+      onReasoning: (chunk) => {
+        streamingReasoning.value += chunk
+        nextTick(scrollToBottom)
+      },
+      onSubagentStart: (s) => {
+        streamingSubagents.value = [
+          ...streamingSubagents.value,
+          {
+            subagent_id: s.subagent_id,
+            name: s.name,
+            prompt: s.prompt ?? null,
+            status: 'running',
+            text: '',
+            result: null,
+            error: null,
+          },
+        ]
+        nextTick(scrollToBottom)
+      },
+      onSubagentText: (t) => {
+        streamingSubagents.value = streamingSubagents.value.map((s) =>
+          s.subagent_id === t.subagent_id
+            ? { ...s, text: s.text + t.content }
+            : s,
+        )
+        nextTick(scrollToBottom)
+      },
+      onSubagentDone: (d) => {
+        streamingSubagents.value = streamingSubagents.value.map((s) =>
+          s.subagent_id === d.subagent_id
+            ? { ...s, status: d.status, result: d.result ?? null, error: d.error ?? null }
+            : s,
+        )
+        nextTick(scrollToBottom)
+      },
     })
     if (result.cancelled) {
       outcome = 'cancelled'
@@ -302,6 +360,8 @@ async function runStream(
     streamingText.value = ''
     streamingToolCalls.value = []
     pendingApprovals.value = []
+    streamingReasoning.value = ''
+    streamingSubagents.value = []
     currentRunId.value = null
     streamState.value =
       outcome === 'cancelled' ? 'cancelled' : outcome === 'failed' ? 'failed' : 'idle'
@@ -462,6 +522,16 @@ onMounted(() => {
           {{ activeId === null ? 'Neuer Chat' : `Conversation #${activeId}` }}
         </h1>
         <div class="flex items-center gap-1">
+          <button
+            type="button"
+            class="inline-flex size-9 items-center justify-center rounded-md transition-colors hover:bg-muted"
+            :class="showReasoningByDefault ? 'text-violet-600 dark:text-violet-400' : 'text-muted-foreground'"
+            :aria-pressed="showReasoningByDefault"
+            :title="showReasoningByDefault ? 'Gedankengang standardmäßig einklappen' : 'Gedankengang standardmäßig anzeigen'"
+            @click="setShowReasoningByDefault(!showReasoningByDefault)"
+          >
+            <Brain class="size-4" />
+          </button>
           <ThemeToggle />
           <NuxtLink to="/settings/llm">
             <Button size="sm" variant="ghost">
@@ -495,6 +565,22 @@ onMounted(() => {
           @retry="retryLast"
           @edit="(content) => editMessage(m.id, content)"
         />
+        <!-- Live reasoning card for the turn in flight. Streamed thinking,
+             shown before the tools/answer it produced. -->
+        <div
+          v-if="isStreaming && streamingReasoning"
+          class="flex w-full flex-col items-start"
+        >
+          <ReasoningCard :content="streamingReasoning" streaming />
+        </div>
+        <!-- Live subagent activity for the turn in flight, grouped per agent. -->
+        <div
+          v-for="s in streamingSubagents"
+          :key="`subagent-${s.subagent_id}`"
+          class="flex w-full flex-col items-start"
+        >
+          <SubagentCard :subagent="s" />
+        </div>
         <!-- Approval cards for risky tool calls paused in the turn in flight.
              A pending card blocks the run until the user decides. -->
         <div
@@ -528,6 +614,8 @@ onMounted(() => {
               && !streamingText
               && streamingToolCalls.length === 0
               && pendingApprovals.length === 0
+              && !streamingReasoning
+              && streamingSubagents.length === 0
           "
           class="flex justify-start"
         >
