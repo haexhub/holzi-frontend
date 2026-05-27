@@ -1,9 +1,13 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue'
 import { Pencil, RotateCcw } from 'lucide-vue-next'
 import type { Message } from '~/types/api'
+import RenderedMarkdown from '~/components/chat/RenderedMarkdown.vue'
 
 const props = defineProps<{
-  message: Pick<Message, 'role' | 'content'>
+  // `ts` is optional: persisted messages carry it; the in-flight streaming
+  // bubble does not.
+  message: Pick<Message, 'role' | 'content'> & { ts?: number }
   // When true (set by the page on the latest assistant turn), show a
   // Retry control that regenerates this response.
   canRetry?: boolean
@@ -14,12 +18,27 @@ const props = defineProps<{
   canEdit?: boolean
   // Disable the Edit control while another run is in flight.
   editDisabled?: boolean
+  // Set on the in-flight streaming bubble: keep it plain text so we don't
+  // re-run shiki on every chunk. The persisted turn renders as Markdown.
+  plain?: boolean
 }>()
 
 const emit = defineEmits<{ retry: []; edit: [content: string] }>()
 
 const isUser = computed(() => props.message.role === 'user')
 const isTool = computed(() => props.message.role === 'tool')
+// Only persisted assistant prose gets Markdown rendering; user, tool, and the
+// still-streaming bubble stay literal.
+const isAssistant = computed(() => props.message.role === 'assistant')
+const renderMarkdown = computed(() => isAssistant.value && !props.plain)
+
+const timestamp = computed(() => {
+  if (props.message.ts == null) return ''
+  return new Date(props.message.ts * 1000).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+})
 
 // Inline edit state. The draft is seeded from the current content each time
 // the user opens the editor, so Cancel always restores the original.
@@ -82,18 +101,26 @@ function confirmEdit() {
 
     <template v-else>
       <div
-        class="max-w-[80%] rounded-2xl px-4 py-2 text-sm whitespace-pre-wrap break-words"
+        class="max-w-[80%] rounded-2xl px-4 py-2 text-sm break-words"
         :class="{
-          'bg-primary text-primary-foreground': isUser,
-          'bg-muted text-foreground': !isUser && !isTool,
-          'border border-dashed bg-background text-muted-foreground font-mono text-xs': isTool,
+          'bg-primary text-primary-foreground whitespace-pre-wrap': isUser,
+          'bg-muted text-foreground': isAssistant,
+          'whitespace-pre-wrap': isAssistant && !renderMarkdown,
+          'border border-dashed bg-background text-muted-foreground font-mono text-xs whitespace-pre-wrap': isTool,
         }"
       >
         <span v-if="isTool" class="text-xs uppercase tracking-wider opacity-60 mr-2">
           tool
         </span>
-        {{ message.content }}
+        <RenderedMarkdown v-if="renderMarkdown" :content="message.content" />
+        <template v-else>{{ message.content }}</template>
       </div>
+      <span
+        v-if="timestamp"
+        class="message-ts mt-1 px-1 text-[10px] text-muted-foreground"
+      >
+        {{ timestamp }}
+      </span>
       <button
         v-if="canRetry"
         type="button"
