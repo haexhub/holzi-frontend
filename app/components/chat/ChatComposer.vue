@@ -17,7 +17,9 @@ const draft = ref('')
 
 function submit() {
   const text = draft.value.trim()
-  if (!text || props.streaming) return
+  // No streaming guard: while a turn is in flight the page enqueues this
+  // send instead of dropping it, so the composer stays usable throughout.
+  if (!text) return
   emit('send', text)
   draft.value = ''
 }
@@ -37,11 +39,14 @@ function onKeydown(event: KeyboardEvent) {
   >
     <Textarea
       v-model="draft"
-      placeholder="Nachricht an Hermes…  (Enter = senden, Shift+Enter = Zeilenumbruch)"
+      :placeholder="streaming
+        ? 'Nächste Nachricht eingeben…  (wird nach der Antwort gesendet)'
+        : 'Nachricht an Hermes…  (Enter = senden, Shift+Enter = Zeilenumbruch)'"
       class="min-h-[44px] max-h-40 flex-1 resize-none"
-      :disabled="streaming"
       @keydown="onKeydown"
     />
+    <!-- Stop stays reachable for the running turn while the composer below
+         it keeps queueing the next message. -->
     <Button
       v-if="streaming"
       type="button"
@@ -54,7 +59,12 @@ function onKeydown(event: KeyboardEvent) {
     >
       <Square class="size-4 fill-current" />
     </Button>
-    <Button v-else type="submit" size="icon" :disabled="!draft.trim()">
+    <Button
+      type="submit"
+      size="icon"
+      :disabled="!draft.trim()"
+      :title="streaming ? 'In Warteschlange einreihen' : 'Senden'"
+    >
       <Send class="size-4" />
     </Button>
   </form>

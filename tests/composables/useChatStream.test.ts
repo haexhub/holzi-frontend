@@ -118,6 +118,40 @@ describe('sendChatMessage', () => {
     })
   })
 
+  it('treats error as terminal — events after it are ignored', async () => {
+    // The first error event is the authoritative failure; anything the
+    // backend emits afterwards (it shouldn't) must not overwrite it or
+    // produce text the caller renders as a successful turn.
+    mockFetch(
+      new Response(sseBody([
+        { event: 'session', data: { conversation_id: 1 } },
+        { event: 'error', data: { code: 'agent_error', message: 'boom' } },
+        { event: 'text', data: { content: 'too late' } },
+        { event: 'done', data: {} },
+      ])),
+    )
+    const chunks: string[] = []
+    await expect(
+      sendChatMessage({ message: 'hi' }, { onText: (c) => chunks.push(c) }),
+    ).rejects.toMatchObject({ code: 'agent_error', message: 'boom' })
+    expect(chunks).toEqual([])
+  })
+
+  it('rejects when the stream reader fails mid-flight (dropped connection)', async () => {
+    // Simulate a network drop after the session event: the body delivers
+    // one block, then the stream errors. The reader rejection must surface
+    // as a terminal failure so the page can show a failed state.
+    const enc = new TextEncoder()
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(enc.encode('event: session\ndata: {"conversation_id":1}\n\n'))
+        controller.error(new Error('network dropped'))
+      },
+    })
+    mockFetch(new Response(stream, { headers: { 'content-type': 'text/event-stream' } }))
+    await expect(sendChatMessage({ message: 'hi' })).rejects.toThrow('network dropped')
+  })
+
   it('throws when the stream ends without a session event', async () => {
     mockFetch(new Response(sseBody([{ event: 'done', data: {} }])))
     await expect(sendChatMessage({ message: 'hi' })).rejects.toThrow(/without a session event/)

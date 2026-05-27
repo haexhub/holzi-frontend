@@ -19,6 +19,7 @@ import RemindersPanel from '~/components/panels/RemindersPanel.vue'
 import TodosPanel from '~/components/panels/TodosPanel.vue'
 import ThemeToggle from '~/components/ThemeToggle.vue'
 import { useApi } from '~/composables/useApi'
+import { useChatQueue } from '~/composables/useChatQueue'
 import {
   cancelChatRun,
   type ChatStreamCallbacks,
@@ -27,6 +28,7 @@ import {
   friendlyChatError,
   retryLastResponse,
   sendChatMessage,
+  type StreamState,
 } from '~/composables/useChatStream'
 import { useLlmCredentials } from '~/composables/useLlmCredentials'
 import { useAuthStore } from '~/stores/auth'
@@ -40,7 +42,14 @@ const router = useRouter()
 const conversations = ref<Conversation[]>([])
 const activeId = ref<number | null>(null)
 const messages = ref<Message[]>([])
-const streaming = ref(false)
+// Turn lifecycle. `streaming` is the only state that gates sending — every
+// other state leaves the composer free, so a follow-up typed during a turn
+// gets queued rather than dropped.
+const streamState = ref<StreamState>('idle')
+const isStreaming = computed(() => streamState.value === 'streaming')
+// Follow-ups submitted while a turn streams. Rendered as pending user
+// bubbles and flushed one-by-one after each turn finishes cleanly.
+const queue = useChatQueue()
 const streamingText = ref('')
 const currentRunId = ref<string | null>(null)
 // Conversation whose most recent turn was user-cancelled. Scoped to a
@@ -133,9 +142,13 @@ async function loadCredentialState() {
 
 async function selectConversation(id: number) {
   if (activeId.value !== id) {
-    // Switching to a different conversation — drop any cancel notice
-    // that belonged to the previous active one.
+    // Switching to a different conversation — drop any cancel notice and
+    // pending follow-ups that belonged to the previous active one, so they
+    // can't leak into (or be sent against) the conversation we just opened.
+    // The in-stream reload calls this with the *same* id, so a mid-flush
+    // queue survives.
     cancelledConversationId.value = null
+    queue.clear()
   }
   activeId.value = id
   try {
@@ -152,6 +165,7 @@ function newChat() {
   activeId.value = null
   messages.value = []
   cancelledConversationId.value = null
+  queue.clear()
 }
 
 // id of the latest assistant message — the only turn that shows a Retry
@@ -169,12 +183,13 @@ const lastAssistantId = computed(() => {
 async function runStream(
   start: (callbacks: ChatStreamCallbacks) => Promise<ChatStreamResult>,
 ) {
-  streaming.value = true
+  streamState.value = 'streaming'
   streamingText.value = ''
   currentRunId.value = null
   // Fresh activity supersedes any prior abort notice.
   cancelledConversationId.value = null
   error.value = null
+  let outcome: 'done' | 'cancelled' | 'failed' = 'done'
   try {
     const result = await start({
       onSession: (id) => {
@@ -189,6 +204,7 @@ async function runStream(
       },
     })
     if (result.cancelled) {
+      outcome = 'cancelled'
       // Backend did not persist an assistant turn — refresh the
       // conversation so the optimistic state is replaced by the
       // canonical rows and the abgebrochen notice renders. Capture the
@@ -206,16 +222,39 @@ async function runStream(
       await loadConversations()
     }
   } catch (err: unknown) {
+    outcome = 'failed'
     error.value = friendlyChatError(err)
   } finally {
-    streaming.value = false
     streamingText.value = ''
     currentRunId.value = null
+    streamState.value =
+      outcome === 'cancelled' ? 'cancelled' : outcome === 'failed' ? 'failed' : 'idle'
+  }
+  // Only a clean finish auto-advances the queue. After a cancel or a
+  // dropped stream the queued messages stay put and visible (the user
+  // gets an explicit retry path) so we never silently fire them.
+  if (outcome === 'done') {
+    flushQueue()
   }
 }
 
+// Send the next queued follow-up, if any. Runs one at a time: each send
+// re-enters runStream, whose clean-finish path calls flushQueue again.
+function flushQueue() {
+  if (isStreaming.value) return
+  const next = queue.dequeue()
+  if (next) void send(next.content)
+}
+
 async function send(text: string) {
-  if (streaming.value) return
+  if (isStreaming.value) {
+    // A turn is already in flight — hold this follow-up in the visible
+    // queue. flushQueue() sends it once the current turn finishes cleanly.
+    queue.enqueue(text)
+    await nextTick()
+    scrollToBottom()
+    return
+  }
   // Optimistic: render the user message immediately.
   const optimisticUserId = -Date.now()
   messages.value = [
@@ -239,7 +278,7 @@ async function send(text: string) {
 }
 
 async function retryLast() {
-  if (streaming.value || activeId.value === null) return
+  if (isStreaming.value || activeId.value === null) return
   const conversationId = activeId.value
   // Optimistically drop the trailing assistant/tool tail so the UI shows
   // regeneration in place, mirroring what the backend does before re-running.
@@ -254,7 +293,7 @@ async function retryLast() {
 }
 
 async function editMessage(messageId: number, content: string) {
-  if (streaming.value || activeId.value === null) return
+  if (isStreaming.value || activeId.value === null) return
   const conversationId = activeId.value
   // Optimistically rewrite the edited turn and drop everything after it,
   // mirroring what the backend does before re-running.
@@ -339,25 +378,25 @@ onMounted(() => {
         class="flex-1 space-y-3 overflow-y-auto p-4"
       >
         <EmptyChatState
-          v-if="messages.length === 0 && !streaming"
+          v-if="messages.length === 0 && !isStreaming && queue.isEmpty.value"
           :has-credentials="hasCredentials"
         />
         <ChatMessage
           v-for="m in messages"
           :key="m.id"
           :message="m"
-          :can-retry="!streaming && m.id === lastAssistantId"
-          :retry-disabled="streaming"
-          :can-edit="!streaming && m.role === 'user' && m.id > 0"
-          :edit-disabled="streaming"
+          :can-retry="!isStreaming && m.id === lastAssistantId"
+          :retry-disabled="isStreaming"
+          :can-edit="!isStreaming && m.role === 'user' && m.id > 0"
+          :edit-disabled="isStreaming"
           @retry="retryLast"
           @edit="(content) => editMessage(m.id, content)"
         />
         <ChatMessage
-          v-if="streaming && streamingText"
+          v-if="isStreaming && streamingText"
           :message="{ role: 'assistant', content: streamingText }"
         />
-        <div v-if="streaming && !streamingText" class="flex justify-start">
+        <div v-if="isStreaming && !streamingText" class="flex justify-start">
           <div class="rounded-2xl bg-muted px-4 py-2 text-sm text-muted-foreground">
             <span class="inline-flex gap-1">
               <span class="size-1.5 animate-bounce rounded-full bg-current" />
@@ -366,11 +405,37 @@ onMounted(() => {
             </span>
           </div>
         </div>
+        <!-- Follow-ups the user queued while a turn was streaming. Shown as
+             dimmed user bubbles so it's obvious they're pending, not sent. -->
+        <div
+          v-for="q in queue.items.value"
+          :key="`queued-${q.id}`"
+          class="flex w-full flex-col items-end"
+        >
+          <div
+            class="max-w-[80%] rounded-2xl border border-dashed border-primary/40 bg-primary/10 px-4 py-2 text-sm whitespace-pre-wrap break-words text-foreground"
+          >
+            {{ q.content }}
+          </div>
+          <span class="mt-1 text-xs italic text-muted-foreground">
+            {{ streamState === 'failed' ? 'Wartet — nicht gesendet' : 'In Warteschlange…' }}
+          </span>
+        </div>
+        <!-- Explicit failure state: the stream dropped, queued follow-ups are
+             kept, and the user gets an obvious way to send them anyway. -->
+        <div
+          v-if="streamState === 'failed' && !queue.isEmpty.value"
+          class="flex justify-start"
+        >
+          <Button size="sm" variant="outline" @click="flushQueue">
+            Warteschlange jetzt senden
+          </Button>
+        </div>
         <div
           v-if="
             cancelledConversationId !== null
               && cancelledConversationId === activeId
-              && !streaming
+              && !isStreaming
           "
           class="flex justify-start text-xs italic text-muted-foreground"
         >
@@ -395,7 +460,7 @@ onMounted(() => {
       </div>
 
       <ChatComposer
-        :streaming="streaming"
+        :streaming="isStreaming"
         :can-stop="currentRunId !== null"
         @send="send"
         @stop="stopStreaming"

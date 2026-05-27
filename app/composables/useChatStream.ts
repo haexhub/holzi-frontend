@@ -24,6 +24,25 @@ export interface ChatStreamResult {
   cancelled: boolean
 }
 
+/**
+ * Lifecycle of a chat turn, as tracked by the page driving the stream:
+ *   - `idle`         → no turn in flight; composer sends normally
+ *   - `streaming`    → a turn is in flight; new sends are queued
+ *   - `failed`       → the stream dropped/errored; queued messages are kept
+ *   - `cancelled`    → the user stopped the turn via the Stop button
+ *   - `reconnecting` → reserved for a future SSE resume protocol. There is
+ *                      no transition into it yet: resuming a partial stream
+ *                      needs server-side event buffering + Last-Event-ID,
+ *                      which is out of scope here. Kept in the union so the
+ *                      state set is stable when that lands.
+ */
+export type StreamState =
+  | 'idle'
+  | 'streaming'
+  | 'reconnecting'
+  | 'failed'
+  | 'cancelled'
+
 export interface ChatStreamCallbacks {
   onSession?: (conversationId: number) => void
   onRun?: (runId: string) => void
@@ -197,7 +216,11 @@ async function postChatStream(
             payload.message ?? 'unknown agent error',
             { code: payload.code, statusCode: payload.status_code ?? null },
           )
-          break
+          // Terminal: stop reading and let the caller surface the failure.
+          // The backend contract is that `error` is the last event, so we
+          // discard anything still buffered rather than risk rendering a
+          // post-error delta as a successful turn.
+          break outer
         }
       }
     }
