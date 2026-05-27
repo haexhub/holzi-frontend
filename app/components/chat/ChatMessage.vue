@@ -164,7 +164,7 @@ function confirmEdit() {
       </div>
       <!-- Attachment chips on a user turn, under the bubble. -->
       <div
-        v-if="attachments.length"
+        v-if="isUser && attachments.length"
         class="mt-1 flex max-w-[80%] flex-wrap justify-end gap-1.5"
       >
         <AttachmentChip

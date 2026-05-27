@@ -425,28 +425,9 @@ async function send(payload: { text: string; files: File[] }) {
     return
   }
 
-  // Attachments must reference an existing conversation, so create one
-  // up front when this is the first message of a fresh chat, then upload.
-  let conversationId = activeId.value
-  let uploaded: Attachment[] = []
-  if (files.length > 0) {
-    try {
-      if (conversationId === null) {
-        const convo = await api.post<Conversation>('/api/conversations', {
-          message: text,
-        })
-        conversationId = convo.id
-        activeId.value = convo.id
-        await loadConversations()
-      }
-      uploaded = await uploadAttachments(conversationId, files)
-    } catch (err: unknown) {
-      error.value = uploadErrorMessage(err)
-      return
-    }
-  }
-
-  // Optimistic: render the user message (with its chips) immediately.
+  // Optimistic: render the user message (with chips built from the picked
+  // files) immediately, before any upload, so a slow/large upload still
+  // gives instant feedback. Reconciled by the post-stream reload.
   const optimisticUserId = -Date.now()
   messages.value = [
     ...messages.value,
@@ -455,11 +436,51 @@ async function send(payload: { text: string; files: File[] }) {
       role: 'user',
       content: text,
       ts: Math.floor(Date.now() / 1000),
-      attachments: uploaded,
+      attachments: files.map((f, i) => ({
+        id: optimisticUserId - i,
+        conversation_id: activeId.value ?? 0,
+        message_id: null,
+        filename: f.name,
+        content_type: f.type || 'application/octet-stream',
+        size: f.size,
+        created_at: 0,
+      })),
     },
   ]
   await nextTick()
   scrollToBottom()
+
+  // Attachments must reference an existing conversation, so create one up
+  // front when this is the first message of a fresh chat, then upload.
+  let conversationId = activeId.value
+  let uploaded: Attachment[] = []
+  if (files.length > 0) {
+    let createdConversationId: number | null = null
+    try {
+      if (conversationId === null) {
+        const convo = await api.post<Conversation>('/api/conversations', {
+          message: text,
+        })
+        conversationId = convo.id
+        createdConversationId = convo.id
+        activeId.value = convo.id
+        await loadConversations()
+      }
+      uploaded = await uploadAttachments(conversationId, files)
+    } catch (err: unknown) {
+      // Roll back the optimistic bubble and the empty conversation we may
+      // have just created, so a failed upload leaves no stranded state.
+      messages.value = messages.value.filter((m) => m.id !== optimisticUserId)
+      if (createdConversationId !== null) {
+        activeId.value = null
+        await api.delete<void>(`/api/conversations/${createdConversationId}`)
+          .catch(() => {})
+        await loadConversations()
+      }
+      error.value = uploadErrorMessage(err)
+      return
+    }
+  }
 
   await runStream((callbacks) =>
     sendChatMessage(
