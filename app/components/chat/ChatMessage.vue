@@ -4,13 +4,16 @@ import { Pencil, RotateCcw } from 'lucide-vue-next'
 import type { Message } from '~/types/api'
 import RenderedMarkdown from '~/components/chat/RenderedMarkdown.vue'
 import ToolCallCard from '~/components/chat/ToolCallCard.vue'
+import ReasoningCard from '~/components/chat/ReasoningCard.vue'
 
 const props = defineProps<{
   // `ts` is optional: persisted messages carry it; the in-flight streaming
-  // bubble does not. `tool_call` is set on persisted tool turns.
+  // bubble does not. `tool_call` is set on persisted tool turns; `reasoning`
+  // on persisted assistant turns where the provider exposed thinking.
   message: Pick<Message, 'role' | 'content'> & {
     ts?: number
     tool_call?: Message['tool_call']
+    reasoning?: Message['reasoning']
   }
   // When true (set by the page on the latest assistant turn), show a
   // Retry control that regenerates this response.
@@ -39,11 +42,19 @@ const renderMarkdown = computed(() => isAssistant.value && !props.plain)
 // The card view of a persisted tool turn (null on the legacy plain-text path).
 const toolCall = computed(() => props.message.tool_call ?? null)
 
+// Persisted reasoning for an assistant turn (live reasoning is rendered by the
+// page from the stream, not here). Shown above the bubble in a collapsed card.
+const reasoning = computed(() =>
+  isAssistant.value && !props.plain ? (props.message.reasoning ?? null) : null,
+)
+const hasReasoning = computed(() => !!reasoning.value?.trim())
+
 // An assistant turn that only requested tools is persisted with empty content
 // (the tool cards that follow carry the substance). Don't render an empty
 // bubble for it. The still-streaming bubble (plain) is always shown by the
-// page only when it has text, so it's exempt.
-const hidden = computed(
+// page only when it has text, so it's exempt. A reasoning-only turn still
+// renders (its card), just without an empty text bubble.
+const hideBubble = computed(
   () => isAssistant.value && !props.plain && !props.message.content.trim(),
 )
 
@@ -80,10 +91,14 @@ function confirmEdit() {
 
 <template>
   <div
-    v-if="!hidden"
+    v-if="!hideBubble || hasReasoning"
     class="flex w-full flex-col"
     :class="isUser ? 'items-end' : 'items-start'"
   >
+    <!-- Reasoning card (assistant turns where the provider exposed thinking).
+         Rendered before the answer so it reads as "thought, then replied". -->
+    <ReasoningCard v-if="hasReasoning" :content="reasoning!" class="mb-2" />
+
     <!-- Tool turn: render a structured card instead of a text bubble. -->
     <template v-if="isTool && toolCall">
       <ToolCallCard :tool-call="toolCall" />
@@ -126,7 +141,7 @@ function confirmEdit() {
       </div>
     </div>
 
-    <template v-else-if="!(isTool && toolCall)">
+    <template v-else-if="!(isTool && toolCall) && !hideBubble">
       <div
         class="max-w-[80%] rounded-2xl px-4 py-2 text-sm break-words"
         :class="{

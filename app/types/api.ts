@@ -31,6 +31,11 @@ export type ToolCallData = components['schemas']['ToolCallData']
 export type ToolResultData = components['schemas']['ToolResultData']
 // Risky tool paused awaiting the user's decision (Plan 09 approval cards).
 export type ApprovalRequiredData = components['schemas']['ApprovalRequiredData']
+// Reasoning + subagent activity (Plan 10 cards).
+export type ReasoningData = components['schemas']['ReasoningData']
+export type SubagentStartData = components['schemas']['SubagentStartData']
+export type SubagentTextData = components['schemas']['SubagentTextData']
+export type SubagentDoneData = components['schemas']['SubagentDoneData']
 
 // --- LLM credentials ----------------------------------------------------
 // Declared manually until `pnpm run gen:api` is re-run against a Hermes

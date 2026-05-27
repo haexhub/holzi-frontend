@@ -1,5 +1,23 @@
 # Plan 10: Reasoning And Subagent Cards
 
+Status: implemented on 2026-05-27.
+
+Scope note: reasoning is wired end-to-end (provider → SSE → persisted →
+card). Subagent events are defined as the wire contract + rendered by
+`SubagentCard.vue`, but Holzi has no subagent orchestrator yet (explicitly out
+of scope), so nothing emits them — a future orchestrator only has to emit the
+events and the cards already group + render them.
+
+Verification:
+
+- `uv run pytest tests/test_events.py tests/test_agent_streaming.py tests/test_api_chat.py tests/test_api_conversations.py`
+- `uv run pytest` (full backend suite, 428 passed)
+- `uv run ruff check src/hermes/events.py src/hermes/agent.py src/hermes/routes/api.py tests/`
+- `uv run mypy src`
+- `HERMES_AUTH_TOKEN=test-token-for-openapi HERMES_URL=http://127.0.0.1:18082 pnpm run gen:api`
+- `pnpm test` (104 passed)
+- `pnpm typecheck`
+
 Depends on: [08](./08-tool-call-cards.md) (event taxonomy).
 
 ## Goal
