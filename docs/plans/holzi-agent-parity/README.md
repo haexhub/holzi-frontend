@@ -54,8 +54,9 @@ Completed:
 - [05](./05-chat-edit-and-regenerate.md) — chat edit and regenerate (2026-05-27)
 - [06](./06-streaming-resilience-and-queueing.md) — streaming resilience and queued sends (2026-05-27; frontend-only [holzi-frontend#29](https://github.com/haexhub/holzi-frontend/pull/29) merged)
 - [07](./07-chat-rendering-polish.md) — chat rendering polish (2026-05-27; frontend-only [holzi-frontend#30](https://github.com/haexhub/holzi-frontend/pull/30) merged)
+- [08](./08-tool-call-cards.md) — tool call cards + event taxonomy (2026-05-27; cross-repo [Holzi#38](https://github.com/haexhub/Holzi/pull/38) + [holzi-frontend#31](https://github.com/haexhub/holzi-frontend/pull/31) merged)
 
-Next up: [08 — tool call cards + event taxonomy](./08-tool-call-cards.md).
+Next up: [09 — approvals and safety cards](./09-approval-cards.md).
 
 ## Recommended Order
 

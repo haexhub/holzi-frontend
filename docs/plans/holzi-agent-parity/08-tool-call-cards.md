@@ -1,7 +1,40 @@
 # Plan 08: Tool Call Cards + Event Taxonomy
 
+Status: implemented and merged on 2026-05-27. Cross-repo: backend
+([Holzi#38](https://github.com/haexhub/Holzi/pull/38)) + frontend
+([holzi-frontend#31](https://github.com/haexhub/holzi-frontend/pull/31)), both
+squash-merged. The shared SSE envelope lives in `src/hermes/events.py`
+(Pydantic) and is the single source of truth; the SSE `event:` line mirrors the
+envelope's `event` field and the `data:` line carries the full
+`{event, version, data}` body (wire format confirmed with the user). All
+pre-existing events (`session`/`run`/`text`/`done`/`cancelled`/`error`) were
+migrated onto the envelope alongside the new `tool_call`/`tool_result` events.
+CodeRabbit: backend PR reviewed (two valid "guard malformed JSON" findings fixed
+in b408ac4 — reject non-object tool arguments, normalise non-dict `meta_json`);
+frontend PR hit the org review rate limit, so per the CR-rate-limit fallback the
+changes were self-reviewed before merge (no mirror fix needed — JS
+`Object.keys`/`JSON.stringify` don't throw on non-objects and the backend now
+guarantees `arguments` is an object).
+
 Depends on: [07](./07-chat-rendering-polish.md) (rendering surface). Establishes
 the shared SSE event envelope used by Plans 09 and 10.
+
+Verification:
+
+- Backend (`Holzi/`): `pytest` 403 passing (incl. new `tests/test_events.py`
+  and tool-callback / envelope / `tool_call`-metadata tests in
+  `test_agent_streaming.py` + `test_api_chat.py`); `ruff` + `mypy` clean.
+- Frontend (`holzi-frontend/`): `pnpm test` 91 passing (new
+  `tests/components/ToolCallCard.test.ts`, extended `ChatMessage` +
+  `useChatStream` suites); `nuxt typecheck` clean. `app/types/api-generated.ts`
+  regenerated against the backend — picks up `ChatStreamEnvelope`, the event
+  subtypes, and `MessageResponse.tool_call` (`ToolCallView`).
+
+Forward-compat rules (enforced): clients ignore unknown `event` values; adding
+optional `data` fields does not bump `version`; removing/changing semantics
+does. Backward compatibility with pre-Plan-08 `role:"tool"` rows is preserved —
+`meta_json` without `arguments`/`status` defaults to `status:"success"`,
+`arguments:{}`.
 
 ## Goal
 
