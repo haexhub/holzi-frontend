@@ -3,6 +3,7 @@ import {
   cancelChatRun,
   ChatStreamError,
   friendlyChatError,
+  retryLastResponse,
   sendChatMessage,
 } from '~/composables/useChatStream'
 import { useAuthStore } from '~/stores/auth'
@@ -221,6 +222,70 @@ describe('sendChatMessage', () => {
     await sendChatMessage({ message: 'hi', conversation_id: 99 })
     const body = JSON.parse((spy.mock.calls[0][1] as RequestInit).body as string)
     expect(body.conversation_id).toBe(99)
+  })
+})
+
+describe('retryLastResponse', () => {
+  beforeEach(() => {
+    const auth = useAuthStore()
+    auth.setToken('test-token')
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('POSTs to the conversation retry endpoint with no body', async () => {
+    const spy = mockFetch(
+      new Response(sseBody([
+        { event: 'session', data: { conversation_id: 42 } },
+        { event: 'done', data: {} },
+      ])),
+    )
+    await retryLastResponse(42)
+    expect(spy).toHaveBeenCalledWith(
+      '/api/conversations/42/retry',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer test-token',
+        }),
+      }),
+    )
+    // Retry carries no payload — the backend derives everything from state.
+    expect((spy.mock.calls[0][1] as RequestInit).body).toBeUndefined()
+  })
+
+  it('streams text and returns the regenerated result like a normal send', async () => {
+    mockFetch(
+      new Response(sseBody([
+        { event: 'session', data: { conversation_id: 7 } },
+        { event: 'run', data: { run_id: 'retry-run' } },
+        { event: 'text', data: { content: 'fresh ' } },
+        { event: 'text', data: { content: 'answer' } },
+        { event: 'done', data: {} },
+      ])),
+    )
+    const chunks: string[] = []
+    const result = await retryLastResponse(7, { onText: (c) => chunks.push(c) })
+    expect(chunks).toEqual(['fresh ', 'answer'])
+    expect(result.conversationId).toBe(7)
+    expect(result.runId).toBe('retry-run')
+    expect(result.text).toBe('fresh answer')
+    expect(result.cancelled).toBe(false)
+  })
+
+  it('throws when no auth token is set', async () => {
+    const auth = useAuthStore()
+    auth.clear()
+    await expect(retryLastResponse(1)).rejects.toThrow('not authenticated')
+  })
+
+  it('clears the auth token on 401 and throws', async () => {
+    const auth = useAuthStore()
+    mockFetch(new Response('', { status: 401 }))
+    await expect(retryLastResponse(1)).rejects.toThrow('unauthorized')
+    expect(auth.isAuthenticated).toBe(false)
   })
 })
 

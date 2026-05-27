@@ -50,8 +50,9 @@ Completed:
 - [02](./02-conversation-search-organization.md) — search and organization (2026-05-26; follow-up [Holzi#33](https://github.com/haexhub/Holzi/pull/33) merged)
 - [03](./03-chat-cancel-and-run-state.md) — chat cancel and run state (2026-05-26)
 - [03b](./03b-agent-runs-and-observability.md) — agent runs and observability (2026-05-26)
+- [04](./04-chat-retry-last-response.md) — chat retry last response (2026-05-26)
 
-Next up: [04 — chat retry last response](./04-chat-retry-last-response.md).
+Next up: [05 — chat edit and regenerate](./05-chat-edit-and-regenerate.md).
 
 ## Recommended Order
 
