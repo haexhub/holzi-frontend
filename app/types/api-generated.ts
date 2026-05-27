@@ -64,6 +64,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/approvals/{approval_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Api Resolve Approval
+         * @description Deliver the user's decision for a paused tool call.
+         *
+         *     Resolves the `asyncio.Future` the agent task is awaiting; the agent then
+         *     either runs the tool (`allow_once`) or feeds a denied result back to the
+         *     LLM (`deny`). Unknown ids → 404; an id whose decision already landed →
+         *     409 (the UI disables the buttons after one click, so this only fires on a
+         *     genuine double-submit / stale tab). Single-worker invariant makes the
+         *     in-process registry safe.
+         */
+        post: operations["api_resolve_approval_api_approvals__approval_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/runs": {
         parameters: {
             query?: never;
@@ -685,6 +712,52 @@ export interface components {
             /** Output Tokens */
             output_tokens: number | null;
         };
+        /** ApprovalDecisionRequest */
+        ApprovalDecisionRequest: {
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "allow_once" | "deny";
+            /** Reason */
+            reason?: string | null;
+        };
+        /**
+         * ApprovalRequiredData
+         * @description A risky tool call is paused awaiting the user's decision. The agent
+         *     blocks until a decision arrives via ``POST /api/approvals/{approval_id}``;
+         *     until then the stream stays open (heartbeats only). ``call_id`` ties this
+         *     back to the tool call that would run on approval; ``reason`` is the
+         *     human-readable risk explanation shown on the card.
+         */
+        ApprovalRequiredData: {
+            /** Approval Id */
+            approval_id: string;
+            /** Call Id */
+            call_id: string;
+            /** Name */
+            name: string;
+            /** Arguments */
+            arguments?: {
+                [key: string]: unknown;
+            };
+            /** Reason */
+            reason: string;
+        };
+        /** ApprovalRequiredEvent */
+        ApprovalRequiredEvent: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event: "approval_required";
+            /**
+             * Version
+             * @default 1
+             */
+            version: number;
+            data: components["schemas"]["ApprovalRequiredData"];
+        };
         /** CancelledEvent */
         CancelledEvent: {
             /**
@@ -705,7 +778,7 @@ export interface components {
          *     named component in the OpenAPI schema (and thus the generated TS types).
          *     Referenced from /api/chat's 200 response; never instantiated at runtime.
          */
-        ChatStreamEnvelope: components["schemas"]["SessionEvent"] | components["schemas"]["RunEvent"] | components["schemas"]["TextEvent"] | components["schemas"]["ToolCallEvent"] | components["schemas"]["ToolResultEvent"] | components["schemas"]["DoneEvent"] | components["schemas"]["CancelledEvent"] | components["schemas"]["ErrorEvent"];
+        ChatStreamEnvelope: components["schemas"]["SessionEvent"] | components["schemas"]["RunEvent"] | components["schemas"]["TextEvent"] | components["schemas"]["ToolCallEvent"] | components["schemas"]["ToolResultEvent"] | components["schemas"]["ApprovalRequiredEvent"] | components["schemas"]["DoneEvent"] | components["schemas"]["CancelledEvent"] | components["schemas"]["ErrorEvent"];
         /** ConversationDetailResponse */
         ConversationDetailResponse: {
             conversation: components["schemas"]["ConversationResponse"];
@@ -1241,6 +1314,53 @@ export interface operations {
             };
             /** @description Unknown or already-finished run_id */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_resolve_approval_api_approvals__approval_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                approval_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApprovalDecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown approval_id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Approval already resolved */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

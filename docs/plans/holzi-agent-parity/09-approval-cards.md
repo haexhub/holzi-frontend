@@ -1,5 +1,36 @@
 # Plan 09: Approval Cards
 
+Status: implemented on 2026-05-27.
+
+Verification:
+
+- `uv run pytest tests/test_events.py tests/test_agent.py tests/test_tools_cross_channel.py tests/test_api_chat.py` (backend)
+- `uv run pytest` (full backend suite, 416 passed)
+- `uv run ruff check src/hermes/events.py src/hermes/agent.py src/hermes/routes/api.py src/hermes/tools/cross_channel.py src/hermes/main.py tests/test_agent.py tests/test_events.py tests/test_api_chat.py tests/test_tools_cross_channel.py`
+- `uv run mypy src/hermes`
+- `HERMES_AUTH_TOKEN=test-token-for-openapi HERMES_URL=http://127.0.0.1:18082 pnpm run gen:api`
+- `pnpm vitest run` (frontend, 95 passed incl. new `tests/components/ApprovalCard.test.ts`)
+- `pnpm run typecheck`
+
+Notes on what landed (reuses the Plan 08 SSE envelope — new event type, no
+parallel structure):
+
+- Backend: new `approval_required` event in `src/hermes/events.py`; `Tool`
+  gains `requires_approval` / `risk_reason`; `run_agent` gains an `on_approval`
+  gate that pauses a risky tool, runs it on `allow_once`, or feeds a denied
+  `error: ...` tool result back to the LLM on `deny` (gate is skipped when no
+  `on_approval` callback is wired, so Signal/MCP are unaffected).
+  `cross_channel_send` is the first approval-gated tool (outward-facing Signal
+  send). `POST /api/approvals/{approval_id}` resolves an `asyncio.Future` the
+  agent task awaits — registry on `app.state.approvals`, same single-worker
+  invariant as the cancel registry (Plan 03b). The `/api/chat` SSE generator
+  emits a `: ping` heartbeat every 15 s so the connection survives long waits.
+- Frontend: `app/components/chat/ApprovalCard.vue` (risk reason, tool name,
+  arguments, Erlauben/Ablehnen buttons, decided-state); `useChatStream` gains an
+  `onApproval` callback + `resolveApproval()` (POST, treats 404/409 as
+  already-resolved); `app/pages/index.vue` tracks `pendingApprovals` and blocks
+  on a pending card, disabling buttons after one click (no duplicate submit).
+
 Depends on: [08](./08-tool-call-cards.md) (event taxonomy and card UI pattern).
 
 ## Goal
