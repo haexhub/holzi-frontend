@@ -1,19 +1,16 @@
 # Plan 05: Edit And Regenerate
 
-Status: implemented on 2026-05-27; PRs open, pending CodeRabbit review + merge.
-Backend [Holzi#37](https://github.com/haexhub/Holzi/pull/37); frontend
-[holzi-frontend#28](https://github.com/haexhub/holzi-frontend/pull/28). Both CI
-green.
+Status: implemented and merged on 2026-05-27. Backend
+[Holzi#37](https://github.com/haexhub/Holzi/pull/37) (merged); frontend
+[holzi-frontend#28](https://github.com/haexhub/holzi-frontend/pull/28) (merged).
 
-CodeRabbit so far (to triage next session before merge): FE#28 flagged one
-`Major` finding — the generated `api-generated.ts` types the edit endpoint with
-`requestBody?: never` even though it's called with `{ content }`, so generated
-clients lose type safety on the payload. This is the same manual-`request.json()`
-pattern as `/api/chat` (which also has no typed body); fixing it properly means
-declaring a typed body param in the backend so FastAPI documents the schema —
-but that flips empty-content validation from our explicit 400 to FastAPI's 422
-and would need the tests updated. Decide fix-vs-skip during the merge pass. BE#37
-had no review yet at hand-off.
+CodeRabbit: FE#28 flagged one `Major` finding — the generated `api-generated.ts`
+typed the edit endpoint with `requestBody?: never` even though it's called with
+`{ content }`, losing type safety. Fixed by declaring the request body as a
+typed param (`EditMessageRequest`) in the backend so FastAPI documents the
+schema; regenerated types now carry `requestBody`. Side effect: empty/missing
+content now fails FastAPI validation with 422 instead of our manual 400 (no
+frontend impact — both surface as a generic failed request).
 
 Verification:
 
@@ -38,7 +35,7 @@ Notes:
 - Validation mirrors `/api/chat` + `/retry`: unknown conversation → 404; non-web
   channel → 400; message not found *or belonging to another conversation* → 404
   (the path's `conv_id` is authoritative, so clients can't edit across threads);
-  non-`user` role → 400; empty content → 400.
+  non-`user` role → 400; empty content → 422 (declared-body validation).
 - Frontend: `editAndRegenerate(conversationId, messageId, content)` in
   `useChatStream` shares the SSE consumer with `sendChatMessage`/`retryLastResponse`.
   `ChatMessage.vue` shows a "Bearbeiten" control on every persisted user turn

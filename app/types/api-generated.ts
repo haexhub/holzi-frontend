@@ -186,6 +186,10 @@ export interface paths {
          *     delete-then-rerun mechanic as /retry, keyed on the edited message id rather
          *     than the last user message), then re-runs the web agent over the surviving
          *     context and streams with the same SSE semantics as /api/chat.
+         *
+         *     Unlike /api/chat, the body is a declared model so the request schema lands
+         *     in the OpenAPI doc (and the generated frontend types). Empty/missing
+         *     content therefore fails FastAPI validation with a 422.
          */
         post: operations["api_edit_and_regenerate_api_conversations__conv_id__messages__message_id__edit_and_regenerate_post"];
         delete?: never;
@@ -735,6 +739,11 @@ export interface components {
             /** Allowed Chat Ids */
             allowed_chat_ids?: number[] | null;
         };
+        /** EditMessageRequest */
+        EditMessageRequest: {
+            /** Content */
+            content: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -1271,7 +1280,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditMessageRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
