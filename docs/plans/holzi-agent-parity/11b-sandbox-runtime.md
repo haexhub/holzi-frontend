@@ -1,6 +1,18 @@
 # Plan 11b: Sandbox Runtime
 
-Depends on: [01b](./01b-conversation-retention-and-bookmarks.md) (data layout).
+> **Split (2026-05-27).** Too large for one session. The safety-critical spine —
+> container lifecycle, `exec`, mandatory resource limits, and network isolation —
+> shipped as [11b-a](./11b-a-sandbox-spine.md) (backend-only, rootless Podman).
+> This file is now the **11b-b remainder**: the richer internal API
+> (read_file/write_file/git), the health watcher → `sandbox_crashed` SSE event +
+> restart endpoint, and the frontend surface. The runtime decision (rootless
+> Podman, no Docker socket, no DinD) and the `SandboxBackend`/`SandboxManager`
+> abstraction are settled in 11b-a; 11b-b builds on them. Sections below that
+> 11b-a already delivered (topology, lifecycle, limits, isolation tests) are
+> retained for context but are done.
+
+Depends on: [11b-a](./11b-a-sandbox-spine.md) (sandbox spine);
+[01b](./01b-conversation-retention-and-bookmarks.md) (data layout).
 
 ## Goal
 
