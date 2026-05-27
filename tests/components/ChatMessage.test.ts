@@ -31,6 +31,15 @@ describe('ChatMessage.vue', () => {
     expect(wrapper.text()).toContain('# not a heading')
   })
 
+  it('keeps the streaming bubble plain even though it is an assistant message', () => {
+    const wrapper = mount(ChatMessage, {
+      props: { message: { role: 'assistant', content: '# live token' }, plain: true },
+      global: { stubs },
+    })
+    expect(wrapper.find('.rm-stub').exists()).toBe(false)
+    expect(wrapper.text()).toContain('# live token')
+  })
+
   it('shows a timestamp when ts is provided', () => {
     const wrapper = mount(ChatMessage, {
       props: { message: { role: 'assistant', content: 'hi', ts: 1716800000 }, canRetry: false },

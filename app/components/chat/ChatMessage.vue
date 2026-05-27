@@ -18,14 +18,19 @@ const props = defineProps<{
   canEdit?: boolean
   // Disable the Edit control while another run is in flight.
   editDisabled?: boolean
+  // Set on the in-flight streaming bubble: keep it plain text so we don't
+  // re-run shiki on every chunk. The persisted turn renders as Markdown.
+  plain?: boolean
 }>()
 
 const emit = defineEmits<{ retry: []; edit: [content: string] }>()
 
 const isUser = computed(() => props.message.role === 'user')
 const isTool = computed(() => props.message.role === 'tool')
-// Only assistant prose gets Markdown rendering; user and tool text stay literal.
+// Only persisted assistant prose gets Markdown rendering; user, tool, and the
+// still-streaming bubble stay literal.
 const isAssistant = computed(() => props.message.role === 'assistant')
+const renderMarkdown = computed(() => isAssistant.value && !props.plain)
 
 const timestamp = computed(() => {
   if (props.message.ts == null) return ''
@@ -100,13 +105,14 @@ function confirmEdit() {
         :class="{
           'bg-primary text-primary-foreground whitespace-pre-wrap': isUser,
           'bg-muted text-foreground': isAssistant,
+          'whitespace-pre-wrap': isAssistant && !renderMarkdown,
           'border border-dashed bg-background text-muted-foreground font-mono text-xs whitespace-pre-wrap': isTool,
         }"
       >
         <span v-if="isTool" class="text-xs uppercase tracking-wider opacity-60 mr-2">
           tool
         </span>
-        <RenderedMarkdown v-if="isAssistant" :content="message.content" />
+        <RenderedMarkdown v-if="renderMarkdown" :content="message.content" />
         <template v-else>{{ message.content }}</template>
       </div>
       <span

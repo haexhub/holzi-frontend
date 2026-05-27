@@ -403,6 +403,7 @@ onMounted(() => {
         <ChatMessage
           v-if="isStreaming && streamingText"
           :message="{ role: 'assistant', content: streamingText }"
+          plain
         />
         <div v-if="isStreaming && !streamingText" class="flex justify-start">
           <div class="rounded-2xl bg-muted px-4 py-2 text-sm text-muted-foreground">

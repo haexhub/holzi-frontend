@@ -42,7 +42,10 @@ async function upgradeMermaid() {
     const source = block.querySelector('.mermaid-fallback')?.textContent ?? ''
     if (!source.trim()) continue
     try {
-      const { svg } = await mermaid.render(`holzi-mermaid-${mermaidSeq++}`, source)
+      // Globally unique id: mermaid injects a temp node with this id while
+      // rendering, so two message instances must not collide.
+      const id = `holzi-mermaid-${Date.now()}-${mermaidSeq++}-${Math.random().toString(36).slice(2)}`
+      const { svg } = await mermaid.render(id, source)
       block.innerHTML = svg
       block.dataset.rendered = 'true'
     }
