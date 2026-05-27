@@ -57,8 +57,14 @@ Completed:
 - [08](./08-tool-call-cards.md) — tool call cards + event taxonomy (2026-05-27; cross-repo [Holzi#38](https://github.com/haexhub/Holzi/pull/38) + [holzi-frontend#31](https://github.com/haexhub/holzi-frontend/pull/31) merged)
 - [09](./09-approval-cards.md) — approvals and safety cards (2026-05-27; cross-repo [Holzi#39](https://github.com/haexhub/Holzi/pull/39) + [holzi-frontend#32](https://github.com/haexhub/holzi-frontend/pull/32) merged)
 - [10](./10-reasoning-and-subagent-cards.md) — reasoning and subagent cards (2026-05-27; cross-repo [Holzi#40](https://github.com/haexhub/Holzi/pull/40) + [holzi-frontend#34](https://github.com/haexhub/holzi-frontend/pull/34) merged). Reasoning end-to-end; subagent events are the wire contract + cards only (no orchestrator yet).
+- [11](./11-attachments.md) — attachments (2026-05-27; cross-repo [Holzi#42](https://github.com/haexhub/Holzi/pull/42) + [holzi-frontend#36](https://github.com/haexhub/holzi-frontend/pull/36) merged). Text/code/log inlined into agent context; images + PDF stored as metadata-only (no provider image inputs yet). Added `POST /api/conversations` so the first message of a fresh chat can carry attachments.
 
-Next up: [11 — attachments](./11-attachments.md).
+Next up: [11b — sandbox runtime](./11b-sandbox-runtime.md). This leaves the
+chat-polish track and starts the workspace/execution-safety track: it's a
+backend-heavy infrastructure plan (sandbox containers), a different shape from
+01–11. Alternative if you'd rather stay UI-facing: [12 — workspace browser
+(read-only)](./12-workspace-browser-readonly.md), which only needs a sandbox
+for the later write/exec plans (13, 16).
 
 ## Recommended Order
 
