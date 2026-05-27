@@ -1,6 +1,13 @@
 # Plan 09: Approval Cards
 
-Status: implemented on 2026-05-27.
+Status: implemented and merged on 2026-05-27. Cross-repo: backend
+([Holzi#39](https://github.com/haexhub/Holzi/pull/39)) + frontend
+([holzi-frontend#32](https://github.com/haexhub/holzi-frontend/pull/32)), both
+squash-merged. CodeRabbit hit the org review rate limit (out of usage credits),
+so per the CR-rate-limit fallback both PRs were self-reviewed before merge — one
+genuine issue found and fixed during review (the SSE heartbeat used
+`wait_for(queue.get())`, which could drop a concurrently-arriving event;
+switched to `asyncio.wait` so the pending getter survives the heartbeat tick).
 
 Verification:
 
