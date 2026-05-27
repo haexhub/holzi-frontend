@@ -50,6 +50,14 @@ const isStreaming = computed(() => streamState.value === 'streaming')
 // Follow-ups submitted while a turn streams. Rendered as pending user
 // bubbles and flushed one-by-one after each turn finishes cleanly.
 const queue = useChatQueue()
+// Queued follow-ups that won't auto-send: the turn ended in a non-`done`
+// state (drop or user cancel), so they're stranded until the user either
+// sends them manually or switches conversation. Drives the retry affordance.
+const queueStalled = computed(
+  () =>
+    !queue.isEmpty.value
+    && (streamState.value === 'failed' || streamState.value === 'cancelled'),
+)
 const streamingText = ref('')
 const currentRunId = ref<string | null>(null)
 // Conversation whose most recent turn was user-cancelled. Scoped to a
@@ -378,7 +386,7 @@ onMounted(() => {
         class="flex-1 space-y-3 overflow-y-auto p-4"
       >
         <EmptyChatState
-          v-if="messages.length === 0 && !isStreaming && queue.isEmpty.value"
+          v-if="messages.length === 0 && !isStreaming"
           :has-credentials="hasCredentials"
         />
         <ChatMessage
@@ -418,13 +426,14 @@ onMounted(() => {
             {{ q.content }}
           </div>
           <span class="mt-1 text-xs italic text-muted-foreground">
-            {{ streamState === 'failed' ? 'Wartet — nicht gesendet' : 'In Warteschlange…' }}
+            {{ isStreaming ? 'In Warteschlange…' : 'Wartet — nicht gesendet' }}
           </span>
         </div>
-        <!-- Explicit failure state: the stream dropped, queued follow-ups are
-             kept, and the user gets an obvious way to send them anyway. -->
+        <!-- The turn ended without a clean finish (drop or cancel) while
+             follow-ups were queued: keep them and give an obvious way to
+             send them anyway, rather than auto-firing or stranding them. -->
         <div
-          v-if="streamState === 'failed' && !queue.isEmpty.value"
+          v-if="queueStalled"
           class="flex justify-start"
         >
           <Button size="sm" variant="outline" @click="flushQueue">
