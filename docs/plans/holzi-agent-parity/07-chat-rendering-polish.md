@@ -1,7 +1,12 @@
 # Plan 07: Chat Rendering Polish
 
-Status: implemented on 2026-05-27, pending merge. Frontend-only; no backend
-changes — `MessageResponse.ts` already ships the timestamp. Stack (confirmed
+Status: implemented and merged on 2026-05-27. Frontend-only
+([holzi-frontend#30](https://github.com/haexhub/holzi-frontend/pull/30),
+squash-merged); no backend changes — `MessageResponse.ts` already ships the
+timestamp. CodeRabbit: unavailable for this PR (org review rate limit reached);
+per the CR-rate-limit fallback the changes were self-reviewed on the PR, which
+caught one real issue (the streaming bubble routed through shiki on every
+chunk), fixed in b277b82 before merge. Stack (confirmed
 with the user, chosen for a polished result over minimal bundle):
 `markdown-it` + `@shikijs/markdown-it` (shiki, dual github-light/dark themes) +
 `@vscode/markdown-it-katex` + `katex` + `dompurify` + `mermaid` (lazy-loaded).

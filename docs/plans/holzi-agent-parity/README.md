@@ -53,8 +53,9 @@ Completed:
 - [04](./04-chat-retry-last-response.md) — chat retry last response (2026-05-26)
 - [05](./05-chat-edit-and-regenerate.md) — chat edit and regenerate (2026-05-27)
 - [06](./06-streaming-resilience-and-queueing.md) — streaming resilience and queued sends (2026-05-27; frontend-only [holzi-frontend#29](https://github.com/haexhub/holzi-frontend/pull/29) merged)
+- [07](./07-chat-rendering-polish.md) — chat rendering polish (2026-05-27; frontend-only [holzi-frontend#30](https://github.com/haexhub/holzi-frontend/pull/30) merged)
 
-Next up: [07 — chat rendering polish](./07-chat-rendering-polish.md).
+Next up: [08 — tool call cards + event taxonomy](./08-tool-call-cards.md).
 
 ## Recommended Order
 
