@@ -55,8 +55,9 @@ Completed:
 - [06](./06-streaming-resilience-and-queueing.md) — streaming resilience and queued sends (2026-05-27; frontend-only [holzi-frontend#29](https://github.com/haexhub/holzi-frontend/pull/29) merged)
 - [07](./07-chat-rendering-polish.md) — chat rendering polish (2026-05-27; frontend-only [holzi-frontend#30](https://github.com/haexhub/holzi-frontend/pull/30) merged)
 - [08](./08-tool-call-cards.md) — tool call cards + event taxonomy (2026-05-27; cross-repo [Holzi#38](https://github.com/haexhub/Holzi/pull/38) + [holzi-frontend#31](https://github.com/haexhub/holzi-frontend/pull/31) merged)
+- [09](./09-approval-cards.md) — approvals and safety cards (2026-05-27; cross-repo [Holzi#39](https://github.com/haexhub/Holzi/pull/39) + [holzi-frontend#32](https://github.com/haexhub/holzi-frontend/pull/32) merged)
 
-Next up: [09 — approvals and safety cards](./09-approval-cards.md).
+Next up: [10 — reasoning and subagent cards](./10-reasoning-and-subagent-cards.md).
 
 ## Recommended Order
 
