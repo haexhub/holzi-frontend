@@ -201,7 +201,32 @@ restart, shutdown); `tests/test_sandbox_podman_integration.py` (opt-in,
 `-m integration`, skipped without `HERMES_SANDBOX_SOCKET`). Full suite: 457
 passed, 2 deselected; ruff + mypy clean. No `gen:api` (no API/SSE schema change).
 
-**Not yet manually verified end-to-end under a live Podman stack** — the
-Podman-backed bring-up (incl. Traefik-on-Podman socket) is the open integration
-step. The `PodmanSandboxBackend` and the compose/Makefile migration are written
-but only exercised by the opt-in integration tests, not yet by a real run.
+### Live Podman verification (2026-05-27)
+
+Ran against a real rootless Podman socket (Podman 3.4.4, ext4, cgroup v2).
+Results:
+
+- **exec stream demux verified end-to-end** — `PodmanSandboxBackend.exec`
+  against a real container correctly splits stdout/stderr, reassembles frames,
+  and returns the true non-zero exit code (3). This was the highest-risk
+  untested code; it is now proven.
+- **memory cap + isolated network create/start/run verified working.**
+- Three environment/host requirements surfaced (not code bugs in the create
+  path, which uses standard Docker-API options):
+  - **Disk quota** (`StorageOpt size`) only works on XFS+pquota storage; ext4
+    rejects it and fails the create. **Fixed:** disk quota is now opt-in via
+    `HERMES_SANDBOX_DISK_QUOTA` (default off); `disk_mb` stays in the spec but
+    is only applied to the overlay when enabled on supported storage.
+  - **CPU cap** (`NanoCpus`) needs the host to delegate the `cpu` cgroup
+    controller to the rootless user slice (`Delegate=cpu cpuset io memory pids`
+    in `/etc/systemd/system/user@.service.d/delegate.conf` + `daemon-reload` +
+    session restart). Confirmed the sole remaining create blocker on a box
+    without it; memory + pids are delegated by default.
+  - **Networking** — Podman 3.4.4's bundled CNI writes `cniVersion 1.0.0`,
+    which its firewall plugin rejects; pinning the conflist to `0.4.0` (or
+    Podman 4.x with netavark) fixes it. Not an issue on the 4.x target.
+
+**Still open:** a fully green `pytest -m integration` on a host with cpu cgroup
+delegation (and the full `podman compose` stack bring-up — Podman 3.4.4 has no
+`podman compose`, needs 4.x or `podman-compose`). The agent-survives-sandbox-
+kill and network-isolation curl checks are pending that host.
