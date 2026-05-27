@@ -21,6 +21,15 @@ export type Note = components['schemas']['NoteResponse']
 export type Todo = components['schemas']['TodoResponse']
 export type Reminder = components['schemas']['ReminderResponse']
 
+// --- Chat SSE event envelope (Plan 08) ----------------------------------
+// One versioned envelope per stream event; the discriminated union is the
+// single source of truth shared with the backend's src/hermes/events.py.
+export type ChatStreamEnvelope = components['schemas']['ChatStreamEnvelope']
+// Structured tool-call view attached to persisted `role:"tool"` messages.
+export type ToolCallView = components['schemas']['ToolCallView']
+export type ToolCallData = components['schemas']['ToolCallData']
+export type ToolResultData = components['schemas']['ToolResultData']
+
 // --- LLM credentials ----------------------------------------------------
 // Declared manually until `pnpm run gen:api` is re-run against a Hermes
 // build that ships the OAuth + CRUD endpoints (Phase 3+4 of the

@@ -3,11 +3,15 @@ import { computed, ref } from 'vue'
 import { Pencil, RotateCcw } from 'lucide-vue-next'
 import type { Message } from '~/types/api'
 import RenderedMarkdown from '~/components/chat/RenderedMarkdown.vue'
+import ToolCallCard from '~/components/chat/ToolCallCard.vue'
 
 const props = defineProps<{
   // `ts` is optional: persisted messages carry it; the in-flight streaming
-  // bubble does not.
-  message: Pick<Message, 'role' | 'content'> & { ts?: number }
+  // bubble does not. `tool_call` is set on persisted tool turns.
+  message: Pick<Message, 'role' | 'content'> & {
+    ts?: number
+    tool_call?: Message['tool_call']
+  }
   // When true (set by the page on the latest assistant turn), show a
   // Retry control that regenerates this response.
   canRetry?: boolean
@@ -31,6 +35,17 @@ const isTool = computed(() => props.message.role === 'tool')
 // still-streaming bubble stay literal.
 const isAssistant = computed(() => props.message.role === 'assistant')
 const renderMarkdown = computed(() => isAssistant.value && !props.plain)
+
+// The card view of a persisted tool turn (null on the legacy plain-text path).
+const toolCall = computed(() => props.message.tool_call ?? null)
+
+// An assistant turn that only requested tools is persisted with empty content
+// (the tool cards that follow carry the substance). Don't render an empty
+// bubble for it. The still-streaming bubble (plain) is always shown by the
+// page only when it has text, so it's exempt.
+const hidden = computed(
+  () => isAssistant.value && !props.plain && !props.message.content.trim(),
+)
 
 const timestamp = computed(() => {
   if (props.message.ts == null) return ''
@@ -65,9 +80,21 @@ function confirmEdit() {
 
 <template>
   <div
+    v-if="!hidden"
     class="flex w-full flex-col"
     :class="isUser ? 'items-end' : 'items-start'"
   >
+    <!-- Tool turn: render a structured card instead of a text bubble. -->
+    <template v-if="isTool && toolCall">
+      <ToolCallCard :tool-call="toolCall" />
+      <span
+        v-if="timestamp"
+        class="message-ts mt-1 px-1 text-[10px] text-muted-foreground"
+      >
+        {{ timestamp }}
+      </span>
+    </template>
+
     <!-- Inline editor (user turns only) -->
     <div v-if="editing" class="flex w-full max-w-[80%] flex-col gap-1">
       <textarea
@@ -99,7 +126,7 @@ function confirmEdit() {
       </div>
     </div>
 
-    <template v-else>
+    <template v-else-if="!(isTool && toolCall)">
       <div
         class="max-w-[80%] rounded-2xl px-4 py-2 text-sm break-words"
         :class="{

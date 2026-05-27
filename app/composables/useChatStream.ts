@@ -1,16 +1,26 @@
 import { useAuthStore } from '~/stores/auth'
+import type { ToolCallData, ToolResultData } from '~/types/api'
 
 /**
  * Subscribe to /api/chat's SSE stream.
  *
- * The hermes endpoint emits these event types over `text/event-stream`:
- *   - `session`   → { conversation_id: number }
- *   - `run`       → { run_id: string }     (handle for cancelChatRun)
- *   - `text`      → { content: string }    (assistant delta)
- *   - `cancelled` → {}                     (terminal — user clicked Stop)
- *   - `done`      → {}                     (terminal — turn finished cleanly)
+ * Every event shares one versioned envelope `{ event, version, data }` (the
+ * single source of truth lives in the backend's `src/hermes/events.py` and the
+ * generated `ChatStreamEnvelope` type). The SSE `event:` line mirrors the
+ * envelope's `event`, so we switch on it and read the payload from `.data`:
+ *   - `session`     → { conversation_id: number }
+ *   - `run`         → { run_id: string }     (handle for cancelChatRun)
+ *   - `text`        → { content: string }    (assistant delta)
+ *   - `tool_call`   → { call_id, name, arguments, status:"running" }
+ *   - `tool_result` → { call_id, status:"success"|"error", result, error }
+ *   - `cancelled`   → {}                     (terminal — user clicked Stop)
+ *   - `done`        → {}                     (terminal — turn finished cleanly)
  * Plus on failure:
- *   - `error`     → { code, status_code, message }
+ *   - `error`       → { code, status_code, message }
+ *
+ * Forward compatibility: an envelope whose `event` we don't recognise is
+ * ignored (falls through the switch) so a newer backend can add event types
+ * without breaking older clients.
  *
  * Returns the conversation_id, run_id, assembled text, and a `cancelled`
  * flag. `cancelled` is terminal: any events after it on the wire are
@@ -47,6 +57,11 @@ export interface ChatStreamCallbacks {
   onSession?: (conversationId: number) => void
   onRun?: (runId: string) => void
   onText?: (chunk: string) => void
+  // A tool started running. Fired before the tool executes so a card can be
+  // shown in its `running` state.
+  onToolCall?: (call: ToolCallData) => void
+  // A tool finished. `status` flips the matching card to success/error.
+  onToolResult?: (result: ToolResultData) => void
   signal?: AbortSignal
 }
 
@@ -177,25 +192,36 @@ async function postChatStream(
     for (const block of blocks) {
       const { event, data } = parseSseBlock(block)
       if (!event) continue
+      // Every block is an envelope `{ event, version, data }`; the payload we
+      // care about is `.data`. (`event` here is the mirrored SSE event line.)
+      const payload = (data as { data?: unknown }).data ?? {}
       switch (event) {
         case 'session': {
-          conversationId = (data as { conversation_id?: number }).conversation_id ?? null
+          conversationId = (payload as { conversation_id?: number }).conversation_id ?? null
           if (conversationId !== null) {
             callbacks.onSession?.(conversationId)
           }
           break
         }
         case 'run': {
-          runId = (data as { run_id?: string }).run_id ?? null
+          runId = (payload as { run_id?: string }).run_id ?? null
           if (runId !== null) {
             callbacks.onRun?.(runId)
           }
           break
         }
         case 'text': {
-          const chunk = (data as { content?: string }).content ?? ''
+          const chunk = (payload as { content?: string }).content ?? ''
           assistantText += chunk
           callbacks.onText?.(chunk)
+          break
+        }
+        case 'tool_call': {
+          callbacks.onToolCall?.(payload as ToolCallData)
+          break
+        }
+        case 'tool_result': {
+          callbacks.onToolResult?.(payload as ToolResultData)
           break
         }
         case 'cancelled':
@@ -207,14 +233,14 @@ async function postChatStream(
         case 'done':
           break
         case 'error': {
-          const payload = data as {
+          const errData = payload as {
             code?: ChatStreamErrorCode
             status_code?: number
             message?: string
           }
           streamError = new ChatStreamError(
-            payload.message ?? 'unknown agent error',
-            { code: payload.code, statusCode: payload.status_code ?? null },
+            errData.message ?? 'unknown agent error',
+            { code: errData.code, statusCode: errData.status_code ?? null },
           )
           // Terminal: stop reading and let the caller surface the failure.
           // The backend contract is that `error` is the last event, so we

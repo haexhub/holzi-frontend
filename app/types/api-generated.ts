@@ -685,6 +685,27 @@ export interface components {
             /** Output Tokens */
             output_tokens: number | null;
         };
+        /** CancelledEvent */
+        CancelledEvent: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event: "cancelled";
+            /**
+             * Version
+             * @default 1
+             */
+            version: number;
+            data?: components["schemas"]["EmptyData"];
+        };
+        /**
+         * ChatStreamEnvelope
+         * @description Documentation wrapper so the discriminated union surfaces as a single
+         *     named component in the OpenAPI schema (and thus the generated TS types).
+         *     Referenced from /api/chat's 200 response; never instantiated at runtime.
+         */
+        ChatStreamEnvelope: components["schemas"]["SessionEvent"] | components["schemas"]["RunEvent"] | components["schemas"]["TextEvent"] | components["schemas"]["ToolCallEvent"] | components["schemas"]["ToolResultEvent"] | components["schemas"]["DoneEvent"] | components["schemas"]["CancelledEvent"] | components["schemas"]["ErrorEvent"];
         /** ConversationDetailResponse */
         ConversationDetailResponse: {
             conversation: components["schemas"]["ConversationResponse"];
@@ -739,10 +760,52 @@ export interface components {
             /** Allowed Chat Ids */
             allowed_chat_ids?: number[] | null;
         };
+        /** DoneEvent */
+        DoneEvent: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event: "done";
+            /**
+             * Version
+             * @default 1
+             */
+            version: number;
+            data?: components["schemas"]["EmptyData"];
+        };
         /** EditMessageRequest */
         EditMessageRequest: {
             /** Content */
             content: string;
+        };
+        /**
+         * EmptyData
+         * @description Payload for events that carry no data (``done``, ``cancelled``).
+         */
+        EmptyData: Record<string, never>;
+        /** ErrorData */
+        ErrorData: {
+            /** Code */
+            code: string;
+            /** Status Code */
+            status_code: number;
+            /** Message */
+            message: string;
+        };
+        /** ErrorEvent */
+        ErrorEvent: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event: "error";
+            /**
+             * Version
+             * @default 1
+             */
+            version: number;
+            data: components["schemas"]["ErrorData"];
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -801,6 +864,7 @@ export interface components {
             content: string;
             /** Ts */
             ts: number;
+            tool_call?: components["schemas"]["ToolCallView"] | null;
         };
         /** MessengerAccountResponse */
         MessengerAccountResponse: {
@@ -916,10 +980,67 @@ export interface components {
             /** Created At */
             created_at: number;
         };
+        /** RunData */
+        RunData: {
+            /** Run Id */
+            run_id: string;
+        };
+        /** RunEvent */
+        RunEvent: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event: "run";
+            /**
+             * Version
+             * @default 1
+             */
+            version: number;
+            data: components["schemas"]["RunData"];
+        };
+        /** SessionData */
+        SessionData: {
+            /** Conversation Id */
+            conversation_id: number;
+        };
+        /** SessionEvent */
+        SessionEvent: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event: "session";
+            /**
+             * Version
+             * @default 1
+             */
+            version: number;
+            data: components["schemas"]["SessionData"];
+        };
         /** SignalLinkPollResponse */
         SignalLinkPollResponse: {
             /** Accounts */
             accounts: components["schemas"]["MessengerAccountResponse"][];
+        };
+        /** TextData */
+        TextData: {
+            /** Content */
+            content: string;
+        };
+        /** TextEvent */
+        TextEvent: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event: "text";
+            /**
+             * Version
+             * @default 1
+             */
+            version: number;
+            data: components["schemas"]["TextData"];
         };
         /** TodoCreate */
         TodoCreate: {
@@ -945,6 +1066,98 @@ export interface components {
         TodoUpdate: {
             /** Done */
             done: boolean;
+        };
+        /**
+         * ToolCallData
+         * @description A tool invocation has started. Emitted before the tool runs.
+         */
+        ToolCallData: {
+            /** Call Id */
+            call_id: string;
+            /** Name */
+            name: string;
+            /** Arguments */
+            arguments?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Status
+             * @default running
+             * @constant
+             */
+            status: "running";
+        };
+        /** ToolCallEvent */
+        ToolCallEvent: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event: "tool_call";
+            /**
+             * Version
+             * @default 1
+             */
+            version: number;
+            data: components["schemas"]["ToolCallData"];
+        };
+        /**
+         * ToolCallView
+         * @description Structured view of a completed tool call, reconstructed from a persisted
+         *     `role:"tool"` message's `meta_json` + content so the frontend can render
+         *     the same card on reload as it showed live. `result` is set on success,
+         *     `error` on failure.
+         */
+        ToolCallView: {
+            /** Call Id */
+            call_id: string;
+            /** Name */
+            name: string;
+            /** Arguments */
+            arguments?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "success" | "error";
+            /** Result */
+            result?: string | null;
+            /** Error */
+            error?: string | null;
+        };
+        /**
+         * ToolResultData
+         * @description A tool invocation finished. ``result`` is set on success, ``error`` on
+         *     failure; exactly one is non-null for a given ``status``.
+         */
+        ToolResultData: {
+            /** Call Id */
+            call_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "success" | "error";
+            /** Result */
+            result?: string | null;
+            /** Error */
+            error?: string | null;
+        };
+        /** ToolResultEvent */
+        ToolResultEvent: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event: "tool_result";
+            /**
+             * Version
+             * @default 1
+             */
+            version: number;
+            data: components["schemas"]["ToolResultData"];
         };
         /** ValidationError */
         ValidationError: {
@@ -997,13 +1210,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description SSE stream of chat events (one envelope per block). */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ChatStreamEnvelope"];
                 };
             };
         };
