@@ -136,8 +136,10 @@ opt-in, and excluded from the default suite.
 - The manager can create, stream-exec, and stop both workspace and ephemeral
   sandboxes.
 - Resource limits (CPU/RAM/disk) are enforced on every sandbox.
-- The sandbox network cannot reach the agent's DB, secrets, or other sandboxes
-  (asserted at spec level here; enforced for real in the manual integration run).
+- The sandbox cannot reach the agent's DB, secrets, or other sandboxes —
+  achieved by running sandboxes with **no network** (`NetworkMode none`), since
+  the agent drives them over the control socket, not the network. Verified live
+  against Podman (a TCP connect from inside the sandbox fails).
 - Killing a sandbox does not affect the agent.
 
 Deferred to 11b-b: `sandbox_crashed` SSE event, restart-from-UI, conversation
@@ -189,44 +191,43 @@ Backend landed in `src/hermes/sandbox/`:
   sandbox-less; tests use the fake).
 
 Infra: `Dockerfile.sandbox` (minimal debian, unprivileged `sandbox` user, idle
-`sleep infinity`); `docker-compose.local.yml` adds the isolated `hermes-sandbox`
-network and mounts the rootless Podman socket into the agent (agent stays on
-`hermes-local` only); `Makefile`/stack migrated to `podman compose`
-(`CONTAINER_BIN ?= podman`, new `sandbox-image` target). Traefik now reads the
-Podman socket.
+`sleep infinity`); `docker-compose.local.yml` mounts the rootless Podman socket
+into the agent and sets `HERMES_SANDBOX_NETWORK=none`; `Makefile`/stack migrated
+to `podman compose` (`CONTAINER_BIN ?= podman`, new `sandbox-image` target).
+Traefik now reads the Podman socket.
 
-Tests: `tests/test_sandbox.py` (14, against the fake — limits, isolation,
-lifecycle, ephemeral cleanup/no-leak, exec streaming, crash/OOM resilience,
-restart, shutdown); `tests/test_sandbox_podman_integration.py` (opt-in,
-`-m integration`, skipped without `HERMES_SANDBOX_SOCKET`). Full suite: 457
-passed, 2 deselected; ruff + mypy clean. No `gen:api` (no API/SSE schema change).
+Tests: `tests/test_sandbox.py` (16, against the fake — limits, isolation,
+lifecycle, ephemeral cleanup/no-leak, exec streaming + frame demux, crash/OOM
+resilience, restart, shutdown); `tests/test_sandbox_podman_integration.py`
+(3, opt-in `-m integration`). Full suite: 459 passed, 3 deselected; ruff + mypy
+clean. No `gen:api` (no API/SSE schema change).
 
-### Live Podman verification (2026-05-27)
+### Live Podman verification (2026-05-27/28) — DONE
 
-Ran against a real rootless Podman socket (Podman 3.4.4, ext4, cgroup v2).
-Results:
+Ran against a real rootless Podman socket (Podman 3.4.4, ext4, cgroup v2 with
+`cpu` delegated). All three integration tests pass:
 
-- **exec stream demux verified end-to-end** — `PodmanSandboxBackend.exec`
-  against a real container correctly splits stdout/stderr, reassembles frames,
-  and returns the true non-zero exit code (3). This was the highest-risk
-  untested code; it is now proven.
-- **memory cap + isolated network create/start/run verified working.**
-- Three environment/host requirements surfaced (not code bugs in the create
-  path, which uses standard Docker-API options):
-  - **Disk quota** (`StorageOpt size`) only works on XFS+pquota storage; ext4
-    rejects it and fails the create. **Fixed:** disk quota is now opt-in via
-    `HERMES_SANDBOX_DISK_QUOTA` (default off); `disk_mb` stays in the spec but
-    is only applied to the overlay when enabled on supported storage.
-  - **CPU cap** (`NanoCpus`) needs the host to delegate the `cpu` cgroup
-    controller to the rootless user slice (`Delegate=cpu cpuset io memory pids`
-    in `/etc/systemd/system/user@.service.d/delegate.conf` + `daemon-reload` +
-    session restart). Confirmed the sole remaining create blocker on a box
-    without it; memory + pids are delegated by default.
-  - **Networking** — Podman 3.4.4's bundled CNI writes `cniVersion 1.0.0`,
-    which its firewall plugin rejects; pinning the conflist to `0.4.0` (or
-    Podman 4.x with netavark) fixes it. Not an issue on the 4.x target.
+- **exec stream demux verified end-to-end** — stdout/stderr split, frames
+  reassembled across chunks, true non-zero exit code returned. (Highest-risk
+  untested code — now proven.)
+- **full create→exec→remove lifecycle** with CPU + memory caps + the kill/
+  restart recovery path.
+- **network isolation verified** — a sandbox runs with `NetworkMode none` and a
+  TCP connect from inside it fails. (Found en route: separate Podman networks
+  are NOT isolated from each other by default, so "own network" was insufficient
+  — switched to no-network, which is both simpler and stronger.)
 
-**Still open:** a fully green `pytest -m integration` on a host with cpu cgroup
-delegation (and the full `podman compose` stack bring-up — Podman 3.4.4 has no
-`podman compose`, needs 4.x or `podman-compose`). The agent-survives-sandbox-
-kill and network-isolation curl checks are pending that host.
+Environment/host requirements surfaced and captured (see the Ansible
+`podman_debian` role, which now encodes them):
+
+- **subuid/subgid ranges** for the rootless user (else image build fails).
+- **CPU cgroup delegation** — `cpu` is not delegated to user slices by default;
+  `NanoCpus` fails without `Delegate=cpu …` in `user@.service.d`.
+- **Disk quota** (`StorageOpt size`) needs XFS+pquota — ext4 rejects it.
+  **Fixed:** opt-in via `HERMES_SANDBOX_DISK_QUOTA` (default off).
+- **Podman 4.x (netavark)** preferred over 3.4.4 (no `podman compose`; CNI
+  `cniVersion` quirk).
+
+**Still open:** the full `podman compose` stack bring-up (needs Podman 4.x or
+`podman-compose`) — the integration tests above run directly against the socket
+and don't need the compose stack.
