@@ -4,10 +4,10 @@ Status: implemented on 2026-05-26; PRs open, pending CodeRabbit review + merge. 
 
 Verification:
 
-- `uv run pytest` in `/home/haex/Projekte/Holzi` (379 passing, including 6 retry-endpoint tests in `tests/test_api_chat.py` + 5 repo-helper tests in `tests/test_messages.py`)
+- In backend repo root (`Holzi/`): `uv run pytest` (379 passing, including 6 retry-endpoint tests in `tests/test_api_chat.py` + 5 repo-helper tests in `tests/test_messages.py`)
 - `uv run ruff check src tests`
 - backend boot: `HERMES_AUTH_TOKEN=test-token-for-openapi HERMES_DB_PATH=$(mktemp --suffix=.db) uv run uvicorn hermes.main:app --host 127.0.0.1 --port 18082 --log-level warning`
-- frontend regen: `HERMES_AUTH_TOKEN=test-token-for-openapi HERMES_URL=http://127.0.0.1:18082 pnpm run gen:api`
+- frontend regen, in frontend repo root (`holzi-frontend/`): `HERMES_AUTH_TOKEN=test-token-for-openapi HERMES_URL=http://127.0.0.1:18082 pnpm run gen:api`
 - `pnpm test` (56 passing, including 4 `retryLastResponse` tests)
 - `pnpm typecheck`
 
