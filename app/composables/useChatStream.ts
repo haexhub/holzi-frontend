@@ -1,5 +1,5 @@
 import { useAuthStore } from '~/stores/auth'
-import type { ToolCallData, ToolResultData } from '~/types/api'
+import type { ApprovalRequiredData, ToolCallData, ToolResultData } from '~/types/api'
 
 /**
  * Subscribe to /api/chat's SSE stream.
@@ -13,6 +13,9 @@ import type { ToolCallData, ToolResultData } from '~/types/api'
  *   - `text`        → { content: string }    (assistant delta)
  *   - `tool_call`   → { call_id, name, arguments, status:"running" }
  *   - `tool_result` → { call_id, status:"success"|"error", result, error }
+ *   - `approval_required` → { approval_id, call_id, name, arguments, reason }
+ *                      (non-terminal — stream stays open until the user
+ *                       resolves it via resolveApproval)
  *   - `cancelled`   → {}                     (terminal — user clicked Stop)
  *   - `done`        → {}                     (terminal — turn finished cleanly)
  * Plus on failure:
@@ -62,6 +65,10 @@ export interface ChatStreamCallbacks {
   onToolCall?: (call: ToolCallData) => void
   // A tool finished. `status` flips the matching card to success/error.
   onToolResult?: (result: ToolResultData) => void
+  // A risky tool is paused awaiting the user's decision. Fired so the page can
+  // render an approval card; the stream keeps running (heartbeats only) until
+  // resolveApproval() delivers the verdict.
+  onApproval?: (approval: ApprovalRequiredData) => void
   signal?: AbortSignal
 }
 
@@ -224,6 +231,10 @@ async function postChatStream(
           callbacks.onToolResult?.(payload as ToolResultData)
           break
         }
+        case 'approval_required': {
+          callbacks.onApproval?.(payload as ApprovalRequiredData)
+          break
+        }
         case 'cancelled':
           // Terminal: stop reading and let the caller render the turn
           // as aborted. Discard anything still in the buffer — the
@@ -300,6 +311,61 @@ export async function cancelChatRun(runId: string): Promise<void> {
   const detail = await response.text().catch(() => '')
   throw new ChatStreamError(
     `cancel failed: ${response.status} ${detail}`,
+    { code: 'request_failed', statusCode: response.status },
+  )
+}
+
+export type ApprovalDecision = 'allow_once' | 'deny'
+
+/**
+ * Deliver the user's decision for a paused, approval-gated tool call.
+ *
+ * POSTs to `/api/approvals/{approval_id}`, which resolves the future the
+ * backend agent is awaiting — the run then either executes the tool
+ * (`allow_once`) or feeds a denied result back to the model (`deny`).
+ *
+ * Resolves on 204 (delivered) and on 404/409 (the approval is already gone or
+ * already decided — a normal double-submit / stale-tab race, treated as a
+ * no-op). Throws on other failures so the caller can surface a real problem.
+ */
+export async function resolveApproval(
+  approvalId: string,
+  decision: ApprovalDecision,
+  reason?: string,
+): Promise<void> {
+  const auth = useAuthStore()
+  if (!auth.isAuthenticated) {
+    throw new ChatStreamError('unauthorized', {
+      code: 'unauthorized',
+      statusCode: 401,
+    })
+  }
+  const response = await fetch(
+    `/api/approvals/${encodeURIComponent(approvalId)}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${auth.token}`,
+      },
+      body: JSON.stringify(reason != null ? { decision, reason } : { decision }),
+    },
+  )
+  if (response.status === 401) {
+    auth.clear()
+    throw new ChatStreamError('unauthorized', {
+      code: 'unauthorized',
+      statusCode: 401,
+    })
+  }
+  // 404: unknown/expired id. 409: already resolved. Both mean "nothing left to
+  // do" from the user's perspective, so don't surface them as errors.
+  if (response.status === 204 || response.status === 404 || response.status === 409) {
+    return
+  }
+  const detail = await response.text().catch(() => '')
+  throw new ChatStreamError(
+    `approval failed: ${response.status} ${detail}`,
     { code: 'request_failed', statusCode: response.status },
   )
 }

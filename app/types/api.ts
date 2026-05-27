@@ -29,6 +29,8 @@ export type ChatStreamEnvelope = components['schemas']['ChatStreamEnvelope']
 export type ToolCallView = components['schemas']['ToolCallView']
 export type ToolCallData = components['schemas']['ToolCallData']
 export type ToolResultData = components['schemas']['ToolResultData']
+// Risky tool paused awaiting the user's decision (Plan 09 approval cards).
+export type ApprovalRequiredData = components['schemas']['ApprovalRequiredData']
 
 // --- LLM credentials ----------------------------------------------------
 // Declared manually until `pnpm run gen:api` is re-run against a Hermes

@@ -13,6 +13,7 @@ import { Separator } from '@/components/ui/separator'
 import ChatComposer from '~/components/chat/ChatComposer.vue'
 import ChatMessage from '~/components/chat/ChatMessage.vue'
 import ToolCallCard from '~/components/chat/ToolCallCard.vue'
+import ApprovalCard from '~/components/chat/ApprovalCard.vue'
 import ConversationList from '~/components/chat/ConversationList.vue'
 import EmptyChatState from '~/components/chat/EmptyChatState.vue'
 import NotesPanel from '~/components/panels/NotesPanel.vue'
@@ -22,11 +23,13 @@ import ThemeToggle from '~/components/ThemeToggle.vue'
 import { useApi } from '~/composables/useApi'
 import { useChatQueue } from '~/composables/useChatQueue'
 import {
+  type ApprovalDecision,
   cancelChatRun,
   type ChatStreamCallbacks,
   type ChatStreamResult,
   editAndRegenerate,
   friendlyChatError,
+  resolveApproval,
   retryLastResponse,
   sendChatMessage,
   type StreamState,
@@ -72,6 +75,18 @@ interface StreamingToolCall {
   error: string | null
 }
 const streamingToolCalls = ref<StreamingToolCall[]>([])
+// Approval cards for risky tool calls paused in the turn in flight, keyed by
+// approval_id. `pending` until the user clicks, then `submitting` → resolved.
+// Cleared when the turn ends; the reload shows the persisted tool outcome.
+interface PendingApproval {
+  approval_id: string
+  call_id: string
+  name: string
+  arguments: Record<string, unknown>
+  reason: string
+  status: 'pending' | 'submitting' | 'allowed' | 'denied'
+}
+const pendingApprovals = ref<PendingApproval[]>([])
 const currentRunId = ref<string | null>(null)
 // Conversation whose most recent turn was user-cancelled. Scoped to a
 // conversation so switching away and back doesn't leak the abgebrochen
@@ -207,6 +222,7 @@ async function runStream(
   streamState.value = 'streaming'
   streamingText.value = ''
   streamingToolCalls.value = []
+  pendingApprovals.value = []
   currentRunId.value = null
   // Fresh activity supersedes any prior abort notice.
   cancelledConversationId.value = null
@@ -246,6 +262,20 @@ async function runStream(
         )
         nextTick(scrollToBottom)
       },
+      onApproval: (a) => {
+        pendingApprovals.value = [
+          ...pendingApprovals.value,
+          {
+            approval_id: a.approval_id,
+            call_id: a.call_id,
+            name: a.name,
+            arguments: a.arguments ?? {},
+            reason: a.reason,
+            status: 'pending',
+          },
+        ]
+        nextTick(scrollToBottom)
+      },
     })
     if (result.cancelled) {
       outcome = 'cancelled'
@@ -271,6 +301,7 @@ async function runStream(
   } finally {
     streamingText.value = ''
     streamingToolCalls.value = []
+    pendingApprovals.value = []
     currentRunId.value = null
     streamState.value =
       outcome === 'cancelled' ? 'cancelled' : outcome === 'failed' ? 'failed' : 'idle'
@@ -365,6 +396,33 @@ async function stopStreaming() {
   }
 }
 
+function setApprovalStatus(
+  approvalId: string,
+  status: PendingApproval['status'],
+) {
+  pendingApprovals.value = pendingApprovals.value.map((a) =>
+    a.approval_id === approvalId ? { ...a, status } : a,
+  )
+}
+
+async function decideApproval(approvalId: string, decision: ApprovalDecision) {
+  const current = pendingApprovals.value.find((a) => a.approval_id === approvalId)
+  // Guard against double-submit: only a still-pending card can be decided.
+  if (!current || current.status !== 'pending') return
+  setApprovalStatus(approvalId, 'submitting')
+  try {
+    await resolveApproval(approvalId, decision)
+    setApprovalStatus(
+      approvalId,
+      decision === 'allow_once' ? 'allowed' : 'denied',
+    )
+  } catch (err: unknown) {
+    // Let the user try again — the run is still waiting on this decision.
+    error.value = friendlyChatError(err)
+    setApprovalStatus(approvalId, 'pending')
+  }
+}
+
 function scrollToBottom() {
   const el = messagesScroller.value
   if (el) el.scrollTop = el.scrollHeight
@@ -437,6 +495,19 @@ onMounted(() => {
           @retry="retryLast"
           @edit="(content) => editMessage(m.id, content)"
         />
+        <!-- Approval cards for risky tool calls paused in the turn in flight.
+             A pending card blocks the run until the user decides. -->
+        <div
+          v-for="a in pendingApprovals"
+          :key="`approval-${a.approval_id}`"
+          class="flex w-full flex-col items-start"
+        >
+          <ApprovalCard
+            :approval="a"
+            :status="a.status"
+            @decide="(decision) => decideApproval(a.approval_id, decision)"
+          />
+        </div>
         <!-- Live tool cards for the turn in flight (shown before the final
              assistant text, mirroring the order they're emitted). -->
         <div
@@ -452,7 +523,12 @@ onMounted(() => {
           plain
         />
         <div
-          v-if="isStreaming && !streamingText && streamingToolCalls.length === 0"
+          v-if="
+            isStreaming
+              && !streamingText
+              && streamingToolCalls.length === 0
+              && pendingApprovals.length === 0
+          "
           class="flex justify-start"
         >
           <div class="rounded-2xl bg-muted px-4 py-2 text-sm text-muted-foreground">
