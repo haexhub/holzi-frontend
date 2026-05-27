@@ -169,6 +169,35 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/conversations/{conv_id}/messages/{message_id}/edit-and-regenerate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Api Edit And Regenerate
+         * @description Edit a user message and regenerate the conversation from that point.
+         *
+         *     Replaces the message's content in place, trims every later turn (the same
+         *     delete-then-rerun mechanic as /retry, keyed on the edited message id rather
+         *     than the last user message), then re-runs the web agent over the surviving
+         *     context and streams with the same SSE semantics as /api/chat.
+         *
+         *     Unlike /api/chat, the body is a declared model so the request schema lands
+         *     in the OpenAPI doc (and the generated frontend types). Empty/missing
+         *     content therefore fails FastAPI validation with a 422.
+         */
+        post: operations["api_edit_and_regenerate_api_conversations__conv_id__messages__message_id__edit_and_regenerate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/notes": {
         parameters: {
             query?: never;
@@ -710,6 +739,11 @@ export interface components {
             /** Allowed Chat Ids */
             allowed_chat_ids?: number[] | null;
         };
+        /** EditMessageRequest */
+        EditMessageRequest: {
+            /** Content */
+            content: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -1215,6 +1249,42 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_edit_and_regenerate_api_conversations__conv_id__messages__message_id__edit_and_regenerate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conv_id: number;
+                message_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditMessageRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

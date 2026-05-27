@@ -81,6 +81,28 @@ export async function retryLastResponse(
   )
 }
 
+/**
+ * Edit a previous user message and regenerate the conversation from it.
+ *
+ * Hits `POST /api/conversations/{id}/messages/{messageId}/edit-and-regenerate`,
+ * which rewrites the user message in place, drops every later turn, and
+ * re-runs the agent over the corrected context. The response uses the exact
+ * same SSE contract as /api/chat, so it streams through the same consumer
+ * and returns the same shape.
+ */
+export async function editAndRegenerate(
+  conversationId: number,
+  messageId: number,
+  content: string,
+  callbacks: ChatStreamCallbacks = {},
+): Promise<ChatStreamResult> {
+  return postChatStream(
+    `/api/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}/edit-and-regenerate`,
+    { content },
+    callbacks,
+  )
+}
+
 async function postChatStream(
   url: string,
   body: Record<string, unknown> | null,

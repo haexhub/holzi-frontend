@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   cancelChatRun,
   ChatStreamError,
+  editAndRegenerate,
   friendlyChatError,
   retryLastResponse,
   sendChatMessage,
@@ -285,6 +286,73 @@ describe('retryLastResponse', () => {
     const auth = useAuthStore()
     mockFetch(new Response('', { status: 401 }))
     await expect(retryLastResponse(1)).rejects.toThrow('unauthorized')
+    expect(auth.isAuthenticated).toBe(false)
+  })
+})
+
+describe('editAndRegenerate', () => {
+  beforeEach(() => {
+    const auth = useAuthStore()
+    auth.setToken('test-token')
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('POSTs the new content to the edit-and-regenerate endpoint', async () => {
+    const spy = mockFetch(
+      new Response(sseBody([
+        { event: 'session', data: { conversation_id: 42 } },
+        { event: 'done', data: {} },
+      ])),
+    )
+    await editAndRegenerate(42, 99, 'corrected text')
+    expect(spy).toHaveBeenCalledWith(
+      '/api/conversations/42/messages/99/edit-and-regenerate',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer test-token',
+        }),
+      }),
+    )
+    expect((spy.mock.calls[0][1] as RequestInit).body).toBe(
+      JSON.stringify({ content: 'corrected text' }),
+    )
+  })
+
+  it('streams text and returns the regenerated result like a normal send', async () => {
+    mockFetch(
+      new Response(sseBody([
+        { event: 'session', data: { conversation_id: 7 } },
+        { event: 'run', data: { run_id: 'edit-run' } },
+        { event: 'text', data: { content: 'edited ' } },
+        { event: 'text', data: { content: 'answer' } },
+        { event: 'done', data: {} },
+      ])),
+    )
+    const chunks: string[] = []
+    const result = await editAndRegenerate(7, 3, 'new prompt', {
+      onText: (c) => chunks.push(c),
+    })
+    expect(chunks).toEqual(['edited ', 'answer'])
+    expect(result.conversationId).toBe(7)
+    expect(result.runId).toBe('edit-run')
+    expect(result.text).toBe('edited answer')
+    expect(result.cancelled).toBe(false)
+  })
+
+  it('throws when no auth token is set', async () => {
+    const auth = useAuthStore()
+    auth.clear()
+    await expect(editAndRegenerate(1, 1, 'x')).rejects.toThrow('not authenticated')
+  })
+
+  it('clears the auth token on 401 and throws', async () => {
+    const auth = useAuthStore()
+    mockFetch(new Response('', { status: 401 }))
+    await expect(editAndRegenerate(1, 1, 'x')).rejects.toThrow('unauthorized')
     expect(auth.isAuthenticated).toBe(false)
   })
 })
