@@ -44,6 +44,14 @@ Anything that doesn't fall in the "code execution / unbounded write / shell"
 bucket stays in the agent container. The principle is *isolate risk*, not
 *one container per tool call*.
 
+## Notes carried over from the 11b-a review
+
+Two behaviours the health watcher / restart UX must account for, both shipped
+deliberately in 11b-a:
+
+- **A crashed workspace stays cached until an explicit restart.** `SandboxManager.get_workspace` returns the cached handle without a liveness probe; after an OOM/crash the caller keeps getting the dead handle until `restart_workspace` is called. 11b-b's health watcher is the piece that detects the dead state and drives the `sandbox_crashed` event + Restart action — without it, a crashed workspace is a permanent dead entry. Decide whether the watcher restarts automatically or only surfaces the action.
+- **`_map_state` maps any non-zero/Dead exit to `crashed`, not `exited`.** For the idle `sleep infinity` workspace model this is the intended "something killed my workspace" signal, but it conflates a clean non-zero exit with a real crash. If the health watcher needs to tell those apart (e.g. don't alarm on a deliberate stop), refine the mapping in `src/hermes/sandbox/podman.py:_map_state`.
+
 ## Backend
 
 - Define a `sandbox_kind` enum: `workspace` | `ephemeral`.
