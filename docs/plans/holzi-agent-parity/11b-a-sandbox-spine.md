@@ -1,7 +1,8 @@
 # Plan 11b-a: Sandbox Spine (lifecycle + exec + isolation)
 
-Status: implemented (2026-05-27), backend-only — awaiting review/merge. First half
-of the split of [11b](./11b-sandbox-runtime.md).
+Status: implemented (2026-05-27), backend-only; live Podman verified
+(2026-05-28, 3/3 integration tests green incl. network isolation). First half
+of the split of [11b](./11b-sandbox-runtime.md). Awaiting review/merge.
 Depends on: [01b](./01b-conversation-retention-and-bookmarks.md) (data layout).
 
 ## Why this is split
@@ -48,6 +49,13 @@ Chosen over the Docker socket. Rationale:
   concrete backend uses an ordinary Docker-API client. Code stays runtime-neutral
   behind the `SandboxBackend` abstraction; only the concrete backend + compose
   know it is Podman.
+
+**Minimum supported Podman version: 4.x** (Debian 12 ships 4.3.x — that is the
+target). 3.4.4 was used as a smoke target during development but is not
+supported in production: it lacks the `podman compose` subcommand and ships an
+older CNI stack whose firewall plugin rejects the `cniVersion 1.0.0` Podman
+itself writes (workaround documented in the verification notes below). On
+Podman 4.x with netavark these issues do not occur.
 
 Topology: agent container → rootless Podman socket → spawns sandbox **sibling**
 containers (no DinD, no nested daemon) attached to a dedicated locked-down
@@ -135,7 +143,11 @@ opt-in, and excluded from the default suite.
   Docker daemon socket is mounted into the agent.
 - The manager can create, stream-exec, and stop both workspace and ephemeral
   sandboxes.
-- Resource limits (CPU/RAM/disk) are enforced on every sandbox.
+- CPU/RAM caps are enforced on every sandbox (hard fail at `create` when the
+  host's rootless cgroup v2 does not delegate the `cpu` controller — no silent
+  fallback). Disk quota is opt-in via `HERMES_SANDBOX_DISK_QUOTA` (XFS+pquota
+  only — defaults off so `create` works on ext4); `disk_mb` always rides in
+  the spec, but enforcement at the overlay layer is conditional.
 - The sandbox cannot reach the agent's DB, secrets, or other sandboxes —
   achieved by running sandboxes with **no network** (`NetworkMode none`), since
   the agent drives them over the control socket, not the network. Verified live

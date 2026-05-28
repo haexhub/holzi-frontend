@@ -61,8 +61,11 @@ Completed:
 
 - [11b-a](./11b-a-sandbox-spine.md) — sandbox spine: lifecycle + exec + limits +
   network isolation (2026-05-27, backend-only; rootless Podman, `SandboxManager`
-  + `PodmanSandboxBackend`, isolated `hermes-sandbox` network, stack migrated to
-  `podman compose`). End-to-end Podman bring-up still to be verified.
+  + `PodmanSandboxBackend`, sandboxes run with `NetworkMode none` so the
+  isolation criterion holds against real Podman). Verified live against a
+  rootless Podman socket — 3/3 integration tests green (exec demux, kill
+  resilience, network unreachability). Host prerequisites (subuid/subgid, cpu
+  cgroup delegation, podman ≥4.x) captured in the ansible `podman_debian` role.
 
 Next up: [11b-b](./11b-sandbox-runtime.md) — the second half of the split
 sandbox runtime: read_file/write_file/git in the internal API, a health watcher
