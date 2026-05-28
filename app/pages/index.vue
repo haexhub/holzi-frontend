@@ -117,9 +117,12 @@ interface StreamingSubagent {
 }
 const streamingSubagents = ref<StreamingSubagent[]>([])
 // Sandbox crashes surfaced by the agent's health watcher (Plan 11b-b). Keyed
-// by sandbox_id so a duplicate event (e.g. echoed by a reconnect) dedupes
-// against the existing card. Session-scoped: not cleared between turns, only
-// when the user dismisses or restart succeeds.
+// by sandbox_id so a re-emit (reconnect, retry) merges into the existing
+// card. Conversation-scoped: cleared on conversation switch / new chat so a
+// crash from chat A can't appear above chat B. Limitation: the watcher's
+// event only reaches us while an SSE stream is open (see useChatStream);
+// between-turn crashes aren't replayed here — Plan 20 (Diagnostics) owns the
+// persistent crash log.
 interface ActiveCrash {
   crash: SandboxCrashedData
   restarting: boolean
@@ -223,6 +226,7 @@ async function selectConversation(id: number) {
     // queue survives.
     cancelledConversationId.value = null
     queue.clear()
+    sandboxCrashes.value = []
   }
   activeId.value = id
   try {
@@ -240,6 +244,7 @@ function newChat() {
   messages.value = []
   cancelledConversationId.value = null
   queue.clear()
+  sandboxCrashes.value = []
 }
 
 // id of the latest assistant message — the only turn that shows a Retry
@@ -352,9 +357,17 @@ async function runStream(
         nextTick(scrollToBottom)
       },
       onSandboxCrashed: (c) => {
-        // Dedupe by sandbox_id: if the same crash is re-emitted (e.g. on
-        // reconnect) keep the existing card and its restarting state.
-        if (sandboxCrashes.value.some((x) => x.crash.sandbox_id === c.sandbox_id)) {
+        // Dedupe by sandbox_id: a re-emit (e.g. on reconnect) refreshes the
+        // payload (state/exit_code may now be populated) but keeps the
+        // restarting flag so an in-flight POST keeps its spinner.
+        const idx = sandboxCrashes.value.findIndex(
+          (x) => x.crash.sandbox_id === c.sandbox_id,
+        )
+        if (idx !== -1) {
+          const existing = sandboxCrashes.value[idx]!
+          sandboxCrashes.value = sandboxCrashes.value.map((entry, i) =>
+            i === idx ? { crash: c, restarting: existing.restarting } : entry,
+          )
           return
         }
         sandboxCrashes.value = [
@@ -613,7 +626,10 @@ async function restartSandbox(sandboxId: string) {
       (c) => c.crash.sandbox_id !== sandboxId,
     )
   } catch (err: unknown) {
-    error.value = err instanceof Error ? err.message : 'Sandbox-Neustart fehlgeschlagen.'
+    const detail = err instanceof Error ? err.message : ''
+    error.value = detail
+      ? `Sandbox-Neustart fehlgeschlagen: ${detail}`
+      : 'Sandbox-Neustart fehlgeschlagen. Bitte erneut versuchen.'
     sandboxCrashes.value = sandboxCrashes.value.map((c) =>
       c.crash.sandbox_id === sandboxId ? { ...c, restarting: false } : c,
     )
@@ -687,11 +703,14 @@ onMounted(() => {
         ref="messagesScroller"
         class="flex-1 space-y-3 overflow-y-auto p-4"
       >
-        <!-- Sandbox crash notifications (Plan 11b-b). Session-scoped, rendered
-             above the chat so they stay visible while the user works. -->
+        <!-- Sandbox crash notifications (Plan 11b-b). Conversation-scoped,
+             rendered at the top of the scroller so a fresh crash shows up
+             above the next user/assistant message; scrolls with the chat. -->
         <div
           v-for="entry in sandboxCrashes"
           :key="`sandbox-crash-${entry.crash.sandbox_id}`"
+          role="alert"
+          aria-live="polite"
           class="flex w-full flex-col items-start"
         >
           <SandboxCrashCard

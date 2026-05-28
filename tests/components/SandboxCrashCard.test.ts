@@ -51,6 +51,17 @@ describe('SandboxCrashCard.vue', () => {
     expect(wrapper.text()).toContain('Wird neu gestartet')
   })
 
+  it('does not emit when buttons are clicked while restarting', async () => {
+    const wrapper = mount(SandboxCrashCard, {
+      props: { crash: baseCrash, restarting: true },
+    })
+    for (const button of wrapper.findAll('button')) {
+      await button.trigger('click')
+    }
+    expect(wrapper.emitted('restart')).toBeUndefined()
+    expect(wrapper.emitted('dismiss')).toBeUndefined()
+  })
+
   it('shows the OOM-specific German label for state="oom"', () => {
     const wrapper = mount(SandboxCrashCard, {
       props: {

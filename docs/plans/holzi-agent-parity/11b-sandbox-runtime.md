@@ -18,6 +18,14 @@ the crash-history list). 11b-b ships the in-chat crash card + Restart action,
 which is what the runtime needs to be usable today; the larger panels can
 land cleanly with the surfaces they belong to.
 
+**Known limit (also deferred to Plan 20).** The health watcher fires while a
+chat SSE stream is open and the agent emits the event into that stream; it
+does **not** persist crashes for later replay. If a workspace dies while no
+chat stream is connected, the crash card never appears for that crash. Plan
+20's persistent crash log is the place to fix this — the runtime spine
+already records the dedupe state, so backfilling a persistent ring buffer
+later is additive.
+
 > **Split (2026-05-27).** Too large for one session. The safety-critical spine —
 > container lifecycle, `exec`, mandatory resource limits, and network isolation —
 > shipped as [11b-a](./11b-a-sandbox-spine.md) (backend-only, rootless Podman).
