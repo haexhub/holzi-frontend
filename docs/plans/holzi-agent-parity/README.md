@@ -59,14 +59,9 @@ Completed:
 - [10](./10-reasoning-and-subagent-cards.md) — reasoning and subagent cards (2026-05-27; cross-repo [Holzi#40](https://github.com/haexhub/Holzi/pull/40) + [holzi-frontend#34](https://github.com/haexhub/holzi-frontend/pull/34) merged). Reasoning end-to-end; subagent events are the wire contract + cards only (no orchestrator yet).
 - [11](./11-attachments.md) — attachments (2026-05-27; cross-repo [Holzi#42](https://github.com/haexhub/Holzi/pull/42) + [holzi-frontend#36](https://github.com/haexhub/holzi-frontend/pull/36) merged). Text/code/log inlined into agent context; images + PDF stored as metadata-only (no provider image inputs yet). Added `POST /api/conversations` so the first message of a fresh chat can carry attachments.
 - [11b-a](./11b-a-sandbox-spine.md) — sandbox spine: lifecycle + exec + limits + network isolation (2026-05-28; cross-repo [Holzi#43](https://github.com/haexhub/Holzi/pull/43) + [holzi-frontend#38](https://github.com/haexhub/holzi-frontend/pull/38) merged). Rootless Podman, `SandboxManager` + `PodmanSandboxBackend`, sandboxes run with `NetworkMode none` so the isolation criterion holds against real Podman. Verified live: 3/3 integration tests green (exec demux, kill resilience, network unreachability). Host prerequisites (subuid/subgid, cpu cgroup delegation, podman ≥4.x) encoded in the ansible `podman_debian` role.
+- [11b-b](./11b-sandbox-runtime.md) — sandbox runtime remainder: file API + health watcher + `sandbox_crashed` event + restart endpoint + in-chat crash card (2026-05-28; cross-repo [Holzi#44](https://github.com/haexhub/Holzi/pull/44) + [holzi-frontend#40](https://github.com/haexhub/holzi-frontend/pull/40) merged). `read_file`/`write_file` on the `SandboxBackend` Protocol (Podman uses `/containers/{id}/archive` tar-wrapping with streaming + 10 MiB cap); `git` stayed as plain `exec(["git", ...])`. `SandboxManager` health watcher (surface-only, never auto-restarts) plus dedupe by (workspace_id, sandbox_id). `sandbox_crashed` SSE event in the existing envelope; the chat stream subscribes a per-request crash handler. `GET /api/workspaces/{id}/sandbox` (returns `absent` when no handle is cached) and `POST .../restart`. Frontend `SandboxCrashCard.vue` is rendered in `pages/index.vue` as a conversation-scoped banner; **Workspace badge → Plan 12, persistent crash log → Plan 20**.
 
-Next up: [11b-b](./11b-sandbox-runtime.md) — the second half of the split
-sandbox runtime: read_file/write_file/git in the internal API, a health watcher
-→ `sandbox_crashed` SSE event + restart endpoint (reuses the Plan 08 envelope),
-and the frontend status badge + restart + minimal WorkspacePanel + diagnostics
-surface. Alternative if you'd rather stay UI-facing: [12 — workspace browser
-(read-only)](./12-workspace-browser-readonly.md), which only needs a sandbox
-for the later write/exec plans (13, 16).
+Next up: [12 — workspace browser (read-only)](./12-workspace-browser-readonly.md) is the natural follow-on — it owns the workspace panel where the sandbox status badge will live and gives the file API its first user-visible surface. The later write/exec plans (13, 16) build on the runtime that 11b-b now delivers end-to-end.
 
 ## Recommended Order
 
