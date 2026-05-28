@@ -1,6 +1,18 @@
 # Plan 11b: Sandbox Runtime
 
-Depends on: [01b](./01b-conversation-retention-and-bookmarks.md) (data layout).
+> **Split (2026-05-27).** Too large for one session. The safety-critical spine —
+> container lifecycle, `exec`, mandatory resource limits, and network isolation —
+> shipped as [11b-a](./11b-a-sandbox-spine.md) (backend-only, rootless Podman).
+> This file is now the **11b-b remainder**: the richer internal API
+> (read_file/write_file/git), the health watcher → `sandbox_crashed` SSE event +
+> restart endpoint, and the frontend surface. The runtime decision (rootless
+> Podman, no Docker socket, no DinD) and the `SandboxBackend`/`SandboxManager`
+> abstraction are settled in 11b-a; 11b-b builds on them. Sections below that
+> 11b-a already delivered (topology, lifecycle, limits, isolation tests) are
+> retained for context but are done.
+
+Depends on: [11b-a](./11b-a-sandbox-spine.md) (sandbox spine);
+[01b](./01b-conversation-retention-and-bookmarks.md) (data layout).
 
 ## Goal
 
@@ -31,6 +43,15 @@ Three roles, three container shapes:
 Anything that doesn't fall in the "code execution / unbounded write / shell"
 bucket stays in the agent container. The principle is *isolate risk*, not
 *one container per tool call*.
+
+## Notes carried over from the 11b-a review
+
+Two behaviours the health watcher / restart UX must account for, both shipped
+deliberately in 11b-a:
+
+- **A crashed workspace stays cached until an explicit restart.** `SandboxManager.get_workspace` returns the cached handle without a liveness probe; after an OOM/crash the caller keeps getting the dead handle until `restart_workspace` is called. 11b-b's health watcher is the piece that detects the dead state and drives the `sandbox_crashed` event + Restart action — without it, a crashed workspace is a permanent dead entry. Decide whether the watcher restarts automatically or only surfaces the action.
+- **`_map_state` maps any non-zero/Dead exit to `crashed`, not `exited`.** For the idle `sleep infinity` workspace model this is the intended "something killed my workspace" signal, but it conflates a clean non-zero exit with a real crash. If the health watcher needs to tell those apart (e.g. don't alarm on a deliberate stop), refine the mapping in `_map_state` at `src/hermes/sandbox/podman.py` in the
+backend repo (`haexhub/Holzi` — code lives in the backend, not this repo).
 
 ## Backend
 

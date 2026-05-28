@@ -59,10 +59,19 @@ Completed:
 - [10](./10-reasoning-and-subagent-cards.md) — reasoning and subagent cards (2026-05-27; cross-repo [Holzi#40](https://github.com/haexhub/Holzi/pull/40) + [holzi-frontend#34](https://github.com/haexhub/holzi-frontend/pull/34) merged). Reasoning end-to-end; subagent events are the wire contract + cards only (no orchestrator yet).
 - [11](./11-attachments.md) — attachments (2026-05-27; cross-repo [Holzi#42](https://github.com/haexhub/Holzi/pull/42) + [holzi-frontend#36](https://github.com/haexhub/holzi-frontend/pull/36) merged). Text/code/log inlined into agent context; images + PDF stored as metadata-only (no provider image inputs yet). Added `POST /api/conversations` so the first message of a fresh chat can carry attachments.
 
-Next up: [11b — sandbox runtime](./11b-sandbox-runtime.md). This leaves the
-chat-polish track and starts the workspace/execution-safety track: it's a
-backend-heavy infrastructure plan (sandbox containers), a different shape from
-01–11. Alternative if you'd rather stay UI-facing: [12 — workspace browser
+- [11b-a](./11b-a-sandbox-spine.md) — sandbox spine: lifecycle + exec + limits +
+  network isolation (2026-05-27, backend-only; rootless Podman, `SandboxManager`
+  + `PodmanSandboxBackend`, sandboxes run with `NetworkMode none` so the
+  isolation criterion holds against real Podman). Verified live against a
+  rootless Podman socket — 3/3 integration tests green (exec demux, kill
+  resilience, network unreachability). Host prerequisites (subuid/subgid, cpu
+  cgroup delegation, podman ≥4.x) captured in the ansible `podman_debian` role.
+
+Next up: [11b-b](./11b-sandbox-runtime.md) — the second half of the split
+sandbox runtime: read_file/write_file/git in the internal API, a health watcher
+→ `sandbox_crashed` SSE event + restart endpoint (reuses the Plan 08 envelope),
+and the frontend status badge + restart + minimal WorkspacePanel + diagnostics
+surface. Alternative if you'd rather stay UI-facing: [12 — workspace browser
 (read-only)](./12-workspace-browser-readonly.md), which only needs a sandbox
 for the later write/exec plans (13, 16).
 
@@ -81,7 +90,8 @@ for the later write/exec plans (13, 16).
 9. [Approvals and safety cards](./09-approval-cards.md)
 10. [Reasoning and subagent cards](./10-reasoning-and-subagent-cards.md)
 11. [Attachments](./11-attachments.md)
-11b. [Sandbox runtime](./11b-sandbox-runtime.md)
+11b-a. [Sandbox spine (lifecycle + exec + isolation)](./11b-a-sandbox-spine.md)
+11b-b. [Sandbox runtime remainder (read/write/git + health + UI)](./11b-sandbox-runtime.md)
 12. [Workspace browser read-only](./12-workspace-browser-readonly.md)
 13. [Workspace write operations and Git status](./13-workspace-write-git.md)
 14. [Control center shell](./14-control-center-shell.md)
