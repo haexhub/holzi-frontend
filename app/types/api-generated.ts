@@ -357,6 +357,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/workspaces/{workspace_id}/sandbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Api Get Sandbox Status */
+        get: operations["api_get_sandbox_status_api_workspaces__workspace_id__sandbox_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspaces/{workspace_id}/sandbox/restart": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Api Restart Sandbox */
+        post: operations["api_restart_sandbox_api_workspaces__workspace_id__sandbox_restart_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/llm/credentials": {
         parameters: {
             query?: never;
@@ -824,7 +858,7 @@ export interface components {
          *     named component in the OpenAPI schema (and thus the generated TS types).
          *     Referenced from /api/chat's 200 response; never instantiated at runtime.
          */
-        ChatStreamEnvelope: components["schemas"]["SessionEvent"] | components["schemas"]["RunEvent"] | components["schemas"]["TextEvent"] | components["schemas"]["ToolCallEvent"] | components["schemas"]["ToolResultEvent"] | components["schemas"]["ApprovalRequiredEvent"] | components["schemas"]["ReasoningEvent"] | components["schemas"]["SubagentStartEvent"] | components["schemas"]["SubagentTextEvent"] | components["schemas"]["SubagentDoneEvent"] | components["schemas"]["DoneEvent"] | components["schemas"]["CancelledEvent"] | components["schemas"]["ErrorEvent"];
+        ChatStreamEnvelope: components["schemas"]["SessionEvent"] | components["schemas"]["RunEvent"] | components["schemas"]["TextEvent"] | components["schemas"]["ToolCallEvent"] | components["schemas"]["ToolResultEvent"] | components["schemas"]["ApprovalRequiredEvent"] | components["schemas"]["ReasoningEvent"] | components["schemas"]["SubagentStartEvent"] | components["schemas"]["SubagentTextEvent"] | components["schemas"]["SubagentDoneEvent"] | components["schemas"]["SandboxCrashedEvent"] | components["schemas"]["DoneEvent"] | components["schemas"]["CancelledEvent"] | components["schemas"]["ErrorEvent"];
         /** ConversationCreateRequest */
         ConversationCreateRequest: {
             /** Message */
@@ -1154,6 +1188,55 @@ export interface components {
              */
             version: number;
             data: components["schemas"]["RunData"];
+        };
+        /**
+         * SandboxCrashedData
+         * @description A workspace sandbox died (crashed, OOM, or was removed) while the agent
+         *     was holding a cached handle. Surfaced by Plan 11b-b's health watcher so the
+         *     UI can offer a Restart action on the conversation. The agent does not
+         *     auto-restart — surface-only by design, to keep crash-loops from amplifying.
+         *     ``workspace_id`` identifies which workspace; ``state`` is one of
+         *     ``crashed``/``oom``/``removed``; ``exit_code`` may be ``None`` when the
+         *     runtime didn't report one.
+         */
+        SandboxCrashedData: {
+            /** Workspace Id */
+            workspace_id: string;
+            /** Sandbox Id */
+            sandbox_id: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "crashed" | "oom" | "removed";
+            /** Exit Code */
+            exit_code?: number | null;
+        };
+        /** SandboxCrashedEvent */
+        SandboxCrashedEvent: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            event: "sandbox_crashed";
+            /**
+             * Version
+             * @default 1
+             */
+            version: number;
+            data: components["schemas"]["SandboxCrashedData"];
+        };
+        /** SandboxStatusResponse */
+        SandboxStatusResponse: {
+            /** Workspace Id */
+            workspace_id: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "running" | "exited" | "crashed" | "oom" | "removed" | "absent";
+            /** Exit Code */
+            exit_code?: number | null;
         };
         /** SessionData */
         SessionData: {
@@ -2249,6 +2332,68 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_get_sandbox_status_api_workspaces__workspace_id__sandbox_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SandboxStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_restart_sandbox_api_workspaces__workspace_id__sandbox_restart_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SandboxStatusResponse"];
+                };
             };
             /** @description Validation Error */
             422: {

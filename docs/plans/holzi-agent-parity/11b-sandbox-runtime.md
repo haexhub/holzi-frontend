@@ -1,5 +1,31 @@
 # Plan 11b: Sandbox Runtime
 
+Status: 11b-b implemented on 2026-05-28. Cross-repo: backend additions in
+`haexhub/Holzi` (read_file/write_file in `SandboxBackend` + Podman + Fake,
+WorkspaceCrash + health watcher in `SandboxManager`, `sandbox_crashed` SSE
+event, `GET/POST /api/workspaces/{id}/sandbox{,/restart}`); frontend additions
+here (`SandboxCrashedData` re-export, `onSandboxCrashed` callback in
+`useChatStream`, `SandboxCrashCard.vue`, wiring + restart action in
+`pages/index.vue`, component tests). `git` operations stayed as plain
+`exec(["git", ...])` instead of a new method — exec already streams stdout/
+stderr and an exit code, which is exactly what git needs; adding a parallel
+typed path would have been duplication.
+
+UI surfaces the plan called out — workspace badge, "Recent sandbox crashes"
+on Diagnostics — are deferred to **Plan 12** (Workspace browser owns the
+workspace panel where the badge belongs) and **Plan 20** (Diagnostics owns
+the crash-history list). 11b-b ships the in-chat crash card + Restart action,
+which is what the runtime needs to be usable today; the larger panels can
+land cleanly with the surfaces they belong to.
+
+**Known limit (also deferred to Plan 20).** The health watcher fires while a
+chat SSE stream is open and the agent emits the event into that stream; it
+does **not** persist crashes for later replay. If a workspace dies while no
+chat stream is connected, the crash card never appears for that crash. Plan
+20's persistent crash log is the place to fix this — the runtime spine
+already records the dedupe state, so backfilling a persistent ring buffer
+later is additive.
+
 > **Split (2026-05-27).** Too large for one session. The safety-critical spine —
 > container lifecycle, `exec`, mandatory resource limits, and network isolation —
 > shipped as [11b-a](./11b-a-sandbox-spine.md) (backend-only, rootless Podman).

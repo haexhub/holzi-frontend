@@ -17,6 +17,7 @@ import ChatMessage from '~/components/chat/ChatMessage.vue'
 import ToolCallCard from '~/components/chat/ToolCallCard.vue'
 import ApprovalCard from '~/components/chat/ApprovalCard.vue'
 import ReasoningCard from '~/components/chat/ReasoningCard.vue'
+import SandboxCrashCard from '~/components/chat/SandboxCrashCard.vue'
 import SubagentCard from '~/components/chat/SubagentCard.vue'
 import ConversationList from '~/components/chat/ConversationList.vue'
 import EmptyChatState from '~/components/chat/EmptyChatState.vue'
@@ -41,7 +42,13 @@ import {
 import { useLlmCredentials } from '~/composables/useLlmCredentials'
 import { useReasoningPreference } from '~/composables/useReasoningPreference'
 import { useAuthStore } from '~/stores/auth'
-import type { Attachment, Conversation, ConversationDetail, Message } from '~/types/api'
+import type {
+  Attachment,
+  Conversation,
+  ConversationDetail,
+  Message,
+  SandboxCrashedData,
+} from '~/types/api'
 
 const auth = useAuthStore()
 const api = useApi()
@@ -109,6 +116,18 @@ interface StreamingSubagent {
   error: string | null
 }
 const streamingSubagents = ref<StreamingSubagent[]>([])
+// Sandbox crashes surfaced by the agent's health watcher (Plan 11b-b). Keyed
+// by sandbox_id so a re-emit (reconnect, retry) merges into the existing
+// card. Conversation-scoped: cleared on conversation switch / new chat so a
+// crash from chat A can't appear above chat B. Limitation: the watcher's
+// event only reaches us while an SSE stream is open (see useChatStream);
+// between-turn crashes aren't replayed here — Plan 20 (Diagnostics) owns the
+// persistent crash log.
+interface ActiveCrash {
+  crash: SandboxCrashedData
+  restarting: boolean
+}
+const sandboxCrashes = ref<ActiveCrash[]>([])
 const currentRunId = ref<string | null>(null)
 // Conversation whose most recent turn was user-cancelled. Scoped to a
 // conversation so switching away and back doesn't leak the abgebrochen
@@ -207,6 +226,7 @@ async function selectConversation(id: number) {
     // queue survives.
     cancelledConversationId.value = null
     queue.clear()
+    sandboxCrashes.value = []
   }
   activeId.value = id
   try {
@@ -224,6 +244,7 @@ function newChat() {
   messages.value = []
   cancelledConversationId.value = null
   queue.clear()
+  sandboxCrashes.value = []
 }
 
 // id of the latest assistant message — the only turn that shows a Retry
@@ -333,6 +354,26 @@ async function runStream(
             ? { ...s, status: d.status, result: d.result ?? null, error: d.error ?? null }
             : s,
         )
+        nextTick(scrollToBottom)
+      },
+      onSandboxCrashed: (c) => {
+        // Dedupe by sandbox_id: a re-emit (e.g. on reconnect) refreshes the
+        // payload (state/exit_code may now be populated) but keeps the
+        // restarting flag so an in-flight POST keeps its spinner.
+        const idx = sandboxCrashes.value.findIndex(
+          (x) => x.crash.sandbox_id === c.sandbox_id,
+        )
+        if (idx !== -1) {
+          const existing = sandboxCrashes.value[idx]!
+          sandboxCrashes.value = sandboxCrashes.value.map((entry, i) =>
+            i === idx ? { crash: c, restarting: existing.restarting } : entry,
+          )
+          return
+        }
+        sandboxCrashes.value = [
+          ...sandboxCrashes.value,
+          { crash: c, restarting: false },
+        ]
         nextTick(scrollToBottom)
       },
     })
@@ -564,6 +605,37 @@ async function decideApproval(approvalId: string, decision: ApprovalDecision) {
   }
 }
 
+function dismissSandboxCrash(sandboxId: string) {
+  sandboxCrashes.value = sandboxCrashes.value.filter(
+    (c) => c.crash.sandbox_id !== sandboxId,
+  )
+}
+
+async function restartSandbox(sandboxId: string) {
+  const entry = sandboxCrashes.value.find((c) => c.crash.sandbox_id === sandboxId)
+  if (!entry || entry.restarting) return
+  const workspaceId = entry.crash.workspace_id
+  sandboxCrashes.value = sandboxCrashes.value.map((c) =>
+    c.crash.sandbox_id === sandboxId ? { ...c, restarting: true } : c,
+  )
+  try {
+    await api.post(
+      `/api/workspaces/${encodeURIComponent(workspaceId)}/sandbox/restart`,
+    )
+    sandboxCrashes.value = sandboxCrashes.value.filter(
+      (c) => c.crash.sandbox_id !== sandboxId,
+    )
+  } catch (err: unknown) {
+    const detail = err instanceof Error ? err.message : ''
+    error.value = detail
+      ? `Sandbox-Neustart fehlgeschlagen: ${detail}`
+      : 'Sandbox-Neustart fehlgeschlagen. Bitte erneut versuchen.'
+    sandboxCrashes.value = sandboxCrashes.value.map((c) =>
+      c.crash.sandbox_id === sandboxId ? { ...c, restarting: false } : c,
+    )
+  }
+}
+
 function scrollToBottom() {
   const el = messagesScroller.value
   if (el) el.scrollTop = el.scrollHeight
@@ -631,6 +703,22 @@ onMounted(() => {
         ref="messagesScroller"
         class="flex-1 space-y-3 overflow-y-auto p-4"
       >
+        <!-- Sandbox crash notifications (Plan 11b-b). Conversation-scoped,
+             rendered at the top of the scroller so a fresh crash shows up
+             above the next user/assistant message; scrolls with the chat. -->
+        <div
+          v-for="entry in sandboxCrashes"
+          :key="`sandbox-crash-${entry.crash.sandbox_id}`"
+          aria-live="polite"
+          class="flex w-full flex-col items-start"
+        >
+          <SandboxCrashCard
+            :crash="entry.crash"
+            :restarting="entry.restarting"
+            @restart="restartSandbox(entry.crash.sandbox_id)"
+            @dismiss="dismissSandboxCrash(entry.crash.sandbox_id)"
+          />
+        </div>
         <EmptyChatState
           v-if="messages.length === 0 && !isStreaming"
           :has-credentials="hasCredentials"
