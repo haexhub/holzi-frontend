@@ -58,14 +58,7 @@ Completed:
 - [09](./09-approval-cards.md) — approvals and safety cards (2026-05-27; cross-repo [Holzi#39](https://github.com/haexhub/Holzi/pull/39) + [holzi-frontend#32](https://github.com/haexhub/holzi-frontend/pull/32) merged)
 - [10](./10-reasoning-and-subagent-cards.md) — reasoning and subagent cards (2026-05-27; cross-repo [Holzi#40](https://github.com/haexhub/Holzi/pull/40) + [holzi-frontend#34](https://github.com/haexhub/holzi-frontend/pull/34) merged). Reasoning end-to-end; subagent events are the wire contract + cards only (no orchestrator yet).
 - [11](./11-attachments.md) — attachments (2026-05-27; cross-repo [Holzi#42](https://github.com/haexhub/Holzi/pull/42) + [holzi-frontend#36](https://github.com/haexhub/holzi-frontend/pull/36) merged). Text/code/log inlined into agent context; images + PDF stored as metadata-only (no provider image inputs yet). Added `POST /api/conversations` so the first message of a fresh chat can carry attachments.
-
-- [11b-a](./11b-a-sandbox-spine.md) — sandbox spine: lifecycle + exec + limits +
-  network isolation (2026-05-27, backend-only; rootless Podman, `SandboxManager`
-  + `PodmanSandboxBackend`, sandboxes run with `NetworkMode none` so the
-  isolation criterion holds against real Podman). Verified live against a
-  rootless Podman socket — 3/3 integration tests green (exec demux, kill
-  resilience, network unreachability). Host prerequisites (subuid/subgid, cpu
-  cgroup delegation, podman ≥4.x) captured in the ansible `podman_debian` role.
+- [11b-a](./11b-a-sandbox-spine.md) — sandbox spine: lifecycle + exec + limits + network isolation (2026-05-28; cross-repo [Holzi#43](https://github.com/haexhub/Holzi/pull/43) + [holzi-frontend#38](https://github.com/haexhub/holzi-frontend/pull/38) merged). Rootless Podman, `SandboxManager` + `PodmanSandboxBackend`, sandboxes run with `NetworkMode none` so the isolation criterion holds against real Podman. Verified live: 3/3 integration tests green (exec demux, kill resilience, network unreachability). Host prerequisites (subuid/subgid, cpu cgroup delegation, podman ≥4.x) encoded in the ansible `podman_debian` role.
 
 Next up: [11b-b](./11b-sandbox-runtime.md) — the second half of the split
 sandbox runtime: read_file/write_file/git in the internal API, a health watcher
