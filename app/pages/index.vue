@@ -709,7 +709,6 @@ onMounted(() => {
         <div
           v-for="entry in sandboxCrashes"
           :key="`sandbox-crash-${entry.crash.sandbox_id}`"
-          role="alert"
           aria-live="polite"
           class="flex w-full flex-col items-start"
         >
