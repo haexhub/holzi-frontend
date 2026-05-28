@@ -1,10 +1,12 @@
 # Plan 11b: Sandbox Runtime
 
-Status: 11b-b implemented on 2026-05-28. Cross-repo: backend additions in
-`haexhub/Holzi` (read_file/write_file in `SandboxBackend` + Podman + Fake,
-WorkspaceCrash + health watcher in `SandboxManager`, `sandbox_crashed` SSE
-event, `GET/POST /api/workspaces/{id}/sandbox{,/restart}`); frontend additions
-here (`SandboxCrashedData` re-export, `onSandboxCrashed` callback in
+Status: implemented and merged on 2026-05-28. Cross-repo: backend
+[Holzi#44](https://github.com/haexhub/Holzi/pull/44) (read_file/write_file in
+`SandboxBackend` + Podman + Fake, WorkspaceCrash + health watcher in
+`SandboxManager`, `sandbox_crashed` SSE event, `GET/POST
+/api/workspaces/{id}/sandbox{,/restart}`); frontend
+[holzi-frontend#40](https://github.com/haexhub/holzi-frontend/pull/40)
+(`SandboxCrashedData` re-export, `onSandboxCrashed` callback in
 `useChatStream`, `SandboxCrashCard.vue`, wiring + restart action in
 `pages/index.vue`, component tests). `git` operations stayed as plain
 `exec(["git", ...])` instead of a new method — exec already streams stdout/
