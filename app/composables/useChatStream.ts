@@ -2,6 +2,7 @@ import { useAuthStore } from '~/stores/auth'
 import type {
   ApprovalRequiredData,
   ReasoningData,
+  SandboxCrashedData,
   SubagentDoneData,
   SubagentStartData,
   SubagentTextData,
@@ -28,6 +29,9 @@ import type {
  *   - `subagent_start` → { subagent_id, name, prompt? }
  *   - `subagent_text`  → { subagent_id, content }   (subagent output delta)
  *   - `subagent_done`  → { subagent_id, status, result?, error? }
+ *   - `sandbox_crashed` → { workspace_id, sandbox_id, state, exit_code? }
+ *                      (non-terminal — surfaced by the health watcher so the
+ *                       UI can offer a Restart; the stream continues)
  *   - `cancelled`   → {}                     (terminal — user clicked Stop)
  *   - `done`        → {}                     (terminal — turn finished cleanly)
  * Plus on failure:
@@ -89,6 +93,10 @@ export interface ChatStreamCallbacks {
   onSubagentStart?: (start: SubagentStartData) => void
   onSubagentText?: (text: SubagentTextData) => void
   onSubagentDone?: (done: SubagentDoneData) => void
+  // The agent's health watcher detected a workspace sandbox crash. Surface-
+  // only: the agent does not auto-restart, the UI renders a card with a
+  // Restart button. Non-terminal — the stream keeps going.
+  onSandboxCrashed?: (crash: SandboxCrashedData) => void
   signal?: AbortSignal
 }
 
@@ -276,6 +284,10 @@ async function postChatStream(
         }
         case 'subagent_done': {
           callbacks.onSubagentDone?.(payload as SubagentDoneData)
+          break
+        }
+        case 'sandbox_crashed': {
+          callbacks.onSandboxCrashed?.(payload as SandboxCrashedData)
           break
         }
         case 'cancelled':

@@ -37,6 +37,9 @@ export type ReasoningData = components['schemas']['ReasoningData']
 export type SubagentStartData = components['schemas']['SubagentStartData']
 export type SubagentTextData = components['schemas']['SubagentTextData']
 export type SubagentDoneData = components['schemas']['SubagentDoneData']
+// Workspace sandbox crash notification (Plan 11b-b). Surfaced into the chat
+// stream so the UI can offer a Restart action.
+export type SandboxCrashedData = components['schemas']['SandboxCrashedData']
 
 // --- LLM credentials ----------------------------------------------------
 // Declared manually until `pnpm run gen:api` is re-run against a Hermes
