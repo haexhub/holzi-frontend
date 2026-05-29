@@ -1,14 +1,15 @@
 # Plan 15: Memory Panel
 
-Status: implemented on 2026-05-29.
+Status: implemented on 2026-05-29; merged cross-repo [Holzi#48](https://github.com/haexhub/Holzi/pull/48) + [holzi-frontend#48](https://github.com/haexhub/holzi-frontend/pull/48).
 
 Verification:
 
-- Backend: `uv run pytest tests/test_api_notes.py tests/test_notes.py -q` — 20 passing (incl. 4 new search tests against `/api/notes?q=`). Full suite: `uv run pytest -q` — 551 passing.
-- Frontend: `pnpm exec vitest run` — 19 files / 165 tests passing (incl. new `tests/components/MemoryPage.test.ts` with 13 cases covering load, debounced search, create, edit, URL-encoded delete + cancel, stale-selection-after-filter, key field disabled, and error display; existing `SettingsPlaceholder.test.ts` updated to treat `memory` as shipped).
+- Backend: `uv run pytest tests/test_api_notes.py tests/test_notes.py -q` — 21 passing (incl. 5 new search tests against `/api/notes?q=`). Full suite: `uv run pytest -q` — 552 passing.
+- Frontend: `pnpm exec vitest run` — 19 files / 166 tests passing (incl. new `tests/components/MemoryPage.test.ts` with 14 cases covering load, debounced search, create, edit, URL-encoded delete + cancel, two stale-selection corner cases, key field disabled, and error display; existing `SettingsPlaceholder.test.ts` updated to treat `memory` as shipped).
 - Frontend: `pnpm exec nuxi typecheck` — clean.
 - API types regenerated via `pnpm run gen:api` against the local backend.
 - Live smoke against `make up-local-full` via Playwright: empty-state, create with markdown content + tags, read-mode renders headings/lists/code-block + tag chips, edit-mode (key disabled, content + tags pre-filled), cancel returns to read without saving, FTS search hit (`plan`) and no-match (`xyznomatch`) both behave correctly, delete clears the selection. Screenshots not committed.
+- Pre-merge review: CodeRabbit (rate-limited on frontend) flagged whitespace-only `?q=` returning `[]` instead of falling through to `list_all`; two parallel general-purpose review agents covered the rest. Resulting fixes shipped in the same PR: `if q and q.strip():` on the route, `cancelEdit` empty-fallback when the active note was filtered out mid-edit, `isCreating` reset in `selectNote`, stale `useApi.ts` doc-comment cleanup.
 
 Notes:
 
