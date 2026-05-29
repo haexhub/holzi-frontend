@@ -1,7 +1,19 @@
 # Plan 13: Workspace Write Operations And Git Status
 
-Status: implemented in-session on 2026-05-29; cross-repo PRs pending.
-Backend adds `POST/PUT/DELETE /api/workspace/file`, `POST /api/workspace/rename`,
+Status: implemented and merged on 2026-05-29. Cross-repo: backend
+[Holzi#46](https://github.com/haexhub/Holzi/pull/46) and frontend
+[holzi-frontend#44](https://github.com/haexhub/holzi-frontend/pull/44)
+both merged; CodeRabbit findings on the backend (env-replacement of
+`git commit` env vars → switched to `git -c user.name/email=...` flags;
+`_git_commit` wraps `_drain_exec` so a sandbox crash mid-commit can't
+500 after a successful write; `_stat_entry` normalises missing/`not a
+directory` parents into 404/400 instead of raw `SandboxError` →
+HTTP 500; `committed` comment on delete clarified) and the in-session
+frontend review (save-reload race with root switch; lost conversation
+mid-edit; saveNotice vs saveError styling; create flyout on root change;
+loadGit `errorDetail`; `commitConvId()` helper; treeError clear on file
+click) were addressed before merge. Backend adds `POST/PUT/DELETE
+/api/workspace/file`, `POST /api/workspace/rename`,
 and `GET /api/workspace/git`; the existing `GET /api/workspace/file` now also
 returns `sha256` of the on-disk bytes for the writer's `base_sha`. Every
 mutating call routes through the workspace sandbox (`mgr.write_file`,
