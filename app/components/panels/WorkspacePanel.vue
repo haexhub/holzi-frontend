@@ -60,6 +60,10 @@ const gitError = ref<string | null>(null)
 const editing = ref(false)
 const editingContent = ref<string>('')
 const saveError = ref<string | null>(null)
+// Distinct from `saveError`: a successful write that produced no commit
+// (root isn't a git repo) is *not* an error, so it gets its own neutral
+// banner instead of red-tinting a happy path.
+const saveNotice = ref<string | null>(null)
 const saving = ref(false)
 
 // Create-file flyout state.
@@ -89,6 +93,17 @@ function errorDetail(err: unknown): string | null {
 function errorMessage(err: unknown, fallback: string): string {
   if (err instanceof Error && err.message) return err.message
   return fallback
+}
+
+// Single source of truth for "stringify the active conversation for a
+// `user[conv-N]:` commit". Throws loudly if called without a conversation;
+// the UI's `canWrite` gate is supposed to prevent that, so reaching this
+// branch means a guard regressed somewhere — better to fail loud than to
+// send `"null"` as the conversation id.
+function commitConvId(): string {
+  const id = props.conversationId
+  if (id == null) throw new Error('no active conversation')
+  return String(id)
 }
 
 function humanSize(bytes: number | null | undefined): string {
@@ -245,7 +260,8 @@ async function loadGit() {
     if (status === 503) {
       gitError.value = 'Sandbox nicht verfügbar.'
     } else {
-      gitError.value = errorMessage(err, 'Git-Status nicht verfügbar.')
+      gitError.value =
+        errorDetail(err) ?? errorMessage(err, 'Git-Status nicht verfügbar.')
     }
     gitStatus.value = null
   }
@@ -259,6 +275,10 @@ function onEntryClick(entry: TreeEntry) {
     fileError.value = null
     void loadTree()
   } else if (entry.type === 'file') {
+    // Clear a stale tree error: if a previous /tree fetch errored but
+    // some entries are still visible (e.g. cached list), opening a file
+    // shouldn't leave the error message dangling above the new preview.
+    treeError.value = null
     void loadFile(entry.name)
   }
 }
@@ -281,6 +301,12 @@ function onRootChange() {
   filePreview.value = null
   fileError.value = null
   gitStatus.value = null
+  // Drop the create flyout too — its `createPath` is rooted under the
+  // previous workspace's breadcrumb, so leaving it open would invite the
+  // user to create a file at the wrong place.
+  creating.value = false
+  createPath.value = ''
+  createError.value = null
   void loadTree()
   void loadGit()
 }
@@ -297,39 +323,54 @@ function startEditing() {
   editing.value = true
   editingContent.value = filePreview.value.content ?? ''
   saveError.value = null
+  saveNotice.value = null
 }
 
 function cancelEditing() {
   editing.value = false
   editingContent.value = ''
   saveError.value = null
+  saveNotice.value = null
 }
 
 async function saveEdit() {
   const preview = filePreview.value
   if (!preview || !canWrite.value || preview.sha256 == null) return
+  // Capture the workspace context at the moment the user clicked Save —
+  // if the user switches root or selects a different file while the PUT
+  // is in flight, we must not reload the *new* root's file as if the
+  // write happened there.
+  const rootAtSave = selectedRoot.value
+  const nameAtSave = preview.name
   saving.value = true
   saveError.value = null
+  saveNotice.value = null
   try {
     const res = await api.put<WorkspaceWriteResponse>('/api/workspace/file', {
-      root: selectedRoot.value,
+      root: rootAtSave,
       path: preview.path,
       content: editingContent.value,
       base_sha: preview.sha256,
-      conversation_id: String(props.conversationId),
+      conversation_id: commitConvId(),
     })
-    // Refresh from server so the new sha + truncation state come from the
-    // canonical source rather than a guess. Also refreshes the dirty badge.
     editing.value = false
     editingContent.value = ''
+    if (selectedRoot.value !== rootAtSave) {
+      // The user navigated away mid-save; the write succeeded against
+      // `rootAtSave` but there's no longer a UI position to surface the
+      // refreshed preview in. Just exit edit mode silently.
+      return
+    }
+    // Refresh from server so the new sha + truncation state come from the
+    // canonical source rather than a guess. Also refreshes the dirty badge.
     await Promise.all([
-      loadFile(preview.name),
+      loadFile(nameAtSave),
       loadGit(),
     ])
     if (res.committed === false) {
-      // Surface a low-friction note rather than treating it as an error:
-      // the write succeeded, just without a commit (root isn't a git repo).
-      saveError.value = 'Gespeichert (kein Git-Repo, kein Commit erstellt).'
+      // Successful write, just without a commit (root isn't a git repo).
+      // A neutral notice — not an error.
+      saveNotice.value = 'Gespeichert (kein Git-Repo, kein Commit erstellt).'
     }
   } catch (err: unknown) {
     const status = errorStatus(err)
@@ -375,7 +416,7 @@ async function submitCreate() {
       root: selectedRoot.value,
       path,
       content: '',
-      conversation_id: String(props.conversationId),
+      conversation_id: commitConvId(),
     })
     creating.value = false
     createPath.value = ''
@@ -410,7 +451,7 @@ async function renameCurrent() {
         root: selectedRoot.value,
         src: preview.path,
         dest: target,
-        conversation_id: String(props.conversationId),
+        conversation_id: commitConvId(),
       },
     )
     // After rename, the file lives at a new path; clear selection and
@@ -448,7 +489,7 @@ async function deleteCurrent() {
     await api.delete<WorkspaceWriteResponse>('/api/workspace/file', {
       root: selectedRoot.value,
       path: preview.path,
-      conversation_id: String(props.conversationId),
+      conversation_id: commitConvId(),
     })
     selectedFileName.value = null
     filePreview.value = null
@@ -469,12 +510,19 @@ async function deleteCurrent() {
 }
 
 // Drop any unsaved edit if the user navigates away (root/breadcrumb/file
-// change). Keeps the model consistent with the visible preview.
-watch([selectedRoot, currentPath, selectedFileName], () => {
-  editing.value = false
-  editingContent.value = ''
-  saveError.value = null
-})
+// change) OR if the active conversation disappears. The latter matters
+// because `canWrite` flips false when conversationId becomes null, which
+// would otherwise leave the user in an edit mode whose Save silently
+// no-ops at the `canWrite` guard.
+watch(
+  [selectedRoot, currentPath, selectedFileName, () => props.conversationId],
+  () => {
+    editing.value = false
+    editingContent.value = ''
+    saveError.value = null
+    saveNotice.value = null
+  },
+)
 
 onMounted(loadRoots)
 </script>
@@ -691,6 +739,12 @@ onMounted(loadRoots)
             class="border-b bg-muted px-3 py-1 text-xs text-destructive"
           >
             {{ saveError }}
+          </div>
+          <div
+            v-else-if="saveNotice"
+            class="border-b bg-muted px-3 py-1 text-xs text-muted-foreground"
+          >
+            {{ saveNotice }}
           </div>
           <div v-if="editing" class="flex flex-1 flex-col overflow-hidden">
             <textarea
