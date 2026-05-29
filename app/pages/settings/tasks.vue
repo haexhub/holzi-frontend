@@ -11,7 +11,7 @@ import {
   Trash2,
   X,
 } from 'lucide-vue-next'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -101,11 +101,15 @@ function openEdit() {
     formDueAtLocal.value = task.due_at ? epochToLocalInput(task.due_at) : defaultDueAtLocal()
   }
   formError.value = null
+  // A run-now/pause/delete failure on the read view shouldn't linger
+  // into the edit view — the user has moved on.
+  actionError.value = null
   mode.value = 'edit'
 }
 
 function cancelEdit() {
   formError.value = null
+  actionError.value = null
   if (isCreating.value) {
     isCreating.value = false
     mode.value = 'empty'
@@ -216,6 +220,7 @@ async function togglePause() {
 // once the agent loop finishes. Without a follow-up poll the user clicks
 // Play and sees nothing change — looks broken.
 const RUN_NOW_POLL_DELAYS_MS = [1500, 4000]
+const pollTimers = new Set<ReturnType<typeof setTimeout>>()
 
 async function onRunNow() {
   const task = selected.value
@@ -225,14 +230,22 @@ async function onRunNow() {
   try {
     await runNow(task.id)
     await load()
-    // Schedule a couple of follow-up reloads in the background so a
-    // run that took ~3-5s shows its outcome without the user reloading
-    // the page. We don't await these — the Play button re-enables
-    // immediately so a second run-now still works.
+    // Schedule a couple of follow-up reloads so a short-running task's
+    // outcome lands on the UI without a manual refresh. Track the timer
+    // ids so unmount can cancel them — otherwise the callback fires
+    // against an unmounted composable.
     for (const delay of RUN_NOW_POLL_DELAYS_MS) {
-      setTimeout(() => {
-        load().catch(() => {})
+      const id = setTimeout(() => {
+        pollTimers.delete(id)
+        load().catch((err) => {
+          // Surface poll failures via the load-error channel rather
+          // than swallowing them — a 500 on the list endpoint shouldn't
+          // be invisible just because it came from a background reload.
+          error.value =
+            err instanceof Error ? err.message : 'Fehler beim Neuladen.'
+        })
       }, delay)
+      pollTimers.add(id)
     }
   } catch (err: unknown) {
     actionError.value =
@@ -241,6 +254,11 @@ async function onRunNow() {
     running.value = false
   }
 }
+
+onBeforeUnmount(() => {
+  for (const id of pollTimers) clearTimeout(id)
+  pollTimers.clear()
+})
 
 async function onRemove() {
   const task = selected.value

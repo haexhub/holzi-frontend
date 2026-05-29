@@ -193,7 +193,7 @@ describe('settings/tasks.vue', () => {
 
   it('runs a task now via the play button', async () => {
     apiGet.mockResolvedValueOnce([task({ id: 1, title: 't' })])
-    apiPost.mockResolvedValueOnce({ task_id: 1, run_id: '', status: 'queued' })
+    apiPost.mockResolvedValueOnce({ task_id: 1, status: 'queued' })
     apiGet.mockResolvedValueOnce([task({ id: 1, title: 't', last_status: 'success' })])
 
     const wrapper = mount(TasksPage)
