@@ -8,9 +8,6 @@ import type { components } from './api-generated'
 // --- Request bodies -----------------------------------------------------
 export type NoteCreate = components['schemas']['NoteCreate']
 export type NoteUpdate = components['schemas']['NoteUpdate']
-export type TodoCreate = components['schemas']['TodoCreate']
-export type TodoUpdate = components['schemas']['TodoUpdate']
-export type ReminderCreate = components['schemas']['ReminderCreate']
 export type ValidationError = components['schemas']['HTTPValidationError']
 
 // --- Response bodies ----------------------------------------------------
@@ -19,8 +16,6 @@ export type Message = components['schemas']['MessageResponse']
 export type ConversationDetail = components['schemas']['ConversationDetailResponse']
 export type Attachment = components['schemas']['AttachmentResponse']
 export type Note = components['schemas']['NoteResponse']
-export type Todo = components['schemas']['TodoResponse']
-export type Reminder = components['schemas']['ReminderResponse']
 
 // --- Workspace browser (Plan 12) ----------------------------------------
 export type WorkspaceRoot = components['schemas']['WorkspaceRoot']

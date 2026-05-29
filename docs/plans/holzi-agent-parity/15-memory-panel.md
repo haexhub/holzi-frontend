@@ -1,5 +1,24 @@
 # Plan 15: Memory Panel
 
+Status: implemented on 2026-05-29.
+
+Verification:
+
+- Backend: `uv run pytest tests/test_api_notes.py tests/test_notes.py -q` — 20 passing (incl. 4 new search tests against `/api/notes?q=`). Full suite: `uv run pytest -q` — 551 passing.
+- Frontend: `pnpm exec vitest run` — 19 files / 165 tests passing (incl. new `tests/components/MemoryPage.test.ts` with 13 cases covering load, debounced search, create, edit, URL-encoded delete + cancel, stale-selection-after-filter, key field disabled, and error display; existing `SettingsPlaceholder.test.ts` updated to treat `memory` as shipped).
+- Frontend: `pnpm exec nuxi typecheck` — clean.
+- API types regenerated via `pnpm run gen:api` against the local backend.
+- Live smoke against `make up-local-full` via Playwright: empty-state, create with markdown content + tags, read-mode renders headings/lists/code-block + tag chips, edit-mode (key disabled, content + tags pre-filled), cancel returns to read without saving, FTS search hit (`plan`) and no-match (`xyznomatch`) both behave correctly, delete clears the selection. Screenshots not committed.
+
+Notes:
+
+- **Backend**: added optional `q` query parameter to `GET /api/notes`. When set, the route calls `notes.find` (existing FTS5 helper) instead of `list_all`. User input is sanitised by a small `_fts5_query` helper that splits on whitespace, drops non-alphanumeric characters per token, and quotes each surviving token as a phrase — that gives multi-term AND matching without ever exposing FTS5 operator syntax (`"`, `:`, `*`, `(`, `)`, `-`, …) to the UI. An empty query (after sanitisation) returns `[]`. No schema or repository changes — `notes.find` and `notes.upsert` already had everything the panel needs.
+- **Frontend**: `app/pages/settings/memory.vue` rebuilt in the **Hermes WebUI memory-panel layout** — a left "Personal memory" sidebar with `+` button + search field + list of notes (key, first-line markdown preview, tag chips, selected-row highlight) and a right main-view that flips between **empty / read / edit** modes. Header buttons mirror Hermes WebUI exactly: Edit/Trash in read mode, Cancel/Save (X / check) in edit mode. Read mode renders the note's content through the existing `RenderedMarkdown` component (shiki code-blocks + KaTeX + mermaid), with tag chips below a divider. Edit mode shows the key as a disabled input (immutable identifier), a tall content textarea, and a comma-tags input. Search debounces 200 ms.
+- **Stale-selection guard**: after every reload, if the active `selectedKey` isn't in the new result set (search no-match, deleted-elsewhere, …) the detail pane drops back to the empty-state — caught during Playwright verification, fixed in code + test before merging.
+- **`app/lib/settingsNav.ts`** drops the `upcoming` hint from the `memory` entry — exactly the shape Plan 14 documented for future plans.
+- **Right-side rail cleanup** (per user request "die todos, reminder bar kann gerne weg"): the conversation page's right aside drops the Todos and Reminders tabs — only Notes + Workspace remain. `TodosPanel.vue` and `RemindersPanel.vue` are deleted, along with their unused `Todo`/`Reminder`/`TodoCreate`/`TodoUpdate`/`ReminderCreate` type aliases in `app/types/api.ts`. Backend `/api/todos` and `/api/reminders` are untouched (still usable as agent tools).
+- The `SettingsPlaceholder.test.ts` "shipped" list now includes `/settings/memory`; the placeholder smoke case re-points at `/settings/tasks` (still a placeholder) so the regression remains covered.
+
 Depends on: [14](./14-control-center-shell.md).
 
 ## Goal

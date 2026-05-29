@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import {
   AlertCircle,
-  Bell,
   FolderTree,
-  ListChecks,
   LogOut,
   NotebookPen,
   Settings,
@@ -23,8 +21,6 @@ import SubagentCard from '~/components/chat/SubagentCard.vue'
 import ConversationList from '~/components/chat/ConversationList.vue'
 import EmptyChatState from '~/components/chat/EmptyChatState.vue'
 import NotesPanel from '~/components/panels/NotesPanel.vue'
-import RemindersPanel from '~/components/panels/RemindersPanel.vue'
-import TodosPanel from '~/components/panels/TodosPanel.vue'
 import WorkspacePanel from '~/components/panels/WorkspacePanel.vue'
 import ThemeToggle from '~/components/ThemeToggle.vue'
 import { useApi } from '~/composables/useApi'
@@ -137,7 +133,7 @@ const currentRunId = ref<string | null>(null)
 // the next send into the same conversation.
 const cancelledConversationId = ref<number | null>(null)
 const error = ref<string | null>(null)
-const activePanel = ref<'notes' | 'todos' | 'reminders' | 'workspace'>('notes')
+const activePanel = ref<'notes' | 'workspace'>('notes')
 const messagesScroller = ref<HTMLElement | null>(null)
 // `null` while the credentials list is still loading — EmptyChatState
 // uses this to avoid flashing the "add credentials" CTA before we know.
@@ -873,7 +869,7 @@ onMounted(() => {
       />
     </main>
 
-    <!-- Right panel: notes/todos/reminders -->
+    <!-- Right panel: notes + workspace -->
     <aside class="flex h-screen flex-col border-l">
       <nav class="flex border-b">
         <button
@@ -883,22 +879,6 @@ onMounted(() => {
           @click="activePanel = 'notes'"
         >
           <NotebookPen class="size-3.5" /> Notes
-        </button>
-        <button
-          type="button"
-          class="flex flex-1 items-center justify-center gap-1 border-r px-3 py-2 text-xs font-medium transition-colors"
-          :class="activePanel === 'todos' ? 'bg-accent' : 'hover:bg-muted'"
-          @click="activePanel = 'todos'"
-        >
-          <ListChecks class="size-3.5" /> Todos
-        </button>
-        <button
-          type="button"
-          class="flex flex-1 items-center justify-center gap-1 border-r px-3 py-2 text-xs font-medium transition-colors"
-          :class="activePanel === 'reminders' ? 'bg-accent' : 'hover:bg-muted'"
-          @click="activePanel = 'reminders'"
-        >
-          <Bell class="size-3.5" /> Reminders
         </button>
         <button
           type="button"
@@ -912,8 +892,6 @@ onMounted(() => {
       <Separator />
       <div class="flex-1 overflow-hidden">
         <NotesPanel v-if="activePanel === 'notes'" />
-        <TodosPanel v-else-if="activePanel === 'todos'" />
-        <RemindersPanel v-else-if="activePanel === 'reminders'" />
         <WorkspacePanel
           v-else-if="activePanel === 'workspace'"
           :conversation-id="activeId"
