@@ -286,25 +286,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/todos": {
+    "/api/tasks": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Api List Todos */
-        get: operations["api_list_todos_api_todos_get"];
+        /** Api List Tasks */
+        get: operations["api_list_tasks_api_tasks_get"];
         put?: never;
-        /** Api Create Todo */
-        post: operations["api_create_todo_api_todos_post"];
+        /** Api Create Task */
+        post: operations["api_create_task_api_tasks_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/todos/{todo_id}": {
+    "/api/tasks/{task_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -314,33 +314,15 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Api Delete Todo */
-        delete: operations["api_delete_todo_api_todos__todo_id__delete"];
+        /** Api Delete Task */
+        delete: operations["api_delete_task_api_tasks__task_id__delete"];
         options?: never;
         head?: never;
-        /** Api Patch Todo */
-        patch: operations["api_patch_todo_api_todos__todo_id__patch"];
+        /** Api Patch Task */
+        patch: operations["api_patch_task_api_tasks__task_id__patch"];
         trace?: never;
     };
-    "/api/reminders": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Api List Reminders */
-        get: operations["api_list_reminders_api_reminders_get"];
-        put?: never;
-        /** Api Create Reminder */
-        post: operations["api_create_reminder_api_reminders_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/reminders/{reminder_id}": {
+    "/api/tasks/{task_id}/run": {
         parameters: {
             query?: never;
             header?: never;
@@ -349,9 +331,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
-        /** Api Delete Reminder */
-        delete: operations["api_delete_reminder_api_reminders__reminder_id__delete"];
+        /**
+         * Api Run Task Now
+         * @description Fire a task immediately as a background job; respond 202 with the
+         *     pre-allocated `run_id` so the UI can correlate the firing with the
+         *     `agent_runs` row that will appear shortly. Does NOT advance the cron
+         *     schedule — a manual run shouldn't skip the next due occurrence.
+         */
+        post: operations["api_run_task_now_api_tasks__task_id__run_post"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1245,33 +1233,6 @@ export interface components {
             version: number;
             data: components["schemas"]["ReasoningData"];
         };
-        /** ReminderCreate */
-        ReminderCreate: {
-            /** Due At */
-            due_at: number;
-            /** Message */
-            message: string;
-            /**
-             * Channel
-             * @default signal
-             */
-            channel: string;
-        };
-        /** ReminderResponse */
-        ReminderResponse: {
-            /** Id */
-            id: number;
-            /** Due At */
-            due_at: number;
-            /** Message */
-            message: string;
-            /** Channel */
-            channel: string;
-            /** Fired At */
-            fired_at: number | null;
-            /** Created At */
-            created_at: number;
-        };
         /** RunData */
         RunData: {
             /** Run Id */
@@ -1452,6 +1413,94 @@ export interface components {
             version: number;
             data: components["schemas"]["SubagentTextData"];
         };
+        /** TaskCreate */
+        TaskCreate: {
+            /** Title */
+            title: string;
+            /** Prompt */
+            prompt: string;
+            /** Due At */
+            due_at?: number | null;
+            /** Schedule */
+            schedule?: string | null;
+            /**
+             * Timezone
+             * @default UTC
+             */
+            timezone: string;
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+        };
+        /** TaskResponse */
+        TaskResponse: {
+            /** Id */
+            id: number;
+            /** Title */
+            title: string;
+            /** Prompt */
+            prompt: string;
+            /** Due At */
+            due_at: number | null;
+            /** Schedule */
+            schedule: string | null;
+            /** Timezone */
+            timezone: string;
+            /** Enabled */
+            enabled: boolean;
+            /** Last Run At */
+            last_run_at: number | null;
+            /** Last Status */
+            last_status: string | null;
+            /** Last Run Id */
+            last_run_id: string | null;
+            /** Created At */
+            created_at: number;
+            /** Updated At */
+            updated_at: number;
+        };
+        /**
+         * TaskRunResponse
+         * @description Returned from POST /api/tasks/{id}/run while the run is in flight.
+         */
+        TaskRunResponse: {
+            /** Task Id */
+            task_id: number;
+            /** Run Id */
+            run_id: string;
+            /**
+             * Status
+             * @constant
+             */
+            status: "queued";
+        };
+        /** TaskUpdate */
+        TaskUpdate: {
+            /** Title */
+            title?: string | null;
+            /** Prompt */
+            prompt?: string | null;
+            /** Due At */
+            due_at?: number | null;
+            /**
+             * Clear Due At
+             * @default false
+             */
+            clear_due_at: boolean;
+            /** Schedule */
+            schedule?: string | null;
+            /**
+             * Clear Schedule
+             * @default false
+             */
+            clear_schedule: boolean;
+            /** Timezone */
+            timezone?: string | null;
+            /** Enabled */
+            enabled?: boolean | null;
+        };
         /** TextData */
         TextData: {
             /** Content */
@@ -1470,31 +1519,6 @@ export interface components {
              */
             version: number;
             data: components["schemas"]["TextData"];
-        };
-        /** TodoCreate */
-        TodoCreate: {
-            /** Content */
-            content: string;
-            /** Tags */
-            tags?: string[];
-        };
-        /** TodoResponse */
-        TodoResponse: {
-            /** Id */
-            id: number;
-            /** Content */
-            content: string;
-            /** Tags */
-            tags: string | null;
-            /** Done At */
-            done_at: number | null;
-            /** Created At */
-            created_at: number;
-        };
-        /** TodoUpdate */
-        TodoUpdate: {
-            /** Done */
-            done: boolean;
         };
         /**
          * ToolCallData
@@ -2357,11 +2381,9 @@ export interface operations {
             };
         };
     };
-    api_list_todos_api_todos_get: {
+    api_list_tasks_api_tasks_get: {
         parameters: {
             query?: {
-                only_open?: boolean;
-                tag?: string | null;
                 limit?: number;
             };
             header?: never;
@@ -2376,7 +2398,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TodoResponse"][];
+                    "application/json": components["schemas"]["TaskResponse"][];
                 };
             };
             /** @description Validation Error */
@@ -2390,7 +2412,7 @@ export interface operations {
             };
         };
     };
-    api_create_todo_api_todos_post: {
+    api_create_task_api_tasks_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -2399,17 +2421,17 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TodoCreate"];
+                "application/json": components["schemas"]["TaskCreate"];
             };
         };
         responses: {
             /** @description Successful Response */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TodoResponse"];
+                    "application/json": components["schemas"]["TaskResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2423,12 +2445,12 @@ export interface operations {
             };
         };
     };
-    api_delete_todo_api_todos__todo_id__delete: {
+    api_delete_task_api_tasks__task_id__delete: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                todo_id: number;
+                task_id: number;
             };
             cookie?: never;
         };
@@ -2452,18 +2474,18 @@ export interface operations {
             };
         };
     };
-    api_patch_todo_api_todos__todo_id__patch: {
+    api_patch_task_api_tasks__task_id__patch: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                todo_id: number;
+                task_id: number;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TodoUpdate"];
+                "application/json": components["schemas"]["TaskUpdate"];
             };
         };
         responses: {
@@ -2473,7 +2495,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TodoResponse"];
+                    "application/json": components["schemas"]["TaskResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2487,88 +2509,25 @@ export interface operations {
             };
         };
     };
-    api_list_reminders_api_reminders_get: {
-        parameters: {
-            query?: {
-                include_fired?: boolean;
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReminderResponse"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    api_create_reminder_api_reminders_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ReminderCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReminderResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    api_delete_reminder_api_reminders__reminder_id__delete: {
+    api_run_task_now_api_tasks__task_id__run_post: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                reminder_id: number;
+                task_id: number;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
             /** @description Successful Response */
-            204: {
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["TaskRunResponse"];
+                };
             };
             /** @description Validation Error */
             422: {

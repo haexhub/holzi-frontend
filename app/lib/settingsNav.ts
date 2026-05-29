@@ -23,7 +23,7 @@ export const settingsNav: readonly SettingsNavItem[] = [
   { to: '/settings/messenger', label: 'Messenger', icon: MessageSquare },
   { to: '/settings/preferences', label: 'Preferences', icon: SlidersHorizontal, upcoming: 'Agent-weite Einstellungen wie Sprache, Default-Modell, Tastatur.' },
   { to: '/settings/memory', label: 'Memory', icon: Database },
-  { to: '/settings/tasks', label: 'Tasks', icon: ListChecks, upcoming: 'Wiederkehrende und geplante Aufgaben des Agents (Plan 16).' },
+  { to: '/settings/tasks', label: 'Tasks', icon: ListChecks },
   { to: '/settings/skills', label: 'Skills & Tools', icon: Wrench, upcoming: 'Skills, MCP-Server und Tools, die der Agent ausführen darf.' },
   { to: '/settings/workspaces', label: 'Workspaces', icon: FolderTree, upcoming: 'Verwaltung der Workspaces inkl. Sandbox-Zustand und Disk-Quotas.' },
   { to: '/settings/diagnostics', label: 'Diagnostics', icon: Activity, upcoming: 'Run-History, Sandbox-Crashes, Health-Checks (Plan 20).' },

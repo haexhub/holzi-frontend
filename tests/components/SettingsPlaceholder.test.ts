@@ -44,6 +44,7 @@ describe('settingsNav model', () => {
       '/settings/llm',
       '/settings/messenger',
       '/settings/memory',
+      '/settings/tasks',
     ])
     for (const item of settingsNav) {
       if (!shipped.includes(item.to)) {
@@ -55,9 +56,9 @@ describe('settingsNav model', () => {
 
 describe('PlaceholderSection', () => {
   it('renders the label + upcoming hint for the active placeholder route', () => {
-    const wrapper = mountAtRoute('/settings/tasks')
-    expect(wrapper.text()).toContain('Tasks')
-    expect(wrapper.text()).toContain('Plan 16')
+    // Tasks just shipped (Plan 16); skills is the next placeholder still in flight.
+    const wrapper = mountAtRoute('/settings/skills')
+    expect(wrapper.text()).toContain('Skills')
     expect(wrapper.text()).toContain('noch nicht implementiert')
   })
 
