@@ -2,6 +2,7 @@
 import {
   AlertCircle,
   Bell,
+  FolderTree,
   ListChecks,
   LogOut,
   NotebookPen,
@@ -24,6 +25,7 @@ import EmptyChatState from '~/components/chat/EmptyChatState.vue'
 import NotesPanel from '~/components/panels/NotesPanel.vue'
 import RemindersPanel from '~/components/panels/RemindersPanel.vue'
 import TodosPanel from '~/components/panels/TodosPanel.vue'
+import WorkspacePanel from '~/components/panels/WorkspacePanel.vue'
 import ThemeToggle from '~/components/ThemeToggle.vue'
 import { useApi } from '~/composables/useApi'
 import { useChatQueue } from '~/composables/useChatQueue'
@@ -135,7 +137,7 @@ const currentRunId = ref<string | null>(null)
 // the next send into the same conversation.
 const cancelledConversationId = ref<number | null>(null)
 const error = ref<string | null>(null)
-const activePanel = ref<'notes' | 'todos' | 'reminders'>('notes')
+const activePanel = ref<'notes' | 'todos' | 'reminders' | 'workspace'>('notes')
 const messagesScroller = ref<HTMLElement | null>(null)
 // `null` while the credentials list is still loading — EmptyChatState
 // uses this to avoid flashing the "add credentials" CTA before we know.
@@ -892,11 +894,19 @@ onMounted(() => {
         </button>
         <button
           type="button"
-          class="flex flex-1 items-center justify-center gap-1 px-3 py-2 text-xs font-medium transition-colors"
+          class="flex flex-1 items-center justify-center gap-1 border-r px-3 py-2 text-xs font-medium transition-colors"
           :class="activePanel === 'reminders' ? 'bg-accent' : 'hover:bg-muted'"
           @click="activePanel = 'reminders'"
         >
           <Bell class="size-3.5" /> Reminders
+        </button>
+        <button
+          type="button"
+          class="flex flex-1 items-center justify-center gap-1 px-3 py-2 text-xs font-medium transition-colors"
+          :class="activePanel === 'workspace' ? 'bg-accent' : 'hover:bg-muted'"
+          @click="activePanel = 'workspace'"
+        >
+          <FolderTree class="size-3.5" /> Workspace
         </button>
       </nav>
       <Separator />
@@ -904,6 +914,7 @@ onMounted(() => {
         <NotesPanel v-if="activePanel === 'notes'" />
         <TodosPanel v-else-if="activePanel === 'todos'" />
         <RemindersPanel v-else-if="activePanel === 'reminders'" />
+        <WorkspacePanel v-else-if="activePanel === 'workspace'" />
       </div>
     </aside>
   </div>
