@@ -1,5 +1,19 @@
 # Plan 12: Workspace Browser Read-Only
 
+Status: implemented and merged on 2026-05-29. Cross-repo: backend
+[Holzi#45](https://github.com/haexhub/Holzi/pull/45) (`list_dir` on the
+sandbox backend, the three `/api/workspace/{roots,tree,file}` endpoints,
+preview classification, `HERMES_WORKSPACE_ROOTS` config); frontend
+[holzi-frontend#42](https://github.com/haexhub/holzi-frontend/pull/42)
+(`WorkspacePanel.vue` as the 4th right-panel tab with breadcrumb, dir
+listing, preview, refresh, stale-response guard). All reads route through
+the sandbox-mounted `/workspace` volume — never the host filesystem.
+
+The sandbox status badge the plan mentioned in passing didn't actually live
+in Plan 12's frontend brief and stays deferred until a clear home appears
+(workspace shell in 14 or write-mode in 13). Plan 11b-b's in-chat
+`SandboxCrashCard` already covers the user-facing recovery path.
+
 Depends on: [11b](./11b-sandbox-runtime.md) — workspaces are owned by their
 sandbox container; tree/file reads go through that sandbox, not directly from
 the agent container's filesystem.
