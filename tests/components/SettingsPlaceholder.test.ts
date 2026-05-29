@@ -45,6 +45,7 @@ describe('settingsNav model', () => {
       '/settings/messenger',
       '/settings/memory',
       '/settings/tasks',
+      '/settings/diagnostics',
     ])
     for (const item of settingsNav) {
       if (!shipped.includes(item.to)) {

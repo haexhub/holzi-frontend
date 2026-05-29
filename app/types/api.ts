@@ -17,6 +17,14 @@ export type ConversationDetail = components['schemas']['ConversationDetailRespon
 export type Attachment = components['schemas']['AttachmentResponse']
 export type Note = components['schemas']['NoteResponse']
 
+// --- Agent runs (Plan 03b — surfaced on Diagnostics in Plan 20) ---------
+export type AgentRun = components['schemas']['AgentRunResponse']
+
+// --- Diagnostics (Plan 20) ----------------------------------------------
+export type DiagnosticsCheck = components['schemas']['DiagnosticsCheck']
+export type DiagnosticsResponse = components['schemas']['DiagnosticsResponse']
+export type DiagnosticsStatus = DiagnosticsCheck['status']
+
 // --- Agent tasks (Plan 16) ----------------------------------------------
 export type AgentTask = components['schemas']['TaskResponse']
 export type AgentTaskCreate = components['schemas']['TaskCreate']
