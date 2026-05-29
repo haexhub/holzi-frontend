@@ -22,6 +22,13 @@ export type Note = components['schemas']['NoteResponse']
 export type Todo = components['schemas']['TodoResponse']
 export type Reminder = components['schemas']['ReminderResponse']
 
+// --- Workspace browser (Plan 12) ----------------------------------------
+export type WorkspaceRoot = components['schemas']['WorkspaceRoot']
+export type WorkspaceRootsResponse = components['schemas']['WorkspaceRootsResponse']
+export type WorkspaceTreeResponse = components['schemas']['WorkspaceTreeResponse']
+export type WorkspaceFileResponse = components['schemas']['WorkspaceFileResponse']
+export type TreeEntry = components['schemas']['TreeEntry']
+
 // --- Chat SSE event envelope (Plan 08) ----------------------------------
 // One versioned envelope per stream event; the discriminated union is the
 // single source of truth shared with the backend's src/hermes/events.py.

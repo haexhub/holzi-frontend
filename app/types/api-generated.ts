@@ -685,6 +685,64 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/workspace/roots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Api Workspace Roots
+         * @description List the configured workspace roots.
+         *
+         *     Returns 200 with an empty list when nothing is configured — the frontend
+         *     distinguishes "not configured" from "sandbox unavailable" by the absence
+         *     of a 503 here.
+         */
+        get: operations["api_workspace_roots_api_workspace_roots_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspace/tree": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Api Workspace Tree */
+        get: operations["api_workspace_tree_api_workspace_tree_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspace/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Api Workspace File */
+        get: operations["api_workspace_file_api_workspace_file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -1486,6 +1544,18 @@ export interface components {
             version: number;
             data: components["schemas"]["ToolResultData"];
         };
+        /** TreeEntry */
+        TreeEntry: {
+            /** Name */
+            name: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "file" | "dir" | "other";
+            /** Size */
+            size: number;
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -1498,6 +1568,47 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** WorkspaceFileResponse */
+        WorkspaceFileResponse: {
+            /** Root */
+            root: string;
+            /** Path */
+            path: string;
+            /** Name */
+            name: string;
+            /** Size */
+            size: number | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "text" | "markdown" | "image" | "binary";
+            /** Content */
+            content: string | null;
+            /** Data Url */
+            data_url: string | null;
+            /** Truncated */
+            truncated: boolean;
+        };
+        /** WorkspaceRoot */
+        WorkspaceRoot: {
+            /** Id */
+            id: string;
+        };
+        /** WorkspaceRootsResponse */
+        WorkspaceRootsResponse: {
+            /** Roots */
+            roots: components["schemas"]["WorkspaceRoot"][];
+        };
+        /** WorkspaceTreeResponse */
+        WorkspaceTreeResponse: {
+            /** Root */
+            root: string;
+            /** Path */
+            path: string;
+            /** Entries */
+            entries: components["schemas"]["TreeEntry"][];
         };
     };
     responses: never;
@@ -2850,6 +2961,90 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_workspace_roots_api_workspace_roots_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceRootsResponse"];
+                };
+            };
+        };
+    };
+    api_workspace_tree_api_workspace_tree_get: {
+        parameters: {
+            query: {
+                root: string;
+                path?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceTreeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_workspace_file_api_workspace_file_get: {
+        parameters: {
+            query: {
+                root: string;
+                path: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceFileResponse"];
                 };
             };
             /** @description Validation Error */
