@@ -57,6 +57,11 @@ export function useApi() {
       request<T>(path, { method: 'PUT', body }),
     patch: <T>(path: string, body?: unknown) =>
       request<T>(path, { method: 'PATCH', body }),
-    delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
+    // DELETE with a body is unusual but explicitly used by Plan 13's
+    // `/api/workspace/file` so the destructive call can carry both the
+    // path and the `conversation_id` for the resulting `user[conv-N]:`
+    // commit message — the same shape as create/update/rename.
+    delete: <T>(path: string, body?: unknown) =>
+      request<T>(path, { method: 'DELETE', body }),
   }
 }
