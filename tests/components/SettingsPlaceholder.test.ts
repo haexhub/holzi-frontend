@@ -44,6 +44,7 @@ describe('settingsNav model', () => {
       '/settings/llm',
       '/settings/messenger',
       '/settings/memory',
+      '/settings/tasks',
     ])
     for (const item of settingsNav) {
       if (!shipped.includes(item.to)) {
@@ -55,9 +56,16 @@ describe('settingsNav model', () => {
 
 describe('PlaceholderSection', () => {
   it('renders the label + upcoming hint for the active placeholder route', () => {
-    const wrapper = mountAtRoute('/settings/tasks')
-    expect(wrapper.text()).toContain('Tasks')
-    expect(wrapper.text()).toContain('Plan 16')
+    // Pick the first still-upcoming entry dynamically so this test doesn't
+    // need touching every time another section ships.
+    const firstPlaceholder = settingsNav.find((n) => n.upcoming)
+    if (!firstPlaceholder) {
+      // Once every section is shipped, the placeholder component has
+      // nothing to render — drop this test then.
+      return
+    }
+    const wrapper = mountAtRoute(firstPlaceholder.to)
+    expect(wrapper.text()).toContain(firstPlaceholder.label)
     expect(wrapper.text()).toContain('noch nicht implementiert')
   })
 

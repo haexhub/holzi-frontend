@@ -1,9 +1,48 @@
 # Plan 16: Tasks And Cron Panel
 
+Status: implemented 2026-05-29. Cross-repo: backend
+[Holzi#49](https://github.com/haexhub/Holzi/pull/49), frontend
+[holzi-frontend#51](https://github.com/haexhub/holzi-frontend/pull/51).
+
+**Scope deviation from the original plan.** The plan said "Keep existing
+reminders intact" and listed "Existing reminders still work" as an
+acceptance criterion. Both were dropped. Investigation showed `reminders`
+and `todos` had no user-facing UI left after Plan 15 trimmed the chat
+right-rail — they only existed as agent tools (`reminder_set`,
+`todo_add`, …). Maintaining a parallel scratch-space concept next to the
+new `agent_tasks` would have been pure churn. The reminders + todos
+tables, repos, routes (`/api/reminders`, `/api/todos`), and the matching
+`Reminder`/`Todo` agent tools were deleted in this plan; the tools were
+replaced by `task_create` / `task_list` / `task_delete` operating on the
+new `agent_tasks` table. Existing rows in the legacy tables are dropped
+on upgrade (bot-internal scratch state, no user data).
+
 Depends on: [14](./14-control-center-shell.md). Scheduled tasks that execute
 code must route through the sandbox runtime defined in
 [11b](./11b-sandbox-runtime.md) — the scheduler thread lives in the agent
 container and must not be killable by a misbehaving task.
+
+## Verification
+
+Backend (cwd `/home/haex/Projekte/Holzi`, branch `plan-16-tasks-cron-panel`):
+
+- `uv pip install croniter` (new dep added to `pyproject.toml`).
+- `.venv/bin/python -m pytest --ignore=tests/test_sandbox_podman_integration.py`
+  → 554 passed. New tests cover: `agent_tasks` repo (one-shot + cron +
+  switch between them + reject invalid cron), `AgentTaskScheduler` (fires
+  one-shots and disables them; advances cron `due_at`; records failures
+  per-row without blocking sibling rows; `run_now` does not advance cron),
+  `/api/tasks` CRUD + `/run`, `task_*` agent tools.
+- `.venv/bin/python -m ruff check src/ tests/` → clean.
+
+Frontend (cwd `/home/haex/Projekte/holzi-frontend`, branch
+`plan-16-tasks-cron-panel`):
+
+- `pnpm run gen:api` regenerated `app/types/api-generated.ts`
+  (TaskCreate/Update/Response/RunResponse added; Todo/Reminder shapes
+  gone).
+- `pnpm typecheck` → clean.
+- `pnpm test` → 174 passed (8 new tests for `settings/tasks.vue`).
 
 ## Goal
 

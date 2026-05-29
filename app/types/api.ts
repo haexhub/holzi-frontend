@@ -17,6 +17,12 @@ export type ConversationDetail = components['schemas']['ConversationDetailRespon
 export type Attachment = components['schemas']['AttachmentResponse']
 export type Note = components['schemas']['NoteResponse']
 
+// --- Agent tasks (Plan 16) ----------------------------------------------
+export type AgentTask = components['schemas']['TaskResponse']
+export type AgentTaskCreate = components['schemas']['TaskCreate']
+export type AgentTaskUpdate = components['schemas']['TaskUpdate']
+export type AgentTaskRunResponse = components['schemas']['TaskRunResponse']
+
 // --- Workspace browser (Plan 12) ----------------------------------------
 export type WorkspaceRoot = components['schemas']['WorkspaceRoot']
 export type WorkspaceRootsResponse = components['schemas']['WorkspaceRootsResponse']
