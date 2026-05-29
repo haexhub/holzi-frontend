@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import TasksPage from '~/pages/settings/tasks.vue'
 import type { AgentTask } from '~/types/api'
@@ -35,12 +35,26 @@ function task(overrides: Partial<AgentTask> & { id: number; title: string }): Ag
   }
 }
 
+// jsdom doesn't ship window.confirm; install a controllable stub once for
+// the whole suite so a test failing before its local restore can't leak
+// into the next test.
+const confirmStub = vi.fn<() => boolean>(() => true)
+const originalConfirm = window.confirm
+beforeAll(() => {
+  Object.defineProperty(window, 'confirm', { value: confirmStub, configurable: true })
+})
+afterAll(() => {
+  Object.defineProperty(window, 'confirm', { value: originalConfirm, configurable: true })
+})
+
 describe('settings/tasks.vue', () => {
   beforeEach(() => {
     apiGet.mockReset()
     apiPost.mockReset()
     apiPatch.mockReset()
     apiDelete.mockReset()
+    confirmStub.mockReset()
+    confirmStub.mockReturnValue(true)
   })
 
   afterEach(() => {
@@ -198,12 +212,7 @@ describe('settings/tasks.vue', () => {
     apiGet.mockResolvedValueOnce([task({ id: 1, title: 't' })])
     apiDelete.mockResolvedValueOnce(undefined)
     apiGet.mockResolvedValueOnce([])
-
-    // The test environment doesn't ship `window.confirm`, so install a stub
-    // we can both call and restore.
-    const originalConfirm = window.confirm
-    const confirmFn = vi.fn(() => true)
-    Object.defineProperty(window, 'confirm', { value: confirmFn, configurable: true })
+    confirmStub.mockReturnValue(true)
 
     const wrapper = mount(TasksPage)
     await flushPromises()
@@ -215,10 +224,95 @@ describe('settings/tasks.vue', () => {
     await flushPromises()
 
     expect(apiDelete).toHaveBeenCalledWith('/api/tasks/1', undefined)
-    expect(confirmFn).toHaveBeenCalled()
-    Object.defineProperty(window, 'confirm', {
-      value: originalConfirm,
-      configurable: true,
+    expect(confirmStub).toHaveBeenCalled()
+  })
+
+  it('aborts delete when the user declines the confirmation', async () => {
+    apiGet.mockResolvedValueOnce([task({ id: 1, title: 't' })])
+    confirmStub.mockReturnValue(false)
+
+    const wrapper = mount(TasksPage)
+    await flushPromises()
+
+    await wrapper.get('[data-testid="task-item-1"]').trigger('click')
+    await flushPromises()
+
+    await wrapper.get('[data-testid="task-delete"]').trigger('click')
+    await flushPromises()
+
+    expect(confirmStub).toHaveBeenCalled()
+    expect(apiDelete).not.toHaveBeenCalled()
+  })
+
+  it('edits a recurring task and PATCHes with clear_due_at=true', async () => {
+    // Regression: the `clear_*` flags carry the load-bearing mode-switch
+    // signal. For a same-mode cron edit we expect `clear_due_at: true`
+    // (clear the materialised due_at — backend recomputes) and
+    // `clear_schedule: false`. The opposite for a same-mode one-shot edit.
+    apiGet.mockResolvedValueOnce([
+      task({
+        id: 1,
+        title: 'daily',
+        schedule: '0 8 * * *',
+        due_at: 1_700_000_000,
+      }),
+    ])
+    apiPatch.mockResolvedValueOnce(
+      task({ id: 1, title: 'daily', schedule: '0 9 * * *' }),
+    )
+    apiGet.mockResolvedValueOnce([
+      task({ id: 1, title: 'daily', schedule: '0 9 * * *' }),
+    ])
+
+    const wrapper = mount(TasksPage)
+    await flushPromises()
+
+    await wrapper.get('[data-testid="task-item-1"]').trigger('click')
+    await flushPromises()
+
+    await wrapper.get('button[aria-label="Bearbeiten"]').trigger('click')
+    await wrapper.find('#taskCron').setValue('0 9 * * *')
+
+    await wrapper.get('[data-testid="task-save"]').trigger('click')
+    await flushPromises()
+
+    expect(apiPatch).toHaveBeenCalledTimes(1)
+    const [path, body] = apiPatch.mock.calls[0]
+    expect(path).toBe('/api/tasks/1')
+    expect(body).toMatchObject({
+      title: 'daily',
+      schedule: '0 9 * * *',
+      due_at: null,
+      clear_due_at: true,
+      clear_schedule: false,
     })
+  })
+
+  it('renders the load-error in the sidebar when GET fails', async () => {
+    apiGet.mockRejectedValueOnce(new Error('boom'))
+
+    const wrapper = mount(TasksPage)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('boom')
+  })
+
+  it('surfaces a run-now failure as an action error in the detail header', async () => {
+    apiGet.mockResolvedValueOnce([task({ id: 1, title: 't' })])
+    apiPost.mockRejectedValueOnce(new Error('upstream down'))
+
+    const wrapper = mount(TasksPage)
+    await flushPromises()
+
+    await wrapper.get('[data-testid="task-item-1"]').trigger('click')
+    await flushPromises()
+
+    await wrapper.get('[data-testid="task-run-now"]').trigger('click')
+    await flushPromises()
+
+    const banner = wrapper.get('[data-testid="task-action-error"]')
+    expect(banner.text()).toContain('upstream down')
+    // Sidebar list stays intact — the failure shouldn't replace it.
+    expect(wrapper.get('[data-testid="task-item-1"]').exists()).toBe(true)
   })
 })

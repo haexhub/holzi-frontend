@@ -34,8 +34,19 @@ const { tasks, loading, error, load, create, patch, remove, runNow } = useTasks(
 const selectedId = ref<number | null>(null)
 const mode = ref<Mode>('empty')
 const formError = ref<string | null>(null)
+// Distinct from `error` (which surfaces list-load failures in the sidebar):
+// run-now / pause / delete failures should appear next to where the user
+// clicked, in the detail-pane header — not replace the task list.
+const actionError = ref<string | null>(null)
 const saving = ref(false)
 const running = ref(false)
+
+// IANA tz name to seed the form with. The picker only matters for cron
+// tasks; one-shot tasks resolve their datetime-local input in the user's
+// browser tz already. Defaulting to UTC would surprise non-UTC users when
+// they switch to cron mode without realising they have to change the tz.
+const defaultTimezone =
+  Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
 
 // ── Form state (covers both create and edit) ────────────────────────
 const isCreating = ref(false)
@@ -55,6 +66,7 @@ function selectTask(task: AgentTask) {
   selectedId.value = task.id
   isCreating.value = false
   formError.value = null
+  actionError.value = null
   mode.value = 'read'
 }
 
@@ -66,8 +78,9 @@ function openCreate() {
   formScheduleKind.value = 'once'
   formDueAtLocal.value = defaultDueAtLocal()
   formSchedule.value = '0 8 * * *'
-  formTimezone.value = 'UTC'
+  formTimezone.value = defaultTimezone
   formError.value = null
+  actionError.value = null
   mode.value = 'edit'
 }
 
@@ -147,10 +160,19 @@ async function save() {
       selectedId.value = created.id
     } else {
       const task = selected.value
-      if (!task) return
-      // Only send fields the user actually changed — and use the
-      // explicit clear_* flags whenever we cross the one-shot/recurring
-      // boundary (the API enforces "exactly one of" on every patch).
+      if (!task) {
+        // Task was deleted (here or elsewhere) between openEdit() and
+        // Save. Don't silently succeed — surface it so the user knows
+        // their change wasn't applied.
+        formError.value = 'Task wurde zwischenzeitlich gelöscht.'
+        return
+      }
+      // The two `clear_*` flags always carry the *opposite* mode's clear
+      // signal: in `once` mode we clear schedule, in `cron` mode we clear
+      // due_at. That covers both same-mode edits (the clear is a harmless
+      // no-op on an already-NULL column) and mode switches (the clear is
+      // load-bearing). The backend's update() validates that exactly one
+      // side is set after the patch.
       const body: AgentTaskUpdate = {
         title: formTitle.value.trim(),
         prompt: formPrompt.value,
@@ -174,6 +196,7 @@ async function save() {
 async function togglePause() {
   const task = selected.value
   if (!task) return
+  actionError.value = null
   try {
     // clear_* flags must always be on the wire (FastAPI marks them as
     // required even with a default) — both false for a pause-only patch.
@@ -183,23 +206,36 @@ async function togglePause() {
       clear_schedule: false,
     })
   } catch (err: unknown) {
-    error.value =
+    actionError.value =
       err instanceof Error ? err.message : 'Fehler beim Umschalten.'
   }
 }
 
+// Number of times to poll the list after `runNow`. The backend runs the
+// task in a separate asyncio task; `last_run_at`/`last_status` only lands
+// once the agent loop finishes. Without a follow-up poll the user clicks
+// Play and sees nothing change — looks broken.
+const RUN_NOW_POLL_DELAYS_MS = [1500, 4000]
+
 async function onRunNow() {
   const task = selected.value
   if (!task) return
+  actionError.value = null
   running.value = true
   try {
     await runNow(task.id)
-    // Refresh shortly after so last_run_* lands once the background task
-    // wrote it. The agent itself may still be in flight; the spinner
-    // resets here regardless — the list refresh shows progress.
     await load()
+    // Schedule a couple of follow-up reloads in the background so a
+    // run that took ~3-5s shows its outcome without the user reloading
+    // the page. We don't await these — the Play button re-enables
+    // immediately so a second run-now still works.
+    for (const delay of RUN_NOW_POLL_DELAYS_MS) {
+      setTimeout(() => {
+        load().catch(() => {})
+      }, delay)
+    }
   } catch (err: unknown) {
-    error.value =
+    actionError.value =
       err instanceof Error ? err.message : 'Fehler beim Ausführen.'
   } finally {
     running.value = false
@@ -209,13 +245,14 @@ async function onRunNow() {
 async function onRemove() {
   const task = selected.value
   if (!task) return
-  if (!window.confirm(`Task „${task.title}" wirklich löschen?`)) return
+  if (!window.confirm(`Task "${task.title}" wirklich löschen?`)) return
+  actionError.value = null
   try {
     await remove(task.id)
     selectedId.value = null
     mode.value = 'empty'
   } catch (err: unknown) {
-    error.value =
+    actionError.value =
       err instanceof Error ? err.message : 'Fehler beim Löschen.'
   }
 }
@@ -355,7 +392,14 @@ onMounted(load)
             <p class="truncate text-sm font-semibold" data-testid="task-detail-title">
               {{ selected.title }}
             </p>
-            <p class="text-xs text-muted-foreground">
+            <p
+              v-if="actionError"
+              class="truncate text-xs text-destructive"
+              data-testid="task-action-error"
+            >
+              {{ actionError }}
+            </p>
+            <p v-else class="text-xs text-muted-foreground">
               <template v-if="selected.last_run_at">
                 Zuletzt: {{ formatTimestamp(selected.last_run_at) }}
                 ({{ selected.last_status ?? '—' }})

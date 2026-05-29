@@ -333,10 +333,11 @@ export interface paths {
         put?: never;
         /**
          * Api Run Task Now
-         * @description Fire a task immediately as a background job; respond 202 with the
-         *     pre-allocated `run_id` so the UI can correlate the firing with the
-         *     `agent_runs` row that will appear shortly. Does NOT advance the cron
-         *     schedule — a manual run shouldn't skip the next due occurrence.
+         * @description Fire a task immediately as a background job; respond 202 so the
+         *     client knows the run was accepted. The resulting `agent_runs` row id
+         *     lands on the task's `last_run_id` once the scheduler records it —
+         *     clients poll `GET /api/tasks/{id}` to pick it up. Does NOT advance the
+         *     cron schedule — a manual run shouldn't skip the next due occurrence.
          */
         post: operations["api_run_task_now_api_tasks__task_id__run_post"];
         delete?: never;
@@ -1463,13 +1464,18 @@ export interface components {
         };
         /**
          * TaskRunResponse
-         * @description Returned from POST /api/tasks/{id}/run while the run is in flight.
+         * @description Returned from POST /api/tasks/{id}/run.
+         *
+         *     The run is fire-and-forget: by the time this returns 202, the scheduler
+         *     background task is queued but the `agent_runs` row may not exist yet.
+         *     Clients see the resulting `last_run_id` via the next `GET /api/tasks/{id}`
+         *     once the run is recorded. We don't pre-allocate a run id here because the
+         *     scheduler mints its own (and we'd have to thread it through three layers
+         *     just so the response could carry a string the UI could already poll for).
          */
         TaskRunResponse: {
             /** Task Id */
             task_id: number;
-            /** Run Id */
-            run_id: string;
             /**
              * Status
              * @constant
