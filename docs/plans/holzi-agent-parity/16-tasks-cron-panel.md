@@ -1,8 +1,8 @@
 # Plan 16: Tasks And Cron Panel
 
 Status: implemented 2026-05-29. Cross-repo: backend
-[Holzi#TBD](https://github.com/haexhub/Holzi/pull/TBD), frontend
-[holzi-frontend#TBD](https://github.com/haexhub/holzi-frontend/pull/TBD).
+[Holzi#49](https://github.com/haexhub/Holzi/pull/49), frontend
+[holzi-frontend#51](https://github.com/haexhub/holzi-frontend/pull/51).
 
 **Scope deviation from the original plan.** The plan said "Keep existing
 reminders intact" and listed "Existing reminders still work" as an
