@@ -247,6 +247,30 @@ describe('settings/memory.vue', () => {
     expect(apiDelete).not.toHaveBeenCalled()
   })
 
+  it('cancel-from-edit drops to empty when the note was filtered out mid-edit', async () => {
+    apiGet.mockResolvedValueOnce([note({ key: 'k', content: 'orig' })])
+    const wrapper = mount(MemoryPage, { global: { stubs } })
+    await flushPromises()
+
+    await wrapper.get('[data-testid="memory-item-k"]').trigger('click')
+    await wrapper.get('button[aria-label="Bearbeiten"]').trigger('click')
+
+    // Simulate a search-triggered reload that drops the active selection
+    // while the user is still in edit mode (the load() stale-guard only
+    // resets when mode !== 'edit', so this state is reachable).
+    apiGet.mockResolvedValueOnce([])
+    const search = wrapper.find('input[aria-label="Memory durchsuchen"]')
+    await search.setValue('nomatch')
+    vi.advanceTimersByTime(250)
+    await flushPromises()
+
+    await wrapper.get('button[aria-label="Abbrechen"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="memory-detail-title"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Wähle eine Notiz')
+  })
+
   it('falls back to empty-state when the selection is filtered out of the list', async () => {
     apiGet.mockResolvedValueOnce([note({ key: 'k', content: 'x' })])
     const wrapper = mount(MemoryPage, { global: { stubs } })

@@ -3,8 +3,8 @@ import { useAuthStore } from '~/stores/auth'
 /**
  * Thin wrapper around `$fetch` that injects the Bearer token and surfaces
  * 401s by clearing the stored token. Use for plain REST (`/api/conversations`,
- * `/api/notes`, `/api/todos`, `/api/reminders`). For SSE streaming (`/api/chat`)
- * use `sendChatMessage` instead — `$fetch` can't expose a ReadableStream.
+ * `/api/notes`, `/api/workspace/*`). For SSE streaming (`/api/chat`) use
+ * `sendChatMessage` instead — `$fetch` can't expose a ReadableStream.
  *
  * The path is intentionally typed as a wide `string` (cast to any when
  * forwarding) to avoid Nuxt's typed-routes inference path-explosion.

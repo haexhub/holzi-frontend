@@ -84,6 +84,7 @@ const selectedNote = computed<Note | null>(() => {
 function selectNote(note: Note) {
   selectedKey.value = note.key
   formError.value = null
+  isCreating.value = false
   mode.value = 'read'
 }
 
@@ -130,7 +131,16 @@ function cancelEdit() {
     mode.value = 'empty'
     return
   }
-  mode.value = selectedKey.value ? 'read' : 'empty'
+  // If the original note has since been filtered out (search reload
+  // landed while we were editing) there's nothing to fall back to —
+  // drop the stale selection and go to empty rather than rendering a
+  // headless read pane.
+  if (selectedNote.value) {
+    mode.value = 'read'
+  } else {
+    selectedKey.value = null
+    mode.value = 'empty'
+  }
 }
 
 async function save() {
