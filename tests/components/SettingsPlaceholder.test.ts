@@ -59,6 +59,7 @@ describe('PlaceholderSection', () => {
 
   it('renders nothing when the route is not in the nav model', () => {
     const wrapper = mountAtRoute('/settings/unknown')
+    expect(wrapper.find('h2').exists()).toBe(false)
     expect(wrapper.text()).toBe('')
   })
 })

@@ -12,7 +12,8 @@ import { settingsNav } from '~/lib/settingsNav'
 // back button work naturally. `active-class` styles the current entry.
 //
 // Layout:
-//  - desktop (md+): sticky sidebar on the left, content on the right
+//  - desktop (md+): sticky sidebar on the left (stays visible while
+//    long content like the LLM section scrolls), content on the right
 //  - mobile: horizontally scrollable top tabs, content below
 </script>
 
@@ -39,7 +40,7 @@ import { settingsNav } from '~/lib/settingsNav'
     <!-- Mobile: horizontal scroll tabs -->
     <nav
       class="-mx-6 overflow-x-auto border-b md:hidden"
-      aria-label="Control Center Navigation"
+      aria-label="Control Center (mobile)"
     >
       <div class="flex gap-1 px-6">
         <NuxtLink
@@ -56,10 +57,10 @@ import { settingsNav } from '~/lib/settingsNav'
     </nav>
 
     <div class="flex flex-1 gap-8">
-      <!-- Desktop: sidebar -->
+      <!-- Desktop: sidebar (sticky so it stays in view on long sections) -->
       <nav
-        class="hidden w-52 shrink-0 flex-col gap-0.5 md:flex"
-        aria-label="Control Center Navigation"
+        class="sticky top-6 hidden h-fit w-52 shrink-0 flex-col gap-0.5 self-start md:flex"
+        aria-label="Control Center (desktop)"
       >
         <NuxtLink
           v-for="item in settingsNav"
