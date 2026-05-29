@@ -40,7 +40,11 @@ describe('settingsNav model', () => {
 
   it('flags placeholder sections with an upcoming hint and shipped sections without', () => {
     const shipped = settingsNav.filter((n) => !n.upcoming).map((n) => n.to)
-    expect(shipped).toEqual(['/settings/llm', '/settings/messenger'])
+    expect(shipped).toEqual([
+      '/settings/llm',
+      '/settings/messenger',
+      '/settings/memory',
+    ])
     for (const item of settingsNav) {
       if (!shipped.includes(item.to)) {
         expect(item.upcoming, `${item.to} should have an upcoming hint`).toBeTruthy()
@@ -51,9 +55,9 @@ describe('settingsNav model', () => {
 
 describe('PlaceholderSection', () => {
   it('renders the label + upcoming hint for the active placeholder route', () => {
-    const wrapper = mountAtRoute('/settings/memory')
-    expect(wrapper.text()).toContain('Memory')
-    expect(wrapper.text()).toContain('Plan 15')
+    const wrapper = mountAtRoute('/settings/tasks')
+    expect(wrapper.text()).toContain('Tasks')
+    expect(wrapper.text()).toContain('Plan 16')
     expect(wrapper.text()).toContain('noch nicht implementiert')
   })
 

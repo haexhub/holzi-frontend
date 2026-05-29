@@ -2201,6 +2201,7 @@ export interface operations {
         parameters: {
             query?: {
                 limit?: number;
+                q?: string | null;
             };
             header?: never;
             path?: never;
