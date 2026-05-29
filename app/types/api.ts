@@ -29,6 +29,16 @@ export type WorkspaceTreeResponse = components['schemas']['WorkspaceTreeResponse
 export type WorkspaceFileResponse = components['schemas']['WorkspaceFileResponse']
 export type TreeEntry = components['schemas']['TreeEntry']
 
+// --- Workspace write + git (Plan 13) ------------------------------------
+export type WorkspaceCreateRequest = components['schemas']['WorkspaceCreateRequest']
+export type WorkspaceUpdateRequest = components['schemas']['WorkspaceUpdateRequest']
+export type WorkspaceRenameRequest = components['schemas']['WorkspaceRenameRequest']
+export type WorkspaceDeleteRequest = components['schemas']['WorkspaceDeleteRequest']
+export type WorkspaceWriteResponse = components['schemas']['WorkspaceWriteResponse']
+export type WorkspaceRenameResponse = components['schemas']['WorkspaceRenameResponse']
+export type WorkspaceGitResponse = components['schemas']['WorkspaceGitResponse']
+export type GitEntry = components['schemas']['GitEntry']
+
 // --- Chat SSE event envelope (Plan 08) ----------------------------------
 // One versioned envelope per stream event; the discriminated union is the
 // single source of truth shared with the backend's src/hermes/events.py.

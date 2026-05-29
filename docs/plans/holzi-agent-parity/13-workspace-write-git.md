@@ -1,5 +1,35 @@
 # Plan 13: Workspace Write Operations And Git Status
 
+Status: implemented in-session on 2026-05-29; cross-repo PRs pending.
+Backend adds `POST/PUT/DELETE /api/workspace/file`, `POST /api/workspace/rename`,
+and `GET /api/workspace/git`; the existing `GET /api/workspace/file` now also
+returns `sha256` of the on-disk bytes for the writer's `base_sha`. Every
+mutating call routes through the workspace sandbox (`mgr.write_file`,
+`exec(["mv"...])`, `exec(["rm"...])`) and is followed by `git add -A` +
+`git commit -m "user[conv-N]: <action> <path>"` when the root is a git repo;
+non-repo roots succeed with `committed: false` and no commit. base_sha
+mismatch returns 409 from the start (the Conflict Card UI itself is deferred
+to bind-mount mode per the plan). Binary content (NUL bytes in the request)
+is refused 400. Frontend: `WorkspacePanel.vue` gains an edit mode (textarea +
+Save/Cancel), a `New file` button with an inline create form, rename + delete
+actions on the selected file (delete behind `window.confirm`), a branch +
+dirty/clean badge under the root selector, and a "Wähle eine Konversation"
+hint when `conversationId` is null (writes are gated by an active chat so
+every commit message has an honest author tag). Defaults: directory delete is
+out of scope; the Conflict Card UI ships only once bind-mount mode does.
+
+Verification:
+
+- `pytest tests/test_api_workspace.py` — 59 tests green (24 new for Plan 13)
+- `pytest` full backend suite — 545 passed
+- `pnpm vitest run tests/components/WorkspacePanel.test.ts` — 22 tests green
+  (11 new for Plan 13: git badge, edit/save success + 409 conflict, create,
+  delete confirm + cancel, conversation-id gating)
+- `pnpm vitest run` full frontend suite — 142 passed
+- `pnpm typecheck` — green
+- `pnpm run gen:api` against the in-session backend regenerated
+  `app/types/api-generated.ts`
+
 Depends on: [12](./12-workspace-browser-readonly.md) and
 [11b](./11b-sandbox-runtime.md) — writes happen inside the workspace sandbox,
 not in the agent container.

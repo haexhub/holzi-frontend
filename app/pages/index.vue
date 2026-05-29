@@ -914,7 +914,10 @@ onMounted(() => {
         <NotesPanel v-if="activePanel === 'notes'" />
         <TodosPanel v-else-if="activePanel === 'todos'" />
         <RemindersPanel v-else-if="activePanel === 'reminders'" />
-        <WorkspacePanel v-else-if="activePanel === 'workspace'" />
+        <WorkspacePanel
+          v-else-if="activePanel === 'workspace'"
+          :conversation-id="activeId"
+        />
       </div>
     </aside>
   </div>

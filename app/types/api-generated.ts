@@ -735,6 +735,43 @@ export interface paths {
         };
         /** Api Workspace File */
         get: operations["api_workspace_file_api_workspace_file_get"];
+        /** Api Workspace File Update */
+        put: operations["api_workspace_file_update_api_workspace_file_put"];
+        /** Api Workspace File Create */
+        post: operations["api_workspace_file_create_api_workspace_file_post"];
+        /** Api Workspace File Delete */
+        delete: operations["api_workspace_file_delete_api_workspace_file_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspace/rename": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Api Workspace File Rename */
+        post: operations["api_workspace_file_rename_api_workspace_rename_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspace/git": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Api Workspace Git */
+        get: operations["api_workspace_git_api_workspace_git_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1022,6 +1059,13 @@ export interface components {
              */
             version: number;
             data: components["schemas"]["ErrorData"];
+        };
+        /** GitEntry */
+        GitEntry: {
+            /** Status */
+            status: string;
+            /** Path */
+            path: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -1569,6 +1613,26 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
+        /** WorkspaceCreateRequest */
+        WorkspaceCreateRequest: {
+            /** Root */
+            root: string;
+            /** Path */
+            path: string;
+            /** Content */
+            content: string;
+            /** Conversation Id */
+            conversation_id: string;
+        };
+        /** WorkspaceDeleteRequest */
+        WorkspaceDeleteRequest: {
+            /** Root */
+            root: string;
+            /** Path */
+            path: string;
+            /** Conversation Id */
+            conversation_id: string;
+        };
         /** WorkspaceFileResponse */
         WorkspaceFileResponse: {
             /** Root */
@@ -1590,6 +1654,43 @@ export interface components {
             data_url: string | null;
             /** Truncated */
             truncated: boolean;
+            /** Sha256 */
+            sha256: string | null;
+        };
+        /** WorkspaceGitResponse */
+        WorkspaceGitResponse: {
+            /** Root */
+            root: string;
+            /** Is Repo */
+            is_repo: boolean;
+            /** Branch */
+            branch: string | null;
+            /** Dirty */
+            dirty: boolean;
+            /** Entries */
+            entries: components["schemas"]["GitEntry"][];
+        };
+        /** WorkspaceRenameRequest */
+        WorkspaceRenameRequest: {
+            /** Root */
+            root: string;
+            /** Src */
+            src: string;
+            /** Dest */
+            dest: string;
+            /** Conversation Id */
+            conversation_id: string;
+        };
+        /** WorkspaceRenameResponse */
+        WorkspaceRenameResponse: {
+            /** Root */
+            root: string;
+            /** Src */
+            src: string;
+            /** Dest */
+            dest: string;
+            /** Committed */
+            committed: boolean;
         };
         /** WorkspaceRoot */
         WorkspaceRoot: {
@@ -1609,6 +1710,30 @@ export interface components {
             path: string;
             /** Entries */
             entries: components["schemas"]["TreeEntry"][];
+        };
+        /** WorkspaceUpdateRequest */
+        WorkspaceUpdateRequest: {
+            /** Root */
+            root: string;
+            /** Path */
+            path: string;
+            /** Content */
+            content: string;
+            /** Base Sha */
+            base_sha: string;
+            /** Conversation Id */
+            conversation_id: string;
+        };
+        /** WorkspaceWriteResponse */
+        WorkspaceWriteResponse: {
+            /** Root */
+            root: string;
+            /** Path */
+            path: string;
+            /** Sha256 */
+            sha256: string;
+            /** Committed */
+            committed: boolean;
         };
     };
     responses: never;
@@ -3045,6 +3170,169 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WorkspaceFileResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_workspace_file_update_api_workspace_file_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkspaceUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceWriteResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_workspace_file_create_api_workspace_file_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkspaceCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceWriteResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_workspace_file_delete_api_workspace_file_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkspaceDeleteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceWriteResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_workspace_file_rename_api_workspace_rename_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkspaceRenameRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceRenameResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_workspace_git_api_workspace_git_get: {
+        parameters: {
+            query: {
+                root: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceGitResponse"];
                 };
             };
             /** @description Validation Error */
