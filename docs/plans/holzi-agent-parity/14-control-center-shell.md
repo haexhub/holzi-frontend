@@ -1,5 +1,21 @@
 # Plan 14: Control Center Shell
 
+Status: implemented on 2026-05-29.
+
+Verification:
+
+- `pnpm run typecheck` — clean.
+- `pnpm test` — 18 files, 152 tests passing (incl. new `tests/components/SettingsPlaceholder.test.ts`).
+- Visual smoke not run against the dev-stack; layout uses standard Tailwind responsive utilities (`md:hidden` / `hidden md:flex`) and is covered by tests for the nav model + placeholder rendering.
+
+Notes:
+
+- Nav model lives in `app/lib/settingsNav.ts` as a `readonly SettingsNavItem[]` — one source of truth consumed by `pages/settings.vue` (sidebar + mobile tabs) and the shared `components/settings/PlaceholderSection.vue`. Each item carries an optional `upcoming` hint; shipped sections (`llm`, `messenger`) omit it. Plan 15/16/20 just need to remove the `upcoming` hint and add their content.
+- `/settings` keeps redirecting to `/settings/llm` (existing middleware in `pages/settings/index.vue`).
+- Header label flipped to `Control Center`; subtitle remains German.
+- Six placeholder routes added (`preferences`, `memory`, `tasks`, `skills`, `workspaces`, `diagnostics`) — each page is two lines and mounts `PlaceholderSection` which looks itself up in `settingsNav` by `route.path`. No fake functionality.
+- Responsive layout: desktop renders a 208 px sidebar with icons + labels; mobile renders the same items as horizontally scrollable top tabs (`overflow-x-auto` band). Both navs share the same `settingsNav` array, so deep links + browser back work and the two layouts can never drift apart.
+
 ## Goal
 
 Create a coherent Control Center for operating Holzi.
