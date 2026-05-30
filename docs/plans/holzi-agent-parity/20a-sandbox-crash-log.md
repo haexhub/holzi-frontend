@@ -1,5 +1,79 @@
 # Plan 20-A: Persistent Sandbox-Crash Log Table
 
+Status: **Implemented and merged on 2026-05-30.** Cross-repo: backend
+[Holzi#51](https://github.com/haexhub/Holzi/pull/51) (squashed as
+`85d1792`), frontend
+[holzi-frontend#56](https://github.com/haexhub/holzi-frontend/pull/56)
+(squashed as `f852643`).
+
+Closes the [Plan 11b-b](./11b-sandbox-runtime.md) "Known limit": a
+workspace sandbox dead-transition now persists in `sandbox_crashes` so
+crashes that happen with no chat stream connected survive both the lack
+of a live consumer and an agent-container restart. `GET
+/api/sandbox/crashes` returns them newest-first with `(crashed_at DESC,
+id DESC)` ordering (sub-second collisions still come back in insertion
+order); `/settings/diagnostics` renders them as a third section
+"Sandbox-Abstürze" between Subsysteme and "Letzte Fehlläufe". The
+section renders even when the live sandbox subsystem-check is green —
+past crashes still matter.
+
+`state` is intentionally typed as `Literal["crashed", "oom", "removed"]`
+on the response model so the regenerated frontend types stay exhaustive
+(`CRASH_STATE_LABEL satisfies Record<SandboxCrashState, string>`). The
+canonical writer is `_DEAD_STATES` in `sandbox/manager.py`; adding a
+state is a five-step cross-system change (manager + route Literal +
+gen:api + frontend label map + German display string). The
+500-on-schema-drift is the deliberate failure mode — loud, rather than
+silently rendering "unknown" in the UI.
+
+Cross-repo flow per [[feedback-cross-repo-workflow]]:
+
+- Backend tests first (`tests/test_sandbox_crashes_repo.py` 6,
+  `tests/test_api_sandbox_crashes.py` 8,
+  `tests/test_sandbox_crash_persistence.py` 5 including the
+  handler-isolation case added during self-review) — green.
+- `src/hermes/schema.py` (new `sandbox_crashes` table + index),
+  `src/hermes/repository/sandbox_crashes.py`,
+  `src/hermes/routes/sandbox.py`, `src/hermes/main.py` (registers
+  `persist_crash` **before** `start_health_watcher`).
+- `pnpm run gen:api` regenerated `app/types/api-generated.ts` against
+  the new endpoint.
+- Frontend: `app/types/api.ts` (`SandboxCrash` + `SandboxCrashState`),
+  `app/composables/useDiagnostics.ts` (third triplet + extended
+  `loadAll`), `app/pages/settings/diagnostics.vue` (new section with
+  exhaustive `CRASH_STATE_LABEL`), `tests/components/DiagnosticsPage.test.ts`
+  (12 tests total, 5 new for the section).
+
+Self-review note: CodeRabbit was credits-exhausted on both PRs (per
+[[feedback-coderabbit-workflow]] credit-exhaustion fallback). Two
+parallel general-purpose agents (one per repo) reviewed instead. The
+backend review surfaced four worth-addressing non-blockers, all
+addressed in `1642021` on the same branch before merge (db-None guard,
+`crashed_at` description, cross-system invariant docstring,
+handler-isolation test). The frontend review came back "ship it".
+
+Verification (2026-05-30):
+
+- `cd /home/haex/Projekte/Holzi && uv run pytest tests/test_sandbox_crashes_repo.py tests/test_api_sandbox_crashes.py tests/test_sandbox_crash_persistence.py`
+  → 19 passed.
+- `cd /home/haex/Projekte/Holzi && uv run pytest` → 590 passed, 3
+  deselected (no regression).
+- `pnpm typecheck` → no errors.
+- `pnpm vitest run` → 190 passed (21 files), including the 5 new
+  diagnostics-crashes cases.
+- **Live verification deferred.** `make up-local-full` blocked on a
+  dev-stack bug independent of this slice: the user's host has Docker
+  (no Podman locally), but the Makefile defaults to `podman compose`,
+  and the `podman-compose 1.5.0` fallback hangs in `epoll_wait`. The
+  manager-level test in `test_sandbox_crash_persistence.py` drives the
+  real `SandboxManager` against the `FakeSandboxBackend` (incl. OOM,
+  restart-refires, handler-isolation) and covers the persistence
+  contract end-to-end. Live Podman → DB → API → page coverage is the
+  job of a follow-up "Plan 20-B: dev-stack docker-agnostisch" session.
+
+Two of Plan 20's deferred follow-ups remain open: onboarding empty
+state in `EmptyChatState.vue` and README/troubleshooting/provider docs.
+
 First of the three follow-up slices left open by [Plan 20](./20-onboarding-diagnostics-docs.md).
 Closes the "Known limit" of [Plan 11b-b](./11b-sandbox-runtime.md): a workspace
 sandbox crash currently surfaces only through the live `sandbox_crashed` SSE
