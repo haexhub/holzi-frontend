@@ -1140,6 +1140,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/insights": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Api Insights */
+        get: operations["api_insights_api_insights_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Api Logs */
+        get: operations["api_logs_api_logs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -1373,6 +1407,17 @@ export interface components {
             /** Allowed Chat Ids */
             allowed_chat_ids?: number[] | null;
         };
+        /** DailyBucket */
+        DailyBucket: {
+            /** Bucket */
+            bucket: string;
+            /** Input Tokens */
+            input_tokens: number;
+            /** Output Tokens */
+            output_tokens: number;
+            /** Runs */
+            runs: number;
+        };
         /** DiagnosticsCheck */
         DiagnosticsCheck: {
             /** Id */
@@ -1599,6 +1644,20 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** InsightsResponse */
+        InsightsResponse: {
+            /**
+             * Period
+             * @enum {string}
+             */
+            period: "24h" | "7d" | "30d";
+            totals: components["schemas"]["TotalsResponse"];
+            /** Series */
+            series: components["schemas"]["DailyBucket"][];
+            /** By Model */
+            by_model: components["schemas"]["ModelBreakdown"][];
+            by_status: components["schemas"]["StatusCounts"];
+        };
         /** LlmCredentialCreate */
         LlmCredentialCreate: {
             /**
@@ -1638,6 +1697,13 @@ export interface components {
             /** Updated At */
             updated_at: number;
         };
+        /** LogsResponse */
+        LogsResponse: {
+            /** Rows */
+            rows: {
+                [key: string]: unknown;
+            }[];
+        };
         /** MessageResponse */
         MessageResponse: {
             /** Id */
@@ -1675,6 +1741,19 @@ export interface components {
             created_at: number;
             /** Updated At */
             updated_at: number;
+        };
+        /** ModelBreakdown */
+        ModelBreakdown: {
+            /** Model */
+            model: string;
+            /** Runs */
+            runs: number;
+            /** Input Tokens */
+            input_tokens: number;
+            /** Output Tokens */
+            output_tokens: number;
+            /** Errors */
+            errors: number;
         };
         /** ModelChoiceResponse */
         ModelChoiceResponse: {
@@ -1914,6 +1993,17 @@ export interface components {
             conversation_id: number;
             /** Tool */
             tool: string;
+        };
+        /** StatusCounts */
+        StatusCounts: {
+            /** Success */
+            success: number;
+            /** Error */
+            error: number;
+            /** Cancelled */
+            cancelled: number;
+            /** Running */
+            running: number;
         };
         /**
          * SubagentDoneData
@@ -2206,6 +2296,17 @@ export interface components {
              */
             version: number;
             data: components["schemas"]["ToolResultData"];
+        };
+        /** TotalsResponse */
+        TotalsResponse: {
+            /** Input Tokens */
+            input_tokens: number;
+            /** Output Tokens */
+            output_tokens: number;
+            /** Runs */
+            runs: number;
+            /** Errors */
+            errors: number;
         };
         /** TreeEntry */
         TreeEntry: {
@@ -4598,6 +4699,69 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DiagnosticsResponse"];
+                };
+            };
+        };
+    };
+    api_insights_api_insights_get: {
+        parameters: {
+            query?: {
+                period?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InsightsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_logs_api_logs_get: {
+        parameters: {
+            query?: {
+                tail?: number;
+                min_level?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LogsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

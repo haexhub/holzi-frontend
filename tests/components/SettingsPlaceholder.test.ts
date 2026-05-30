@@ -41,6 +41,8 @@ describe('settingsNav model', () => {
       '/settings/skills',
       '/settings/workspaces',
       '/settings/diagnostics',
+      '/settings/insights',
+      '/settings/logs',
     ])
   })
 
@@ -53,6 +55,8 @@ describe('settingsNav model', () => {
       '/settings/tasks',
       '/settings/workspaces',
       '/settings/diagnostics',
+      '/settings/insights',
+      '/settings/logs',
     ])
     for (const item of settingsNav) {
       if (!shipped.includes(item.to)) {

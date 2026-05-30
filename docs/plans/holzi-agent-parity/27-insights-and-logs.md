@@ -2,7 +2,35 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-Status: **Planned.**
+Status: **Implemented (PR pending).**
+
+Backend: `GET /api/insights?period=24h|7d|30d` aggregates `agent_runs`
+(totals + daily UTC buckets zero-filled + per-model + per-status) via
+new `runs.aggregate_*` helpers; `GET /api/logs?tail=&min_level=` tails
+the rotating structlog file `HERMES_LOG_FILE` (503 when unset) with a
+defensive secret-key redaction pass (same regex applied at write- and
+read-time). Logging gained a `_redaction_processor` + `RotatingFileHandler`
+sibling to the existing stdout stream. `tests/test_api_insights.py`
+(9 cases) + `tests/test_api_logs.py` (11 cases) cover empty windows,
+period validation, tail/level caps, redaction, malformed-line `_raw`
+fallback.
+
+Frontend: new `/settings/insights` and `/settings/logs` pages plus
+`settingsNav` entries and `app/lib/pricing.ts` (static per-model rate
+table, sourced 2026-05-31). The Insights page renders KPI tiles + a
+Tailwind-only bar chart + sortable per-model table + status counts;
+auto-refresh every 60 s while visible. The Logs page tails with
+severity / tail-size / substring filters, copy-all, wrap toggle, and
+auto-refresh every 5 s. `tests/components/InsightsPage.test.ts` (8
+cases) + `tests/components/LogsPage.test.ts` (9 cases) + adjusted
+`SettingsPlaceholder.test.ts`.
+
+Verification: backend `pytest` → 705 passed; frontend `pnpm vitest
+run` → 255 passed; `pnpm typecheck` clean. Live smoke against a real
+backend (port 18083, `HERMES_LOG_FILE` set) confirmed insights returns
+honest zero-filled buckets, logs surfaced real `hermes_starting` /
+`agent_task_scheduler_started` rows plus a `_raw`-wrapped non-JSON MCP
+log line, and 400 / 401 / 503 paths all fire as specified.
 
 Cross-repo. Backend adds two read-only endpoints; frontend adds two pages.
 
