@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { Paperclip, Send, Square } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -29,10 +29,15 @@ const fileInput = ref<HTMLInputElement | null>(null)
 function onPick(event: Event) {
   const input = event.target as HTMLInputElement
   if (input.files) {
-    files.value = [...files.value, ...Array.from(input.files)]
+    attachFiles(Array.from(input.files))
   }
   // Reset so picking the same file again re-fires change.
   input.value = ''
+}
+
+function attachFiles(picked: File[]) {
+  if (!picked.length) return
+  files.value = [...files.value, ...picked]
 }
 
 function removeFile(index: number) {
@@ -55,13 +60,62 @@ function onKeydown(event: KeyboardEvent) {
     submit()
   }
 }
+
+// Drag&Drop counter: child elements fire enter/leave as the pointer crosses
+// them, so a single boolean would flicker. Counting matches the behaviour of
+// every battle-tested dropzone implementation.
+const dragDepth = ref(0)
+const dndEnabled = computed(() => !props.streaming)
+const isDragOver = computed(() => dndEnabled.value && dragDepth.value > 0)
+
+function onDragEnter(event: DragEvent) {
+  if (!dndEnabled.value) return
+  if (!event.dataTransfer?.types?.includes('Files')) return
+  event.preventDefault()
+  dragDepth.value++
+}
+
+function onDragOver(event: DragEvent) {
+  if (!dndEnabled.value) return
+  if (!event.dataTransfer?.types?.includes('Files')) return
+  // Required so the browser doesn't reject the drop.
+  event.preventDefault()
+  event.dataTransfer.dropEffect = 'copy'
+}
+
+function onDragLeave(event: DragEvent) {
+  if (!dndEnabled.value) return
+  event.preventDefault()
+  dragDepth.value = Math.max(0, dragDepth.value - 1)
+}
+
+function onDrop(event: DragEvent) {
+  if (!dndEnabled.value) return
+  event.preventDefault()
+  dragDepth.value = 0
+  const dropped = event.dataTransfer?.files
+  if (dropped && dropped.length) {
+    attachFiles(Array.from(dropped))
+  }
+}
 </script>
 
 <template>
   <form
-    class="flex flex-col gap-2 border-t bg-background p-3"
+    class="relative flex flex-col gap-2 border-t bg-background p-3"
     @submit.prevent="submit"
+    @dragenter="onDragEnter"
+    @dragover="onDragOver"
+    @dragleave="onDragLeave"
+    @drop="onDrop"
   >
+    <div
+      v-if="isDragOver"
+      data-testid="composer-dropzone"
+      class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-md border-2 border-dashed border-primary/70 bg-primary/10 text-sm font-medium text-primary"
+    >
+      Dateien hier ablegen
+    </div>
     <!-- Selected-but-not-yet-sent attachments. Removable until send. -->
     <div v-if="files.length" class="flex flex-wrap gap-1.5">
       <AttachmentChip

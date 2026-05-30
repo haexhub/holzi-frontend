@@ -64,4 +64,67 @@ describe('ChatComposer.vue', () => {
     expect(wrapper.text()).not.toContain('gone.txt')
     expect((wrapper.find('textarea').element as HTMLTextAreaElement).value).toBe('')
   })
+
+  // --- Plan 22: drag&drop --------------------------------------------------
+
+  function buildDataTransfer(files: File[]): DataTransfer {
+    const list = {
+      length: files.length,
+      item: (i: number) => files[i] ?? null,
+      [Symbol.iterator]: function* () {
+        for (const f of files) yield f
+      },
+    } as unknown as FileList
+    return {
+      files: list,
+      types: ['Files'],
+      dropEffect: 'none',
+      effectAllowed: 'all',
+    } as unknown as DataTransfer
+  }
+
+  it('dragenter shows the dropzone overlay; dragleave hides it', async () => {
+    const wrapper = mount(ChatComposer)
+    expect(wrapper.find('[data-testid="composer-dropzone"]').exists()).toBe(false)
+    await wrapper.find('form').trigger('dragenter', { dataTransfer: buildDataTransfer([]) })
+    expect(wrapper.find('[data-testid="composer-dropzone"]').exists()).toBe(true)
+    await wrapper.find('form').trigger('dragleave', { dataTransfer: buildDataTransfer([]) })
+    expect(wrapper.find('[data-testid="composer-dropzone"]').exists()).toBe(false)
+  })
+
+  it('drop adds the file via the same path as the paperclip picker', async () => {
+    const wrapper = mount(ChatComposer)
+    const file = new File(['hi'], 'dropped.md', { type: 'text/markdown' })
+    await wrapper.find('form').trigger('dragenter', { dataTransfer: buildDataTransfer([file]) })
+    await wrapper.find('form').trigger('drop', { dataTransfer: buildDataTransfer([file]) })
+
+    expect(wrapper.find('[data-testid="composer-dropzone"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('dropped.md')
+
+    await wrapper.find('textarea').setValue('send it')
+    await wrapper.find('form').trigger('submit')
+    const events = wrapper.emitted('send')
+    expect(events).toHaveLength(1)
+    const payload = events![0]![0] as { text: string; files: File[] }
+    expect(payload.files).toHaveLength(1)
+    expect(payload.files[0]!.name).toBe('dropped.md')
+  })
+
+  it('does not show the dropzone while a stream is active', async () => {
+    const wrapper = mount(ChatComposer, { props: { streaming: true } })
+    await wrapper.find('form').trigger('dragenter', { dataTransfer: buildDataTransfer([]) })
+    expect(wrapper.find('[data-testid="composer-dropzone"]').exists()).toBe(false)
+  })
+
+  it('ignores non-file drags (e.g. text selection)', async () => {
+    const wrapper = mount(ChatComposer)
+    const textOnlyDT = {
+      files: { length: 0 } as unknown as FileList,
+      types: ['text/plain'],
+      dropEffect: 'none',
+      effectAllowed: 'all',
+    } as unknown as DataTransfer
+    await wrapper.find('form').trigger('dragenter', { dataTransfer: textOnlyDT })
+    expect(wrapper.find('[data-testid="composer-dropzone"]').exists()).toBe(false)
+  })
 })

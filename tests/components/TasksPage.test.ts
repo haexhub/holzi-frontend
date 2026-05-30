@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import TasksPage from '~/pages/settings/tasks.vue'
 import type { AgentTask } from '~/types/api'
@@ -18,6 +18,11 @@ vi.mock('~/composables/useApi', () => ({
   }),
 }))
 
+const confirmFn = vi.fn()
+vi.mock('~/composables/useConfirm', () => ({
+  useConfirm: () => ({ confirm: (opts: unknown) => confirmFn(opts) }),
+}))
+
 function task(overrides: Partial<AgentTask> & { id: number; title: string }): AgentTask {
   return {
     id: overrides.id,
@@ -35,26 +40,14 @@ function task(overrides: Partial<AgentTask> & { id: number; title: string }): Ag
   }
 }
 
-// jsdom doesn't ship window.confirm; install a controllable stub once for
-// the whole suite so a test failing before its local restore can't leak
-// into the next test.
-const confirmStub = vi.fn<() => boolean>(() => true)
-const originalConfirm = window.confirm
-beforeAll(() => {
-  Object.defineProperty(window, 'confirm', { value: confirmStub, configurable: true })
-})
-afterAll(() => {
-  Object.defineProperty(window, 'confirm', { value: originalConfirm, configurable: true })
-})
-
 describe('settings/tasks.vue', () => {
   beforeEach(() => {
     apiGet.mockReset()
     apiPost.mockReset()
     apiPatch.mockReset()
     apiDelete.mockReset()
-    confirmStub.mockReset()
-    confirmStub.mockReturnValue(true)
+    confirmFn.mockReset()
+    confirmFn.mockResolvedValue(true)
   })
 
   afterEach(() => {
@@ -212,7 +205,7 @@ describe('settings/tasks.vue', () => {
     apiGet.mockResolvedValueOnce([task({ id: 1, title: 't' })])
     apiDelete.mockResolvedValueOnce(undefined)
     apiGet.mockResolvedValueOnce([])
-    confirmStub.mockReturnValue(true)
+    confirmFn.mockResolvedValue(true)
 
     const wrapper = mount(TasksPage)
     await flushPromises()
@@ -224,12 +217,12 @@ describe('settings/tasks.vue', () => {
     await flushPromises()
 
     expect(apiDelete).toHaveBeenCalledWith('/api/tasks/1', undefined)
-    expect(confirmStub).toHaveBeenCalled()
+    expect(confirmFn).toHaveBeenCalled()
   })
 
   it('aborts delete when the user declines the confirmation', async () => {
     apiGet.mockResolvedValueOnce([task({ id: 1, title: 't' })])
-    confirmStub.mockReturnValue(false)
+    confirmFn.mockResolvedValue(false)
 
     const wrapper = mount(TasksPage)
     await flushPromises()
@@ -240,7 +233,7 @@ describe('settings/tasks.vue', () => {
     await wrapper.get('[data-testid="task-delete"]').trigger('click')
     await flushPromises()
 
-    expect(confirmStub).toHaveBeenCalled()
+    expect(confirmFn).toHaveBeenCalled()
     expect(apiDelete).not.toHaveBeenCalled()
   })
 

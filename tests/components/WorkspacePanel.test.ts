@@ -24,6 +24,16 @@ vi.mock('~/composables/useApi', () => ({
   }),
 }))
 
+const confirmFn = vi.fn()
+vi.mock('~/composables/useConfirm', () => ({
+  useConfirm: () => ({ confirm: (opts: unknown) => confirmFn(opts) }),
+}))
+
+const promptFn = vi.fn()
+vi.mock('~/composables/usePromptDialog', () => ({
+  usePromptDialog: () => ({ prompt: (opts: unknown) => promptFn(opts) }),
+}))
+
 // Used as a default response for the panel's /api/workspace/git call so
 // existing Plan 12 tests don't need to know the endpoint exists. Plan 13
 // tests that care about the badge override with `is_repo: true`.
@@ -83,6 +93,10 @@ describe('WorkspacePanel.vue', () => {
     apiPost.mockReset()
     apiPut.mockReset()
     apiDelete.mockReset()
+    confirmFn.mockReset()
+    confirmFn.mockResolvedValue(true)
+    promptFn.mockReset()
+    promptFn.mockResolvedValue(null)
   })
 
   afterEach(() => {
@@ -674,206 +688,186 @@ describe('WorkspacePanel.vue', () => {
   // --- Plan 13: delete -----------------------------------------------------
 
   it('delete: confirms then DELETEs /api/workspace/file with conversation_id', async () => {
-    const confirmSpy = vi.fn().mockReturnValue(true)
-    vi.stubGlobal('confirm', confirmSpy)
-    try {
-      apiGet.mockImplementation((path: string) => {
-        if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
-        if (path === '/api/workspace/tree')
-          return Promise.resolve(
-            treeResponse('ws', '', [{ name: 'gone.txt', type: 'file', size: 4 }]),
-          )
-        if (path === '/api/workspace/file')
-          return Promise.resolve(
-            fileResponse({
-              name: 'gone.txt',
-              kind: 'text',
-              content: 'bye',
-              sha256: 'sha-x',
-            }),
-          )
-        if (path === '/api/workspace/git') return Promise.resolve(NOT_A_REPO)
-        throw new Error(`unexpected ${path}`)
-      })
-      apiDelete.mockResolvedValue({
-        root: 'ws',
-        path: 'gone.txt',
-        sha256: 'sha-empty',
-        committed: false,
-      })
+    confirmFn.mockResolvedValue(true)
+    apiGet.mockImplementation((path: string) => {
+      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
+      if (path === '/api/workspace/tree')
+        return Promise.resolve(
+          treeResponse('ws', '', [{ name: 'gone.txt', type: 'file', size: 4 }]),
+        )
+      if (path === '/api/workspace/file')
+        return Promise.resolve(
+          fileResponse({
+            name: 'gone.txt',
+            kind: 'text',
+            content: 'bye',
+            sha256: 'sha-x',
+          }),
+        )
+      if (path === '/api/workspace/git') return Promise.resolve(NOT_A_REPO)
+      throw new Error(`unexpected ${path}`)
+    })
+    apiDelete.mockResolvedValue({
+      root: 'ws',
+      path: 'gone.txt',
+      sha256: 'sha-empty',
+      committed: false,
+    })
 
-      const wrapper = mount(WorkspacePanel, {
-        global: { stubs },
-        props: { conversationId: 9 },
-      })
-      await flushPromises()
-      await wrapper.findAll('li').find((li) => li.text().includes('gone.txt'))!.trigger('click')
-      await flushPromises()
-      const delBtn = wrapper
-        .findAll('button')
-        .find((b) => b.attributes('aria-label') === 'Löschen')
-      expect(delBtn).toBeTruthy()
-      await delBtn!.trigger('click')
-      await flushPromises()
+    const wrapper = mount(WorkspacePanel, {
+      global: { stubs },
+      props: { conversationId: 9 },
+    })
+    await flushPromises()
+    await wrapper.findAll('li').find((li) => li.text().includes('gone.txt'))!.trigger('click')
+    await flushPromises()
+    const delBtn = wrapper
+      .findAll('button')
+      .find((b) => b.attributes('aria-label') === 'Löschen')
+    expect(delBtn).toBeTruthy()
+    await delBtn!.trigger('click')
+    await flushPromises()
 
-      expect(confirmSpy).toHaveBeenCalled()
-      expect(apiDelete).toHaveBeenCalledWith('/api/workspace/file', {
-        root: 'ws',
-        path: 'gone.txt',
-        conversation_id: '9',
-      })
-    } finally {
-      vi.unstubAllGlobals()
-    }
+    expect(confirmFn).toHaveBeenCalled()
+    expect(apiDelete).toHaveBeenCalledWith('/api/workspace/file', {
+      root: 'ws',
+      path: 'gone.txt',
+      conversation_id: '9',
+    })
   })
 
   it('delete: cancelling the confirm dialog does not call the API', async () => {
-    const confirmSpy = vi.fn().mockReturnValue(false)
-    vi.stubGlobal('confirm', confirmSpy)
-    try {
-      apiGet.mockImplementation((path: string) => {
-        if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
-        if (path === '/api/workspace/tree')
-          return Promise.resolve(
-            treeResponse('ws', '', [{ name: 'gone.txt', type: 'file', size: 4 }]),
-          )
-        if (path === '/api/workspace/file')
-          return Promise.resolve(
-            fileResponse({
-              name: 'gone.txt',
-              kind: 'text',
-              content: 'bye',
-              sha256: 'sha-x',
-            }),
-          )
-        if (path === '/api/workspace/git') return Promise.resolve(NOT_A_REPO)
-        throw new Error(`unexpected ${path}`)
-      })
+    confirmFn.mockResolvedValue(false)
+    apiGet.mockImplementation((path: string) => {
+      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
+      if (path === '/api/workspace/tree')
+        return Promise.resolve(
+          treeResponse('ws', '', [{ name: 'gone.txt', type: 'file', size: 4 }]),
+        )
+      if (path === '/api/workspace/file')
+        return Promise.resolve(
+          fileResponse({
+            name: 'gone.txt',
+            kind: 'text',
+            content: 'bye',
+            sha256: 'sha-x',
+          }),
+        )
+      if (path === '/api/workspace/git') return Promise.resolve(NOT_A_REPO)
+      throw new Error(`unexpected ${path}`)
+    })
 
-      const wrapper = mount(WorkspacePanel, {
-        global: { stubs },
-        props: { conversationId: 1 },
-      })
-      await flushPromises()
-      await wrapper.findAll('li').find((li) => li.text().includes('gone.txt'))!.trigger('click')
-      await flushPromises()
-      await wrapper
-        .findAll('button')
-        .find((b) => b.attributes('aria-label') === 'Löschen')!
-        .trigger('click')
-      await flushPromises()
+    const wrapper = mount(WorkspacePanel, {
+      global: { stubs },
+      props: { conversationId: 1 },
+    })
+    await flushPromises()
+    await wrapper.findAll('li').find((li) => li.text().includes('gone.txt'))!.trigger('click')
+    await flushPromises()
+    await wrapper
+      .findAll('button')
+      .find((b) => b.attributes('aria-label') === 'Löschen')!
+      .trigger('click')
+    await flushPromises()
 
-      expect(confirmSpy).toHaveBeenCalled()
-      expect(apiDelete).not.toHaveBeenCalled()
-    } finally {
-      vi.unstubAllGlobals()
-    }
+    expect(confirmFn).toHaveBeenCalled()
+    expect(apiDelete).not.toHaveBeenCalled()
   })
 
   // --- Plan 13: rename -----------------------------------------------------
 
   it('rename: prompt → POST /rename → reload tree + navigate to dest parent', async () => {
-    const promptSpy = vi.fn().mockReturnValue('src/new.md')
-    vi.stubGlobal('prompt', promptSpy)
-    try {
-      apiGet.mockImplementation((path: string, query?: Record<string, unknown>) => {
-        if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
-        if (path === '/api/workspace/tree') {
-          if (query?.path === '' || query?.path === undefined)
-            return Promise.resolve(
-              treeResponse('ws', '', [{ name: 'old.md', type: 'file', size: 5 }]),
-            )
-          if (query?.path === 'src')
-            return Promise.resolve(
-              treeResponse('ws', 'src', [{ name: 'new.md', type: 'file', size: 5 }]),
-            )
-        }
-        if (path === '/api/workspace/file')
+    promptFn.mockResolvedValue('src/new.md')
+    apiGet.mockImplementation((path: string, query?: Record<string, unknown>) => {
+      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
+      if (path === '/api/workspace/tree') {
+        if (query?.path === '' || query?.path === undefined)
           return Promise.resolve(
-            fileResponse({
-              name: query?.path === 'src/new.md' ? 'new.md' : 'old.md',
-              path: String(query?.path),
-              kind: 'markdown',
-              content: '# hi',
-              sha256: 'sha-x',
-            }),
+            treeResponse('ws', '', [{ name: 'old.md', type: 'file', size: 5 }]),
           )
-        if (path === '/api/workspace/git') return Promise.resolve(NOT_A_REPO)
-        throw new Error(`unexpected ${path} ${JSON.stringify(query)}`)
-      })
-      apiPost.mockResolvedValue({
-        root: 'ws',
-        src: 'old.md',
-        dest: 'src/new.md',
-        committed: true,
-      })
+        if (query?.path === 'src')
+          return Promise.resolve(
+            treeResponse('ws', 'src', [{ name: 'new.md', type: 'file', size: 5 }]),
+          )
+      }
+      if (path === '/api/workspace/file')
+        return Promise.resolve(
+          fileResponse({
+            name: query?.path === 'src/new.md' ? 'new.md' : 'old.md',
+            path: String(query?.path),
+            kind: 'markdown',
+            content: '# hi',
+            sha256: 'sha-x',
+          }),
+        )
+      if (path === '/api/workspace/git') return Promise.resolve(NOT_A_REPO)
+      throw new Error(`unexpected ${path} ${JSON.stringify(query)}`)
+    })
+    apiPost.mockResolvedValue({
+      root: 'ws',
+      src: 'old.md',
+      dest: 'src/new.md',
+      committed: true,
+    })
 
-      const wrapper = mount(WorkspacePanel, {
-        global: { stubs },
-        props: { conversationId: 5 },
-      })
-      await flushPromises()
-      await wrapper.findAll('li').find((li) => li.text().includes('old.md'))!.trigger('click')
-      await flushPromises()
+    const wrapper = mount(WorkspacePanel, {
+      global: { stubs },
+      props: { conversationId: 5 },
+    })
+    await flushPromises()
+    await wrapper.findAll('li').find((li) => li.text().includes('old.md'))!.trigger('click')
+    await flushPromises()
 
-      const renameBtn = wrapper
-        .findAll('button')
-        .find((b) => b.attributes('aria-label') === 'Umbenennen')
-      expect(renameBtn).toBeTruthy()
-      await renameBtn!.trigger('click')
-      await flushPromises()
+    const renameBtn = wrapper
+      .findAll('button')
+      .find((b) => b.attributes('aria-label') === 'Umbenennen')
+    expect(renameBtn).toBeTruthy()
+    await renameBtn!.trigger('click')
+    await flushPromises()
 
-      expect(promptSpy).toHaveBeenCalled()
-      expect(apiPost).toHaveBeenCalledWith('/api/workspace/rename', {
-        root: 'ws',
-        src: 'old.md',
-        dest: 'src/new.md',
-        conversation_id: '5',
-      })
-      // Breadcrumb now sits in `src/` (the dest's parent) and the new
-      // file is visible.
-      expect(wrapper.text()).toContain('src')
-    } finally {
-      vi.unstubAllGlobals()
-    }
+    expect(promptFn).toHaveBeenCalled()
+    expect(apiPost).toHaveBeenCalledWith('/api/workspace/rename', {
+      root: 'ws',
+      src: 'old.md',
+      dest: 'src/new.md',
+      conversation_id: '5',
+    })
+    // Breadcrumb now sits in `src/` (the dest's parent) and the new
+    // file is visible.
+    expect(wrapper.text()).toContain('src')
   })
 
   it('rename: 409 surfaces "Zielpfad existiert bereits"', async () => {
-    const promptSpy = vi.fn().mockReturnValue('b.md')
-    vi.stubGlobal('prompt', promptSpy)
-    try {
-      apiGet.mockImplementation((path: string) => {
-        if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
-        if (path === '/api/workspace/tree')
-          return Promise.resolve(
-            treeResponse('ws', '', [{ name: 'a.md', type: 'file', size: 1 }]),
-          )
-        if (path === '/api/workspace/file')
-          return Promise.resolve(
-            fileResponse({ name: 'a.md', kind: 'markdown', content: '#', sha256: 's' }),
-          )
-        if (path === '/api/workspace/git') return Promise.resolve(NOT_A_REPO)
-        throw new Error(`unexpected ${path}`)
-      })
-      apiPost.mockRejectedValue(httpError(409, 'dest already exists'))
+    promptFn.mockResolvedValue('b.md')
+    apiGet.mockImplementation((path: string) => {
+      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
+      if (path === '/api/workspace/tree')
+        return Promise.resolve(
+          treeResponse('ws', '', [{ name: 'a.md', type: 'file', size: 1 }]),
+        )
+      if (path === '/api/workspace/file')
+        return Promise.resolve(
+          fileResponse({ name: 'a.md', kind: 'markdown', content: '#', sha256: 's' }),
+        )
+      if (path === '/api/workspace/git') return Promise.resolve(NOT_A_REPO)
+      throw new Error(`unexpected ${path}`)
+    })
+    apiPost.mockRejectedValue(httpError(409, 'dest already exists'))
 
-      const wrapper = mount(WorkspacePanel, {
-        global: { stubs },
-        props: { conversationId: 1 },
-      })
-      await flushPromises()
-      await wrapper.findAll('li').find((li) => li.text().includes('a.md'))!.trigger('click')
-      await flushPromises()
-      await wrapper
-        .findAll('button')
-        .find((b) => b.attributes('aria-label') === 'Umbenennen')!
-        .trigger('click')
-      await flushPromises()
+    const wrapper = mount(WorkspacePanel, {
+      global: { stubs },
+      props: { conversationId: 1 },
+    })
+    await flushPromises()
+    await wrapper.findAll('li').find((li) => li.text().includes('a.md'))!.trigger('click')
+    await flushPromises()
+    await wrapper
+      .findAll('button')
+      .find((b) => b.attributes('aria-label') === 'Umbenennen')!
+      .trigger('click')
+    await flushPromises()
 
-      expect(wrapper.text()).toContain('Zielpfad existiert bereits')
-    } finally {
-      vi.unstubAllGlobals()
-    }
+    expect(wrapper.text()).toContain('Zielpfad existiert bereits')
   })
 
   // --- Plan 13: git status error path ---------------------------------------

@@ -18,6 +18,11 @@ vi.mock('~/composables/useApi', () => ({
   }),
 }))
 
+const confirmFn = vi.fn()
+vi.mock('~/composables/useConfirm', () => ({
+  useConfirm: () => ({ confirm: (opts: unknown) => confirmFn(opts) }),
+}))
+
 // RenderedMarkdown loads shiki/mermaid lazily and is overkill for unit
 // tests that only care about the layout. Stub it to a plain div so we
 // can still assert on rendered content.
@@ -45,6 +50,8 @@ describe('settings/memory.vue', () => {
     apiPost.mockReset()
     apiPut.mockReset()
     apiDelete.mockReset()
+    confirmFn.mockReset()
+    confirmFn.mockResolvedValue(true)
     vi.useFakeTimers()
   })
 
@@ -215,9 +222,7 @@ describe('settings/memory.vue', () => {
     apiGet.mockResolvedValueOnce([note({ key: 'foo bar', content: 'x' })])
     apiDelete.mockResolvedValueOnce({})
     apiGet.mockResolvedValueOnce([])
-
-    const confirmFn = vi.fn().mockReturnValue(true)
-    window.confirm = confirmFn
+    confirmFn.mockResolvedValue(true)
 
     const wrapper = mount(MemoryPage, { global: { stubs } })
     await flushPromises()
@@ -233,8 +238,7 @@ describe('settings/memory.vue', () => {
 
   it('does not delete when the user cancels the confirm', async () => {
     apiGet.mockResolvedValue([note({ key: 'k', content: 'x' })])
-    const confirmFn = vi.fn().mockReturnValue(false)
-    window.confirm = confirmFn
+    confirmFn.mockResolvedValue(false)
 
     const wrapper = mount(MemoryPage, { global: { stubs } })
     await flushPromises()

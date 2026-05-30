@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import RenderedMarkdown from '~/components/chat/RenderedMarkdown.vue'
 import { useApi } from '~/composables/useApi'
+import { useConfirm } from '~/composables/useConfirm'
 import type { Note, NoteCreate, NoteUpdate } from '~/types/api'
 
 // Plan 15 — /settings/memory in the Hermes WebUI memory-panel layout:
@@ -24,6 +25,7 @@ import type { Note, NoteCreate, NoteUpdate } from '~/types/api'
 // header convention.
 
 const api = useApi()
+const { confirm } = useConfirm()
 
 type Mode = 'empty' | 'read' | 'edit'
 
@@ -188,7 +190,12 @@ async function save() {
 async function remove() {
   const note = selectedNote.value
   if (!note) return
-  if (!window.confirm(`Notiz "${note.key}" wirklich löschen?`)) return
+  const ok = await confirm({
+    title: 'Notiz löschen?',
+    description: `"${note.key}" wird endgültig gelöscht.`,
+    destructive: true,
+  })
+  if (!ok) return
   try {
     await api.delete(`/api/notes/${encodeURIComponent(note.key)}`)
     selectedKey.value = null

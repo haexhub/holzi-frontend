@@ -25,6 +25,7 @@ import WorkspacePanel from '~/components/panels/WorkspacePanel.vue'
 import ThemeToggle from '~/components/ThemeToggle.vue'
 import { useApi } from '~/composables/useApi'
 import { useChatQueue } from '~/composables/useChatQueue'
+import { useToast } from '~/composables/useToast'
 import {
   type ApprovalDecision,
   cancelChatRun,
@@ -52,6 +53,7 @@ const auth = useAuthStore()
 const api = useApi()
 const llm = useLlmCredentials()
 const router = useRouter()
+const toast = useToast()
 const { showReasoningByDefault, setShowReasoningByDefault } = useReasoningPreference()
 
 const conversations = ref<Conversation[]>([])
@@ -572,7 +574,9 @@ async function stopStreaming() {
   try {
     await cancelChatRun(runId)
   } catch (err: unknown) {
-    error.value = friendlyChatError(err)
+    // Background failure — the stream is still on-screen, so a toast keeps
+    // the inline error slot clear for in-flight stream errors.
+    toast.error(friendlyChatError(err))
   }
 }
 
