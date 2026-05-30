@@ -15,23 +15,18 @@ by `GET /api/runs?status=error`; each failed run can be expanded to reveal
 the persisted trace. The `upcoming` hint was dropped from the diagnostics
 entry in `app/lib/settingsNav.ts`.
 
+**Resolved follow-ups:**
+
+- ✓ Persistent sandbox-crash log table → [Plan 20-A](./20a-sandbox-crash-log.md) (merged 2026-05-30).
+- ✓ Dev-stack docker-agnostic (unblocks 20-A live verify) → [Plan 20-B](./20b-devstack-docker-agnostic.md) (merged 2026-05-30).
+- ✓ First-run / onboarding empty state in `EmptyChatState.vue` → [Plan 20-C](./20c-onboarding-empty-state.md) (merged 2026-05-30).
+
 Explicitly **deferred** to follow-up slices (still open):
 
-- **Persistent sandbox-crash log table.** Plan 11b-b's "Known limit" still
-  holds — sandbox crashes only surface live via the `sandbox_crashed` SSE
-  event on an active chat stream. Adding a `sandbox_crashes` table +
-  recording at the health-watcher level + a query endpoint is its own
-  deliverable; the Diagnostics page works without it because agent-run
-  failures (the wider failure mode) are already surfaced via the existing
-  `agent_runs` table.
-- **First-run / onboarding empty state** in `EmptyChatState.vue`. The
-  Diagnostics page now answers "what is missing before first chat" but
-  doesn't *guide* the user through it — that copy + flow lives in a
-  separate slice.
 - **Docs**: README quickstart, troubleshooting doc, model/provider setup
   doc. "Match actual commands" requires cross-checking current Make
   targets + `.env` variables against what shipped after Plans 11b/12/13/
-  14/15/16 — a separate, doc-only slice.
+  14/15/16/20/20-A/20-B/20-C — a separate, doc-only slice.
 - **Bootstrap/check CLI command** (optional in the plan): skipped since the
   endpoint covers the same observability need.
 - **`/api/health`** belongs to [Plan 19](./19-production-hardening.md), not

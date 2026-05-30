@@ -2,7 +2,26 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-Status: **Planned 2026-05-30.**
+Status: **Implemented and merged on 2026-05-30.** Frontend-only:
+[holzi-frontend#60](https://github.com/haexhub/holzi-frontend/pull/60)
+(squashed as `2170407`).
+
+CodeRabbit credits-exhausted → self-reviewed via a parallel
+general-purpose agent per [[reference-code-review-subagent]]. All findings
+were NITs ("ship it"); one was addressed inline (`9d591f6` — explanatory
+comment on the watcher's one-shot semantics).
+
+Verification (2026-05-30):
+
+- `pnpm vitest run tests/components/EmptyChatState.test.ts` → 6 cases pass.
+- `pnpm vitest run` → 22 files / 196 tests / no regression.
+- `pnpm typecheck` → exit 0.
+- **Live on Docker host** via `make up-local-full` + Playwright accessibility
+  snapshot at `http://app.localhost:11080`: banner renders
+  `"Setup unvollständig — 3 Subsysteme melden Warnungen oder Fehler."`,
+  href `/settings/diagnostics`. The 3 = `messenger + workspace + sandbox =
+  warning` matches `/api/diagnostics`-Output for a sandbox-less Docker dev
+  host (post-Plan-20-B baseline). Tear-down clean via `make down-local`.
 
 Second of the three Plan 20 follow-up slices (after [20-A](./20a-sandbox-crash-log.md)).
 Closes the "Diagnostics zeigt *was* fehlt, nicht *wie* fixen"-gap that [Plan
