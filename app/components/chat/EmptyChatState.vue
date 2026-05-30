@@ -40,7 +40,9 @@ watch(
 const findingCount = computed(() => {
   const d = diagnostics.value
   if (!d || d.overall === 'ok') return 0
-  return d.checks.filter((c) => c.status !== 'ok').length
+  // Defensive: an older hermes-server can return a payload without `checks`
+  // (pre-Plan-20 schema). Fall back to 0 instead of crashing the empty state.
+  return d.checks?.filter((c) => c.status !== 'ok').length ?? 0
 })
 
 const showBanner = computed(
