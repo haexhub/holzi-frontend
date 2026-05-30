@@ -589,17 +589,19 @@ function setApprovalStatus(
   )
 }
 
-async function decideApproval(approvalId: string, decision: ApprovalDecision) {
+async function decideApproval(
+  approvalId: string,
+  decision: ApprovalDecision,
+  reason?: string,
+) {
   const current = pendingApprovals.value.find((a) => a.approval_id === approvalId)
   // Guard against double-submit: only a still-pending card can be decided.
   if (!current || current.status !== 'pending') return
   setApprovalStatus(approvalId, 'submitting')
   try {
-    await resolveApproval(approvalId, decision)
-    setApprovalStatus(
-      approvalId,
-      decision === 'allow_once' ? 'allowed' : 'denied',
-    )
+    await resolveApproval(approvalId, decision, reason)
+    // Any `allow_*` variant ran the tool; only `deny` paints the denied state.
+    setApprovalStatus(approvalId, decision === 'deny' ? 'denied' : 'allowed')
   } catch (err: unknown) {
     // Let the user try again — the run is still waiting on this decision.
     error.value = friendlyChatError(err)
@@ -762,7 +764,7 @@ onMounted(() => {
           <ApprovalCard
             :approval="a"
             :status="a.status"
-            @decide="(decision) => decideApproval(a.approval_id, decision)"
+            @decide="(payload) => decideApproval(a.approval_id, payload.decision, payload.reason)"
           />
         </div>
         <!-- Live tool cards for the turn in flight (shown before the final
