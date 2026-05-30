@@ -51,6 +51,7 @@ describe('settingsNav model', () => {
       '/settings/messenger',
       '/settings/memory',
       '/settings/tasks',
+      '/settings/workspaces',
       '/settings/diagnostics',
     ])
     for (const item of settingsNav) {

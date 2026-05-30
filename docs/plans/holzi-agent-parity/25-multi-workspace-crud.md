@@ -2,7 +2,31 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-Status: **Planned.**
+Status: **Implemented — pending merge.** Cross-repo branches:
+backend `plan-25-multi-workspace-crud` (Holzi), frontend
+`plan-25-multi-workspace-crud` (holzi-frontend).
+
+Verification:
+
+- Backend: new `tests/test_api_workspaces.py` (29 tests, all green);
+  full backend suite 642 passed, no regression.
+- Frontend: new `tests/components/SettingsWorkspaces.test.ts` (9
+  tests); full vitest suite 224 passed, typecheck green.
+- Live curl roundtrip against `make`-less local uvicorn with
+  `HERMES_WORKSPACE_ROOTS="from-env-1,from-env-2,Bad Slug"`:
+  env backfill inserted 2/3 (bad slug skipped), POST 201 + duplicate
+  409 + bad-slug 400, PATCH rename 200 / 404 for unknown, DELETE
+  archive 204 + list excludes archived, `/disk` 404 for unknown,
+  `/sandbox/restart` 503 on a sandbox-less host. Full UI driving
+  through `make up-local-full` is still recommended before merging.
+
+Known follow-ups deliberately deferred:
+
+- `routes/workspace.py` (singular) still derives roots from
+  `HERMES_WORKSPACE_ROOTS`. The new `/api/workspaces` table is the
+  source of truth for the frontend; rebasing the browser/write
+  endpoints onto the table is a small follow-up plan.
+- Hard-delete (rmtree) is the documented non-goal.
 
 Depends on: [11b-a](./11b-a-sandbox-spine.md), [11b-b](./11b-sandbox-runtime.md)
 (sandbox-per-workspace lifecycle), [12](./12-workspace-browser-readonly.md),

@@ -16,11 +16,11 @@ import { useConfirm } from '~/composables/useConfirm'
 import { usePromptDialog } from '~/composables/usePromptDialog'
 import type {
   TreeEntry,
+  Workspace,
   WorkspaceFileResponse,
   WorkspaceGitResponse,
   WorkspaceRenameResponse,
   WorkspaceRoot,
-  WorkspaceRootsResponse,
   WorkspaceTreeResponse,
   WorkspaceWriteResponse,
 } from '~/types/api'
@@ -163,10 +163,14 @@ async function loadRoots() {
   rootsLoading.value = true
   rootsError.value = null
   try {
-    const res = await api.get<WorkspaceRootsResponse>('/api/workspace/roots')
-    roots.value = res.roots
-    if (res.roots.length > 0) {
-      selectedRoot.value = res.roots[0]!.id
+    // Plan 25: workspaces source-of-truth is the DB-driven `/api/workspaces`
+    // endpoint (display_name + sandbox/disk/git aggregate). The panel only
+    // needs the slug for tree/file calls, so we project down to the same
+    // `WorkspaceRoot` shape the type already commits to.
+    const list = await api.get<Workspace[]>('/api/workspaces')
+    roots.value = list.map((w) => ({ id: w.id }) as WorkspaceRoot)
+    if (roots.value.length > 0) {
+      selectedRoot.value = roots.value[0]!.id
       currentPath.value = ''
       void loadTree()
       void loadGit()
@@ -577,7 +581,13 @@ onMounted(loadRoots)
       v-else-if="roots.length === 0"
       class="p-3 text-sm text-muted-foreground"
     >
-      Keine Workspaces konfiguriert. Setze HERMES_WORKSPACE_ROOTS.
+      Keine Workspaces angelegt.
+      <NuxtLink
+        to="/settings/workspaces"
+        class="text-primary underline-offset-2 hover:underline"
+      >
+        Im Control Center anlegen
+      </NuxtLink>.
     </div>
 
     <template v-else>

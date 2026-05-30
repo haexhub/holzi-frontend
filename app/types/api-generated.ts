@@ -820,6 +820,85 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/workspaces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Api List Workspaces
+         * @description List active workspaces with their sandbox + disk + git snapshot.
+         *
+         *     Archived rows are excluded. The order is stable (display_name asc)
+         *     so the UI sidebar's selection stays predictable across refreshes.
+         */
+        get: operations["api_list_workspaces_api_workspaces_get"];
+        put?: never;
+        /**
+         * Api Create Workspace
+         * @description Create a new workspace row. The on-disk subdirectory is created
+         *     lazily on first sandbox start — same pattern as today's `/api/workspace`
+         *     surface, which doesn't pre-create either.
+         */
+        post: operations["api_create_workspace_api_workspaces_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspaces/{workspace_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Api Archive Workspace
+         * @description Soft-delete. The on-disk directory stays — hard-delete (rmtree)
+         *     is an explicit Plan-25 non-goal. Idempotent: archiving an already-
+         *     archived row still 204s.
+         */
+        delete: operations["api_archive_workspace_api_workspaces__workspace_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Api Rename Workspace
+         * @description Rename the display label. The slug never changes (it's part of the
+         *     on-disk path). Returns 404 for unknown ids; archived rows can still
+         *     be renamed so the UI's archive view can clean up labels.
+         */
+        patch: operations["api_rename_workspace_api_workspaces__workspace_id__patch"];
+        trace?: never;
+    };
+    "/api/workspaces/{workspace_id}/disk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Api Workspace Disk
+         * @description One-shot disk-usage probe. Returns nulls when the sandbox is
+         *     absent / crashed / `du` non-zero / probe times out — the panel
+         *     renders "—" rather than misreporting a stale number.
+         */
+        get: operations["api_workspace_disk_api_workspaces__workspace_id__disk_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sandbox/crashes": {
         parameters: {
             query?: never;
@@ -1803,6 +1882,13 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
+        /** WorkspaceCreate */
+        WorkspaceCreate: {
+            /** Id */
+            id: string;
+            /** Display Name */
+            display_name: string;
+        };
         /** WorkspaceCreateRequest */
         WorkspaceCreateRequest: {
             /** Root */
@@ -1822,6 +1908,25 @@ export interface components {
             path: string;
             /** Conversation Id */
             conversation_id: string;
+        };
+        /**
+         * WorkspaceDisk
+         * @description Disk-usage snapshot. Null when the probe didn't return cleanly —
+         *     sandbox absent, crashed, timeout, or `du` non-zero exit. The page
+         *     renders "—" rather than misreporting a stale number.
+         */
+        WorkspaceDisk: {
+            /** Used Mb */
+            used_mb?: number | null;
+            /** Quota Mb */
+            quota_mb?: number | null;
+        };
+        /** WorkspaceDiskResponse */
+        WorkspaceDiskResponse: {
+            /** Used Mb */
+            used_mb: number | null;
+            /** Quota Mb */
+            quota_mb: number | null;
         };
         /** WorkspaceFileResponse */
         WorkspaceFileResponse: {
@@ -1847,6 +1952,23 @@ export interface components {
             /** Sha256 */
             sha256: string | null;
         };
+        /**
+         * WorkspaceGit
+         * @description Git snapshot for the workspace card. The full porcelain listing
+         *     stays at `/api/workspace/git`; this surface is just enough to render
+         *     the "main · dirty" badge.
+         */
+        WorkspaceGit: {
+            /** Is Repo */
+            is_repo: boolean;
+            /** Branch */
+            branch?: string | null;
+            /**
+             * Dirty
+             * @default false
+             */
+            dirty: boolean;
+        };
         /** WorkspaceGitResponse */
         WorkspaceGitResponse: {
             /** Root */
@@ -1859,6 +1981,11 @@ export interface components {
             dirty: boolean;
             /** Entries */
             entries: components["schemas"]["GitEntry"][];
+        };
+        /** WorkspaceRename */
+        WorkspaceRename: {
+            /** Display Name */
+            display_name: string;
         };
         /** WorkspaceRenameRequest */
         WorkspaceRenameRequest: {
@@ -1882,6 +2009,23 @@ export interface components {
             /** Committed */
             committed: boolean;
         };
+        /**
+         * WorkspaceResponse
+         * @description One workspace row plus its joined sandbox / disk / git status.
+         */
+        WorkspaceResponse: {
+            /** Id */
+            id: string;
+            /** Display Name */
+            display_name: string;
+            /** Created At */
+            created_at: number;
+            /** Archived At */
+            archived_at?: number | null;
+            sandbox: components["schemas"]["WorkspaceSandbox"];
+            disk: components["schemas"]["WorkspaceDisk"];
+            git: components["schemas"]["WorkspaceGit"];
+        };
         /** WorkspaceRoot */
         WorkspaceRoot: {
             /** Id */
@@ -1891,6 +2035,24 @@ export interface components {
         WorkspaceRootsResponse: {
             /** Roots */
             roots: components["schemas"]["WorkspaceRoot"][];
+        };
+        /**
+         * WorkspaceSandbox
+         * @description Aggregated sandbox snapshot for the workspace list view.
+         *
+         *     `state="absent"` means no handle is cached for this workspace (no chat
+         *     has touched it since the agent started); other values mirror
+         *     `SandboxState` from `sandbox/manager.py`. `exit_code` is null unless
+         *     the container has exited or crashed.
+         */
+        WorkspaceSandbox: {
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "absent" | "running" | "exited" | "crashed" | "oom" | "removed";
+            /** Exit Code */
+            exit_code?: number | null;
         };
         /** WorkspaceTreeResponse */
         WorkspaceTreeResponse: {
@@ -3517,6 +3679,154 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WorkspaceGitResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_list_workspaces_api_workspaces_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceResponse"][];
+                };
+            };
+        };
+    };
+    api_create_workspace_api_workspaces_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkspaceCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_archive_workspace_api_workspaces__workspace_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_rename_workspace_api_workspaces__workspace_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkspaceRename"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_workspace_disk_api_workspaces__workspace_id__disk_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceDiskResponse"];
                 };
             };
             /** @description Validation Error */

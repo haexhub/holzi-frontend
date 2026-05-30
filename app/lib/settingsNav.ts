@@ -24,6 +24,6 @@ export const settingsNav: readonly SettingsNavItem[] = [
   { to: '/settings/memory', label: 'Memory', icon: Database },
   { to: '/settings/tasks', label: 'Tasks', icon: ListChecks },
   { to: '/settings/skills', label: 'Skills & Tools', icon: Wrench, upcoming: 'Skills, MCP-Server und Tools, die der Agent ausführen darf.' },
-  { to: '/settings/workspaces', label: 'Workspaces', icon: FolderTree, upcoming: 'Verwaltung der Workspaces inkl. Sandbox-Zustand und Disk-Quotas.' },
+  { to: '/settings/workspaces', label: 'Workspaces', icon: FolderTree },
   { to: '/settings/diagnostics', label: 'Diagnostics', icon: Activity },
 ] as const
