@@ -26,3 +26,6 @@ logs
 .claude/scheduled_tasks.lock
 
 .playwright-mcp/
+
+# Local git worktrees
+.worktrees/
