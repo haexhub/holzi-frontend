@@ -370,14 +370,23 @@ export async function cancelChatRun(runId: string): Promise<void> {
   )
 }
 
-export type ApprovalDecision = 'allow_once' | 'deny'
+export type ApprovalDecision =
+  | 'allow_once'
+  | 'allow_session'
+  | 'allow_always'
+  | 'deny'
 
 /**
  * Deliver the user's decision for a paused, approval-gated tool call.
  *
  * POSTs to `/api/approvals/{approval_id}`, which resolves the future the
- * backend agent is awaiting — the run then either executes the tool
- * (`allow_once`) or feeds a denied result back to the model (`deny`).
+ * backend agent is awaiting. Plan 21 extended the protocol from two to
+ * four decisions: `allow_once` runs the tool once and re-asks next time;
+ * `allow_session` adds it to the per-conversation standing list (cached
+ * on `app.state.session_approvals`); `allow_always` upserts the
+ * `tool_approvals` DB row so the grant survives a restart; `deny`
+ * refuses with the optional `reason` text appended to the tool error
+ * the model sees.
  *
  * Resolves on 204 (delivered) and on 404/409 (the approval is already gone or
  * already decided — a normal double-submit / stale-tab race, treated as a

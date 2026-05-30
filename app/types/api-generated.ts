@@ -91,6 +91,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/approvals/standing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Api List Standing Approvals
+         * @description Read the active standing-approval lists.
+         *
+         *     Returns persisted `allow_always` rows plus the in-memory
+         *     `allow_session` entries currently cached on `app.state`. The
+         *     web UI doesn't have a dedicated settings page for these yet
+         *     (Plan 21 Non-Goal); the data shape is here so a future page
+         *     only has to render it.
+         */
+        get: operations["api_list_standing_approvals_api_approvals_standing_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/approvals/standing/{tool_name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Api Revoke Standing Approval
+         * @description Drop a standing-approval grant so the next call re-prompts.
+         *
+         *     `scope=always` deletes the `tool_approvals` row; `scope=session`
+         *     removes the tool from every conversation's in-memory set (single-user
+         *     deployment — there's only one user's app.state to scrub). Missing
+         *     tools 404 so the UI can tell a stale revoke from a successful one.
+         */
+        delete: operations["api_revoke_standing_approval_api_approvals_standing__tool_name__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/runs": {
         parameters: {
             query?: never;
@@ -894,7 +945,7 @@ export interface components {
              * Decision
              * @enum {string}
              */
-            decision: "allow_once" | "deny";
+            decision: "allow_once" | "allow_session" | "allow_always" | "deny";
             /** Reason */
             reason?: string | null;
         };
@@ -1313,9 +1364,8 @@ export interface components {
         };
         /**
          * SandboxCrashResponse
-         * @description One row from `sandbox_crashes`. `state` mirrors the
-         *     `SandboxState` enum the watcher reported — kept as a literal so the
-         *     frontend gets exhaustive type coverage if a new state appears.
+         * @description One row from `sandbox_crashes`. See module docstring for the
+         *     cross-system invariant on the `state` field.
          */
         SandboxCrashResponse: {
             /** Id */
@@ -1324,10 +1374,14 @@ export interface components {
             workspace_id: string;
             /** Sandbox Id */
             sandbox_id: string;
-            /** Crashed At */
+            /**
+             * Crashed At
+             * @description Unix epoch seconds when the health watcher's handler fired for this dead-transition.
+             */
             crashed_at: number;
             /**
              * State
+             * @description SandboxState value the watcher reported — see `_DEAD_STATES` in `sandbox/manager.py` for the canonical writer set.
              * @enum {string}
              */
             state: "crashed" | "oom" | "removed";
@@ -1408,6 +1462,29 @@ export interface components {
         SignalLinkPollResponse: {
             /** Accounts */
             accounts: components["schemas"]["MessengerAccountResponse"][];
+        };
+        /** StandingAlwaysEntry */
+        StandingAlwaysEntry: {
+            /** Tool */
+            tool: string;
+            /** Granted At */
+            granted_at: number;
+            /** Last Used At */
+            last_used_at: number | null;
+        };
+        /** StandingApprovalsResponse */
+        StandingApprovalsResponse: {
+            /** Always */
+            always: components["schemas"]["StandingAlwaysEntry"][];
+            /** Session */
+            session: components["schemas"]["StandingSessionEntry"][];
+        };
+        /** StandingSessionEntry */
+        StandingSessionEntry: {
+            /** Conversation Id */
+            conversation_id: number;
+            /** Tool */
+            tool: string;
         };
         /**
          * SubagentDoneData
@@ -1964,6 +2041,64 @@ export interface operations {
             };
             /** @description Approval already resolved */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_list_standing_approvals_api_approvals_standing_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandingApprovalsResponse"];
+                };
+            };
+        };
+    };
+    api_revoke_standing_approval_api_approvals_standing__tool_name__delete: {
+        parameters: {
+            query: {
+                scope: "always" | "session";
+            };
+            header?: never;
+            path: {
+                tool_name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Tool not in the standing list for that scope */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
