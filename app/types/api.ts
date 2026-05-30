@@ -72,6 +72,22 @@ export type WorkspaceRenameResponse = components['schemas']['WorkspaceRenameResp
 export type WorkspaceGitResponse = components['schemas']['WorkspaceGitResponse']
 export type GitEntry = components['schemas']['GitEntry']
 
+// --- Workspace git extended (Plan 24) -----------------------------------
+export type GitDiffResponse = components['schemas']['GitDiffResponse']
+export type GitDiffSummary = components['schemas']['GitDiffSummary']
+export type GitBranch = components['schemas']['GitBranch']
+export type GitBranchesResponse = components['schemas']['GitBranchesResponse']
+export type GitLogEntry = components['schemas']['GitLogEntry']
+export type GitCheckoutRequest = components['schemas']['GitCheckoutRequest']
+export type GitPathsRequest = components['schemas']['GitPathsRequest']
+export type GitDiscardRequest = components['schemas']['GitDiscardRequest']
+export type GitCommitRequest = components['schemas']['GitCommitRequest']
+export type GitFetchRequest = components['schemas']['GitFetchRequest']
+export type GitPullRequest = components['schemas']['GitPullRequest']
+export type GitPushRequest = components['schemas']['GitPushRequest']
+export type GitOpResponse = components['schemas']['GitOpResponse']
+export type GitPullResponse = components['schemas']['GitPullResponse']
+
 // --- Chat SSE event envelope (Plan 08) ----------------------------------
 // One versioned envelope per stream event; the discriminated union is the
 // single source of truth shared with the backend's src/hermes/events.py.
