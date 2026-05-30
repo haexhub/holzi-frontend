@@ -22,10 +22,41 @@ const ACCEPT =
   '.py,.js,.ts,.tsx,.vue,.css,.html,.rs,.go,.java,.c,.h,.cpp,' +
   'text/*,image/png,image/jpeg,image/gif,image/webp,application/pdf'
 
+const MAX_LINES = 10
+
 const draft = ref('')
 const files = ref<File[]>([])
 const fileInput = ref<HTMLInputElement | null>(null)
 const composerEl = ref<HTMLFormElement | null>(null)
+const textareaRef = ref<InstanceType<typeof Textarea> | null>(null)
+
+function autoResize() {
+  const el = textareaRef.value?.el
+  if (!el) return
+  el.style.height = 'auto'
+  const cs = window.getComputedStyle(el)
+  const lineHeight = parseFloat(cs.lineHeight) || 20
+  const paddingTop = parseFloat(cs.paddingTop) || 0
+  const paddingBottom = parseFloat(cs.paddingBottom) || 0
+  const borderTop = parseFloat(cs.borderTopWidth) || 0
+  const borderBottom = parseFloat(cs.borderBottomWidth) || 0
+  const max = lineHeight * MAX_LINES + paddingTop + paddingBottom + borderTop + borderBottom
+  el.style.height = `${Math.min(el.scrollHeight, max)}px`
+  el.style.overflowY = el.scrollHeight > max ? 'auto' : 'hidden'
+}
+
+watch(draft, () => {
+  nextTick(autoResize)
+})
+
+onMounted(() => {
+  nextTick(autoResize)
+  // Custom fonts can change lineHeight after first paint — re-measure when
+  // ready so the 10-line cap stays accurate.
+  if (typeof document !== 'undefined' && document.fonts?.ready) {
+    document.fonts.ready.then(() => nextTick(autoResize))
+  }
+})
 
 function onPick(event: Event) {
   const input = event.target as HTMLInputElement
@@ -53,6 +84,7 @@ function submit() {
   emit('send', { text, files: files.value })
   draft.value = ''
   files.value = []
+  nextTick(autoResize)
 }
 
 function onKeydown(event: KeyboardEvent) {
@@ -120,11 +152,13 @@ const isDragOver = computed(() => !props.streaming && isOverDropZone.value)
         <Paperclip class="size-4" />
       </Button>
       <Textarea
+        ref="textareaRef"
         v-model="draft"
+        :rows="1"
         :placeholder="streaming
           ? 'Nächste Nachricht eingeben…  (wird nach der Antwort gesendet)'
           : 'Nachricht an Hermes…  (Enter = senden, Shift+Enter = Zeilenumbruch)'"
-        class="min-h-[44px] max-h-40 flex-1 resize-none"
+        class="min-h-[44px] flex-1 resize-none overflow-hidden"
         @keydown="onKeydown"
       />
       <!-- Stop stays reachable for the running turn while the composer below
