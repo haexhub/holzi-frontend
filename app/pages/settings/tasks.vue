@@ -11,10 +11,9 @@ import {
   Trash2,
   X,
 } from 'lucide-vue-next'
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
+import Button from '@/components/ui/button/Button.vue'
+import Input from '@/components/ui/input/Input.vue'
+import Textarea from '@/components/ui/textarea/Textarea.vue'
 import { useConfirm } from '~/composables/useConfirm'
 import { useTasks } from '~/composables/useTasks'
 import type {

@@ -8,7 +8,6 @@ import {
   SlidersHorizontal,
   Wrench,
 } from 'lucide-vue-next'
-import type { Component } from 'vue'
 
 export interface SettingsNavItem {
   to: string

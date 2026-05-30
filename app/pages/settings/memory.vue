@@ -8,10 +8,9 @@ import {
   Trash2,
   X,
 } from 'lucide-vue-next'
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
+import Button from '@/components/ui/button/Button.vue'
+import Input from '@/components/ui/input/Input.vue'
+import Textarea from '@/components/ui/textarea/Textarea.vue'
 import RenderedMarkdown from '~/components/chat/RenderedMarkdown.vue'
 import { useApi } from '~/composables/useApi'
 import { useConfirm } from '~/composables/useConfirm'

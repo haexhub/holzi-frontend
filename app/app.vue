@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useBreakpoints, breakpointsTailwind } from '@vueuse/core'
-import { Sonner } from '@/components/ui/sonner'
+import Sonner from '@/components/ui/sonner/Sonner.vue'
 import AppConfirmHost from '@/components/AppConfirmHost.vue'
 
 const colorMode = useColorMode()

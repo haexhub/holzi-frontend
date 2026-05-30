@@ -1,4 +1,3 @@
-import { ref } from 'vue'
 import { useApi } from '~/composables/useApi'
 import type {
   AgentTask,

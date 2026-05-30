@@ -7,8 +7,6 @@ import {
   Settings,
   X,
 } from 'lucide-vue-next'
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
 import { Brain } from 'lucide-vue-next'
 import AttachmentChip from '~/components/chat/AttachmentChip.vue'
 import ChatComposer from '~/components/chat/ChatComposer.vue'
@@ -48,6 +46,8 @@ import type {
   Message,
   SandboxCrashedData,
 } from '~/types/api'
+import Button from '@/components/ui/button/Button.vue'
+import Separator from '@/components/ui/separator/Separator.vue'
 
 const auth = useAuthStore()
 const api = useApi()

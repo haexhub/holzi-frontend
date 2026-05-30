@@ -1,5 +1,3 @@
-import { ref } from 'vue'
-
 export interface ConfirmOptions {
   title: string
   description?: string

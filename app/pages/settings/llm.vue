@@ -1,10 +1,5 @@
 <script setup lang="ts">
 import { BadgeCheck, ExternalLink, Trash2 } from 'lucide-vue-next'
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
 import ModelSelect from '~/components/settings/ModelSelect.vue'
 import { useLlmCredentials } from '~/composables/useLlmCredentials'
 import type {
@@ -12,6 +7,10 @@ import type {
   LlmCredentialCreate,
   LlmProvider,
 } from '~/types/api'
+import Button from '@/components/ui/button/Button.vue'
+import Input from '@/components/ui/input/Input.vue'
+import Label from '@/components/ui/label/Label.vue'
+import Separator from '@/components/ui/separator/Separator.vue'
 
 const llm = useLlmCredentials()
 

@@ -1,19 +1,14 @@
-import { defineConfig } from 'vitest/config'
-import { fileURLToPath } from 'node:url'
-import vue from '@vitejs/plugin-vue'
+import { defineVitestConfig } from '@nuxt/test-utils/config'
 
-export default defineConfig({
-  plugins: [vue()],
+// Nuxt environment gives Vue auto-imports (ref, computed, watch, …),
+// Nuxt composable auto-imports (useApi, useConfirm, …), and component
+// auto-imports (<Button>, <AlertDialog>, …) inside vitest, matching what
+// `nuxt dev` and `nuxt build` see at runtime.
+export default defineVitestConfig({
   test: {
-    environment: 'happy-dom',
+    environment: 'nuxt',
     include: ['tests/**/*.test.ts'],
     globals: true,
     setupFiles: ['./tests/setup.ts'],
-  },
-  resolve: {
-    alias: {
-      '~': fileURLToPath(new URL('./app', import.meta.url)),
-      '@': fileURLToPath(new URL('./app', import.meta.url)),
-    },
   },
 })

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
 import {
   File,
   FileQuestion,
@@ -10,7 +9,7 @@ import {
   RefreshCw,
   Trash2,
 } from 'lucide-vue-next'
-import { Button } from '@/components/ui/button'
+import Button from '@/components/ui/button/Button.vue'
 import RenderedMarkdown from '~/components/chat/RenderedMarkdown.vue'
 import { useApi } from '~/composables/useApi'
 import { useConfirm } from '~/composables/useConfirm'

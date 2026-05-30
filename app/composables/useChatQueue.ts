@@ -1,4 +1,3 @@
-import { computed, ref } from 'vue'
 
 /**
  * A message the user submitted while a turn was still streaming. It is held

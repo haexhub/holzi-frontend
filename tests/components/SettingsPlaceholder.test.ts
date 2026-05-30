@@ -10,13 +10,19 @@ import { settingsNav } from '~/lib/settingsNav'
 
 const currentPath = { value: '/' }
 
-vi.mock('vue-router', () => ({
-  useRoute: () => ({
-    get path() {
-      return currentPath.value
-    },
-  }),
-}))
+// Nuxt-test-env relies on the real vue-router (`useRouter().afterEach`), so
+// only swap `useRoute` and keep everything else intact.
+vi.mock('vue-router', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('vue-router')>()
+  return {
+    ...mod,
+    useRoute: () => ({
+      get path() {
+        return currentPath.value
+      },
+    }),
+  }
+})
 
 function mountAtRoute(path: string) {
   currentPath.value = path

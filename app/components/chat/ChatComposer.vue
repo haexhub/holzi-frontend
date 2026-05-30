@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
 import { Paperclip, Send, Square } from 'lucide-vue-next'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
+import { useDropZone } from '@vueuse/core'
+import Button from '@/components/ui/button/Button.vue'
+import Textarea from '@/components/ui/textarea/Textarea.vue'
 import AttachmentChip from '~/components/chat/AttachmentChip.vue'
 
 const emit = defineEmits<{
@@ -25,6 +25,7 @@ const ACCEPT =
 const draft = ref('')
 const files = ref<File[]>([])
 const fileInput = ref<HTMLInputElement | null>(null)
+const composerEl = ref<HTMLFormElement | null>(null)
 
 function onPick(event: Event) {
   const input = event.target as HTMLInputElement
@@ -61,53 +62,23 @@ function onKeydown(event: KeyboardEvent) {
   }
 }
 
-// Drag&Drop counter: child elements fire enter/leave as the pointer crosses
-// them, so a single boolean would flicker. Counting matches the behaviour of
-// every battle-tested dropzone implementation.
-const dragDepth = ref(0)
-const dndEnabled = computed(() => !props.streaming)
-const isDragOver = computed(() => dndEnabled.value && dragDepth.value > 0)
-
-function onDragEnter(event: DragEvent) {
-  if (!dndEnabled.value) return
-  if (!event.dataTransfer?.types?.includes('Files')) return
-  event.preventDefault()
-  dragDepth.value++
-}
-
-function onDragOver(event: DragEvent) {
-  if (!dndEnabled.value) return
-  if (!event.dataTransfer?.types?.includes('Files')) return
-  // Required so the browser doesn't reject the drop.
-  event.preventDefault()
-  event.dataTransfer.dropEffect = 'copy'
-}
-
-function onDragLeave(event: DragEvent) {
-  if (!dndEnabled.value) return
-  event.preventDefault()
-  dragDepth.value = Math.max(0, dragDepth.value - 1)
-}
-
-function onDrop(event: DragEvent) {
-  if (!dndEnabled.value) return
-  event.preventDefault()
-  dragDepth.value = 0
-  const dropped = event.dataTransfer?.files
-  if (dropped && dropped.length) {
-    attachFiles(Array.from(dropped))
-  }
-}
+// VueUse handles the dragenter/over/leave bookkeeping (counter, child-element
+// flicker, validation). The backend re-validates type and size, so we accept
+// any file here.
+const { isOverDropZone } = useDropZone(composerEl, {
+  onDrop: (dropped) => {
+    if (props.streaming) return
+    if (dropped && dropped.length) attachFiles(dropped)
+  },
+})
+const isDragOver = computed(() => !props.streaming && isOverDropZone.value)
 </script>
 
 <template>
   <form
+    ref="composerEl"
     class="relative flex flex-col gap-2 border-t bg-background p-3"
     @submit.prevent="submit"
-    @dragenter="onDragEnter"
-    @dragover="onDragOver"
-    @dragleave="onDragLeave"
-    @drop="onDrop"
   >
     <div
       v-if="isDragOver"

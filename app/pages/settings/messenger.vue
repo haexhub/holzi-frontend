@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { BadgeCheck, RefreshCcw, Trash2 } from 'lucide-vue-next'
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { Button } from '@/components/ui/button'
 import { useConfirm } from '~/composables/useConfirm'
 import { useMessenger } from '~/composables/useMessenger'
 import type { MessengerAccount } from '~/types/api'
@@ -9,6 +7,7 @@ import type { MessengerAccount } from '~/types/api'
 // Signal "link-as-secondary-device" UI. The flow:
 //
 //   1. user clicks "Mit Signal verbinden"
+import Button from '@/components/ui/button/Button.vue'
 //   2. POST /signal/link/start → server hits signal-cli, streams PNG back
 //   3. PNG shows in the page; we start polling /signal/link/poll every
 //      ~2s so as soon as the user scans the QR on their primary phone

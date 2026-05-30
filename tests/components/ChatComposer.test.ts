@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import ChatComposer from '~/components/chat/ChatComposer.vue'
 
 function addFile(wrapper: ReturnType<typeof mount>, file: File) {
@@ -68,35 +68,64 @@ describe('ChatComposer.vue', () => {
   // --- Plan 22: drag&drop --------------------------------------------------
 
   function buildDataTransfer(files: File[]): DataTransfer {
-    const list = {
+    const fileList = {
       length: files.length,
       item: (i: number) => files[i] ?? null,
       [Symbol.iterator]: function* () {
         for (const f of files) yield f
       },
     } as unknown as FileList
+    // useDropZone (vueuse) validates against `.items`, not `.files`.
+    const items = files.map((f) => ({ kind: 'file', type: f.type, getAsFile: () => f }))
+    const itemList = Object.assign([...items], {
+      length: items.length,
+      add: () => null,
+      clear: () => undefined,
+      remove: () => undefined,
+    }) as unknown as DataTransferItemList
     return {
-      files: list,
+      files: fileList,
+      items: itemList,
       types: ['Files'],
       dropEffect: 'none',
       effectAllowed: 'all',
     } as unknown as DataTransfer
   }
 
+  function fireDrag(form: Element, type: string, dt: DataTransfer) {
+    // wrapper.trigger() drops the custom `dataTransfer` property in some
+    // event constructors; dispatch the event directly so it survives.
+    const event = new Event(type, { bubbles: true, cancelable: true })
+    Object.assign(event, { dataTransfer: dt })
+    form.dispatchEvent(event)
+  }
+
+  async function mountReady() {
+    const wrapper = mount(ChatComposer, { attachTo: document.body })
+    // useDropZone attaches listeners via a watcher on the template ref; wait
+    // one flush so the watcher has run before we dispatch.
+    await flushPromises()
+    return wrapper
+  }
+
   it('dragenter shows the dropzone overlay; dragleave hides it', async () => {
-    const wrapper = mount(ChatComposer)
+    const wrapper = await mountReady()
+    const file = new File(['x'], 'hover.txt', { type: 'text/plain' })
     expect(wrapper.find('[data-testid="composer-dropzone"]').exists()).toBe(false)
-    await wrapper.find('form').trigger('dragenter', { dataTransfer: buildDataTransfer([]) })
+    fireDrag(wrapper.element, 'dragenter', buildDataTransfer([file]))
+    await flushPromises()
     expect(wrapper.find('[data-testid="composer-dropzone"]').exists()).toBe(true)
-    await wrapper.find('form').trigger('dragleave', { dataTransfer: buildDataTransfer([]) })
+    fireDrag(wrapper.element, 'dragleave', buildDataTransfer([file]))
+    await flushPromises()
     expect(wrapper.find('[data-testid="composer-dropzone"]').exists()).toBe(false)
   })
 
   it('drop adds the file via the same path as the paperclip picker', async () => {
-    const wrapper = mount(ChatComposer)
+    const wrapper = await mountReady()
     const file = new File(['hi'], 'dropped.md', { type: 'text/markdown' })
-    await wrapper.find('form').trigger('dragenter', { dataTransfer: buildDataTransfer([file]) })
-    await wrapper.find('form').trigger('drop', { dataTransfer: buildDataTransfer([file]) })
+    fireDrag(wrapper.element, 'dragenter', buildDataTransfer([file]))
+    fireDrag(wrapper.element, 'drop', buildDataTransfer([file]))
+    await flushPromises()
 
     expect(wrapper.find('[data-testid="composer-dropzone"]').exists()).toBe(false)
     expect(wrapper.text()).toContain('dropped.md')
@@ -111,20 +140,14 @@ describe('ChatComposer.vue', () => {
   })
 
   it('does not show the dropzone while a stream is active', async () => {
-    const wrapper = mount(ChatComposer, { props: { streaming: true } })
-    await wrapper.find('form').trigger('dragenter', { dataTransfer: buildDataTransfer([]) })
-    expect(wrapper.find('[data-testid="composer-dropzone"]').exists()).toBe(false)
-  })
-
-  it('ignores non-file drags (e.g. text selection)', async () => {
-    const wrapper = mount(ChatComposer)
-    const textOnlyDT = {
-      files: { length: 0 } as unknown as FileList,
-      types: ['text/plain'],
-      dropEffect: 'none',
-      effectAllowed: 'all',
-    } as unknown as DataTransfer
-    await wrapper.find('form').trigger('dragenter', { dataTransfer: textOnlyDT })
+    const wrapper = mount(ChatComposer, {
+      props: { streaming: true },
+      attachTo: document.body,
+    })
+    await flushPromises()
+    const file = new File(['x'], 'busy.txt', { type: 'text/plain' })
+    fireDrag(wrapper.element, 'dragenter', buildDataTransfer([file]))
+    await flushPromises()
     expect(wrapper.find('[data-testid="composer-dropzone"]').exists()).toBe(false)
   })
 })

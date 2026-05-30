@@ -1,4 +1,3 @@
-import { nextTick } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { useAuthStore } from '~/stores/auth'
 
