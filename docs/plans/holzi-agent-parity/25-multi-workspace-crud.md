@@ -2,23 +2,26 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-Status: **Implemented — pending merge.** Cross-repo branches:
-backend `plan-25-multi-workspace-crud` (Holzi), frontend
-`plan-25-multi-workspace-crud` (holzi-frontend).
+Status: **Merged 2026-05-30.** Cross-repo:
+[Holzi#55](https://github.com/haexhub/Holzi/pull/55) +
+[holzi-frontend#68](https://github.com/haexhub/holzi-frontend/pull/68).
 
 Verification:
 
 - Backend: new `tests/test_api_workspaces.py` (29 tests, all green);
-  full backend suite 642 passed, no regression.
+  full backend suite 642 passed, no regression. Ruff clean.
 - Frontend: new `tests/components/SettingsWorkspaces.test.ts` (9
   tests); full vitest suite 224 passed, typecheck green.
-- Live curl roundtrip against `make`-less local uvicorn with
+- Live curl roundtrip against local uvicorn with
   `HERMES_WORKSPACE_ROOTS="from-env-1,from-env-2,Bad Slug"`:
   env backfill inserted 2/3 (bad slug skipped), POST 201 + duplicate
   409 + bad-slug 400, PATCH rename 200 / 404 for unknown, DELETE
   archive 204 + list excludes archived, `/disk` 404 for unknown,
-  `/sandbox/restart` 503 on a sandbox-less host. Full UI driving
-  through `make up-local-full` is still recommended before merging.
+  `/sandbox/restart` 503 on a sandbox-less host.
+- Full UI driving through `make up-local-full` on a Podman host
+  still deferred to the haex.cloud box — the disk/git aggregate
+  probes against a real workspace sandbox haven't been exercised
+  outside the FakeSandboxBackend tests.
 
 Known follow-ups deliberately deferred:
 
