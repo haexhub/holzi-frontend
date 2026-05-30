@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
 import {
   AlertTriangle,
   ArrowRight,
   KeyRound,
   MessageCircle,
 } from 'lucide-vue-next'
-import { Button } from '@/components/ui/button'
 import { useDiagnostics } from '~/composables/useDiagnostics'
+import Button from '@/components/ui/button/Button.vue'
 
 // `null` = credentials list still loading. We don't want to flash the
 // "Start by adding credentials" CTA before the request resolves, so

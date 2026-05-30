@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { nextTick, ref, watch } from 'vue'
 import { renderMarkdown } from '~/utils/markdown'
 
 const props = defineProps<{ content: string }>()

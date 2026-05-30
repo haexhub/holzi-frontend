@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
 import { Brain, ChevronDown, ChevronRight, Loader2 } from 'lucide-vue-next'
 import { useReasoningPreference } from '~/composables/useReasoningPreference'
 

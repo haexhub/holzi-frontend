@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { AlertOctagon, Loader2 } from 'lucide-vue-next'
 import type { SandboxCrashedData } from '~/types/api'
 

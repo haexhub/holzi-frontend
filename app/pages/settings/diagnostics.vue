@@ -8,8 +8,6 @@ import {
   ChevronRight,
   RefreshCcw,
 } from 'lucide-vue-next'
-import { computed, onMounted, ref } from 'vue'
-import { Button } from '@/components/ui/button'
 import { useDiagnostics } from '~/composables/useDiagnostics'
 import type {
   AgentRun,
@@ -17,6 +15,7 @@ import type {
   SandboxCrash,
   SandboxCrashState,
 } from '~/types/api'
+import Button from '@/components/ui/button/Button.vue'
 
 // Plan 20: read-only status snapshot for the Control Center.
 // Two sections — a flat subsystem-check list (one row per check returned

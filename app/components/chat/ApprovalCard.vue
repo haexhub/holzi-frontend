@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { Check, Loader2, ShieldAlert, X } from 'lucide-vue-next'
 import type { ApprovalDecision } from '~/composables/useChatStream'
 

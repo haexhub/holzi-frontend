@@ -11,10 +11,10 @@ import {
   Trash2,
   X,
 } from 'lucide-vue-next'
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
+import Button from '@/components/ui/button/Button.vue'
+import Input from '@/components/ui/input/Input.vue'
+import Textarea from '@/components/ui/textarea/Textarea.vue'
+import { useConfirm } from '~/composables/useConfirm'
 import { useTasks } from '~/composables/useTasks'
 import type {
   AgentTask,
@@ -30,6 +30,7 @@ type Mode = 'empty' | 'read' | 'edit'
 type ScheduleKind = 'once' | 'cron'
 
 const { tasks, loading, error, load, create, patch, remove, runNow } = useTasks()
+const { confirm } = useConfirm()
 
 const selectedId = ref<number | null>(null)
 const mode = ref<Mode>('empty')
@@ -263,7 +264,12 @@ onBeforeUnmount(() => {
 async function onRemove() {
   const task = selected.value
   if (!task) return
-  if (!window.confirm(`Task "${task.title}" wirklich löschen?`)) return
+  const ok = await confirm({
+    title: 'Task löschen?',
+    description: `"${task.title}" wird endgültig gelöscht.`,
+    destructive: true,
+  })
+  if (!ok) return
   actionError.value = null
   try {
     await remove(task.id)

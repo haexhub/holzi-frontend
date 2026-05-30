@@ -1,6 +1,5 @@
 import { useLocalStorage } from '@vueuse/core'
 import { defineStore } from 'pinia'
-import { computed } from 'vue'
 
 const TOKEN_KEY = 'hermes.auth.token'
 

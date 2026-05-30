@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { BadgeCheck, RefreshCcw, Trash2 } from 'lucide-vue-next'
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { Button } from '@/components/ui/button'
+import { useConfirm } from '~/composables/useConfirm'
 import { useMessenger } from '~/composables/useMessenger'
 import type { MessengerAccount } from '~/types/api'
 
 // Signal "link-as-secondary-device" UI. The flow:
 //
 //   1. user clicks "Mit Signal verbinden"
+import Button from '@/components/ui/button/Button.vue'
 //   2. POST /signal/link/start → server hits signal-cli, streams PNG back
 //   3. PNG shows in the page; we start polling /signal/link/poll every
 //      ~2s so as soon as the user scans the QR on their primary phone
@@ -20,6 +20,7 @@ import type { MessengerAccount } from '~/types/api'
 // stores; same activate/delete plumbing.
 
 const messenger = useMessenger()
+const { confirm } = useConfirm()
 
 const accounts = ref<MessengerAccount[]>([])
 const loading = ref(false)
@@ -152,9 +153,12 @@ async function activate(account: MessengerAccount) {
 async function removeAccount(account: MessengerAccount) {
   const label =
     account.phone_number ?? account.bot_username ?? String(account.id)
-  if (!window.confirm(`Account ${label} wirklich entfernen?`)) {
-    return
-  }
+  const ok = await confirm({
+    title: 'Account entfernen?',
+    description: `Account ${label} wird entfernt.`,
+    destructive: true,
+  })
+  if (!ok) return
   try {
     await messenger.deleteAccount(account.id)
     await loadAccounts()

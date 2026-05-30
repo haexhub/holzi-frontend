@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
 import { Pencil, RotateCcw } from 'lucide-vue-next'
 import type { Message } from '~/types/api'
 import RenderedMarkdown from '~/components/chat/RenderedMarkdown.vue'

@@ -12,7 +12,6 @@ import {
   ComboboxViewport,
 } from 'reka-ui'
 import { Check, ChevronsUpDown } from 'lucide-vue-next'
-import { computed, ref, watch } from 'vue'
 import { useLlmCredentials } from '~/composables/useLlmCredentials'
 import type { LlmModelChoice } from '~/types/api'
 

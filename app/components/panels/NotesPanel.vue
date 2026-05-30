@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { Trash2 } from 'lucide-vue-next'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { useApi } from '~/composables/useApi'
 import type { Note, NoteCreate } from '~/types/api'
+import Button from '@/components/ui/button/Button.vue'
+import Input from '@/components/ui/input/Input.vue'
+import Textarea from '@/components/ui/textarea/Textarea.vue'
 
 const api = useApi()
 const notes = ref<Note[]>([])

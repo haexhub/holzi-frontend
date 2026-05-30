@@ -9,9 +9,12 @@ import {
   Trash2,
   X,
 } from 'lucide-vue-next'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { useConfirm } from '~/composables/useConfirm'
 import type { Conversation } from '~/types/api'
+import Button from '@/components/ui/button/Button.vue'
+import Input from '@/components/ui/input/Input.vue'
+
+const { confirm } = useConfirm()
 
 const props = defineProps<{
   conversations: Conversation[]
@@ -103,11 +106,14 @@ function submitRename(c: Conversation) {
   cancelRename()
 }
 
-function confirmDelete(event: MouseEvent, c: Conversation) {
+async function confirmDelete(event: MouseEvent, c: Conversation) {
   event.stopPropagation()
-  if (!window.confirm(`Konversation "${displayTitle(c)}" löschen?`)) {
-    return
-  }
+  const ok = await confirm({
+    title: 'Konversation löschen?',
+    description: `"${displayTitle(c)}" wird endgültig gelöscht.`,
+    destructive: true,
+  })
+  if (!ok) return
   if (editingId.value === c.id) {
     cancelRename()
   }

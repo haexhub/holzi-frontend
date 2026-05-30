@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Moon, Sun } from 'lucide-vue-next'
-import { computed } from 'vue'
-import { Button } from '@/components/ui/button'
+import Button from '@/components/ui/button/Button.vue'
 
 // The preference (`colorMode.value`) can be 'auto' | 'light' | 'dark';
 // `state` resolves 'auto' against the OS preference, so the icon

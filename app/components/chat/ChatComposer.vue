@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import { Paperclip, Send, Square } from 'lucide-vue-next'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
+import { useDropZone } from '@vueuse/core'
+import Button from '@/components/ui/button/Button.vue'
+import Textarea from '@/components/ui/textarea/Textarea.vue'
 import AttachmentChip from '~/components/chat/AttachmentChip.vue'
 
 const emit = defineEmits<{
@@ -25,14 +25,20 @@ const ACCEPT =
 const draft = ref('')
 const files = ref<File[]>([])
 const fileInput = ref<HTMLInputElement | null>(null)
+const composerEl = ref<HTMLFormElement | null>(null)
 
 function onPick(event: Event) {
   const input = event.target as HTMLInputElement
   if (input.files) {
-    files.value = [...files.value, ...Array.from(input.files)]
+    attachFiles(Array.from(input.files))
   }
   // Reset so picking the same file again re-fires change.
   input.value = ''
+}
+
+function attachFiles(picked: File[]) {
+  if (!picked.length) return
+  files.value = [...files.value, ...picked]
 }
 
 function removeFile(index: number) {
@@ -55,13 +61,32 @@ function onKeydown(event: KeyboardEvent) {
     submit()
   }
 }
+
+// VueUse handles the dragenter/over/leave bookkeeping (counter, child-element
+// flicker, validation). The backend re-validates type and size, so we accept
+// any file here.
+const { isOverDropZone } = useDropZone(composerEl, {
+  onDrop: (dropped) => {
+    if (props.streaming) return
+    if (dropped && dropped.length) attachFiles(dropped)
+  },
+})
+const isDragOver = computed(() => !props.streaming && isOverDropZone.value)
 </script>
 
 <template>
   <form
-    class="flex flex-col gap-2 border-t bg-background p-3"
+    ref="composerEl"
+    class="relative flex flex-col gap-2 border-t bg-background p-3"
     @submit.prevent="submit"
   >
+    <div
+      v-if="isDragOver"
+      data-testid="composer-dropzone"
+      class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-md border-2 border-dashed border-primary/70 bg-primary/10 text-sm font-medium text-primary"
+    >
+      Dateien hier ablegen
+    </div>
     <!-- Selected-but-not-yet-sent attachments. Removable until send. -->
     <div v-if="files.length" class="flex flex-wrap gap-1.5">
       <AttachmentChip

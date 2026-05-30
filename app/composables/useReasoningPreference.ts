@@ -1,4 +1,3 @@
-import { ref } from 'vue'
 
 /**
  * Whether reasoning cards start expanded ("show reasoning by default").

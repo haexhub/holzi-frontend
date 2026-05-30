@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { FileText, Image as ImageIcon, File as FileIcon, X } from 'lucide-vue-next'
 
 const props = defineProps<{

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
 import {
   File,
   FileQuestion,
@@ -10,9 +9,11 @@ import {
   RefreshCw,
   Trash2,
 } from 'lucide-vue-next'
-import { Button } from '@/components/ui/button'
+import Button from '@/components/ui/button/Button.vue'
 import RenderedMarkdown from '~/components/chat/RenderedMarkdown.vue'
 import { useApi } from '~/composables/useApi'
+import { useConfirm } from '~/composables/useConfirm'
+import { usePromptDialog } from '~/composables/usePromptDialog'
 import type {
   TreeEntry,
   WorkspaceFileResponse,
@@ -35,6 +36,8 @@ const props = withDefaults(
 )
 
 const api = useApi()
+const { confirm } = useConfirm()
+const { prompt } = usePromptDialog()
 
 const roots = ref<WorkspaceRoot[]>([])
 const selectedRoot = ref<string>('')
@@ -440,7 +443,12 @@ async function submitCreate() {
 async function renameCurrent() {
   const preview = filePreview.value
   if (!preview || !canWrite.value) return
-  const next = window.prompt('Neuer Pfad (relativ zur Workspace-Wurzel):', preview.path)
+  const next = await prompt({
+    title: 'Datei umbenennen',
+    description: 'Neuer Pfad (relativ zur Workspace-Wurzel):',
+    defaultValue: preview.path,
+    confirmLabel: 'Umbenennen',
+  })
   if (next == null) return
   const target = next.trim()
   if (!target || target === preview.path) return
@@ -484,7 +492,12 @@ async function deleteCurrent() {
   if (!preview || !canWrite.value) return
   // Destructive — always confirm. Plan 13 explicitly calls out "Require
   // confirmations for destructive operations."
-  if (!window.confirm(`Datei "${preview.path}" wirklich löschen?`)) return
+  const ok = await confirm({
+    title: 'Datei löschen?',
+    description: `"${preview.path}" wird endgültig gelöscht.`,
+    destructive: true,
+  })
+  if (!ok) return
   try {
     await api.delete<WorkspaceWriteResponse>('/api/workspace/file', {
       root: selectedRoot.value,

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ArrowLeft } from 'lucide-vue-next'
-import { Button } from '@/components/ui/button'
+import Button from '@/components/ui/button/Button.vue'
 import ThemeToggle from '~/components/ThemeToggle.vue'
 import { settingsNav } from '~/lib/settingsNav'
 
