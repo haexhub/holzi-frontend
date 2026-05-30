@@ -35,8 +35,8 @@ function diagnostics(
       {
         id: 'messenger',
         label: 'Messenger',
-        status: 'warning',
-        message: 'no active account',
+        status: 'ok',
+        message: 'no messenger accounts configured (optional)',
       },
       { id: 'scheduler', label: 'Scheduler', status: 'ok', message: 'running' },
       {
