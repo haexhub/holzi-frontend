@@ -1,13 +1,17 @@
 import { ref } from 'vue'
 import { useApi } from '~/composables/useApi'
-import type { AgentRun, DiagnosticsResponse } from '~/types/api'
+import type {
+  AgentRun,
+  DiagnosticsResponse,
+  SandboxCrash,
+} from '~/types/api'
 
 /**
- * Plan 20: thin wrapper around `/api/diagnostics` plus the
- * `/api/runs?status=error` slice that backs the "Recent failures"
- * panel. Both expose their own loading/error flags so the page can
- * keep the subsystem-check list visible while the failures list
- * (separately, potentially slower) reloads.
+ * Plan 20 + 20-A: thin wrapper around the three Diagnostics-page
+ * endpoints: `/api/diagnostics`, `/api/runs?status=error` (Recent
+ * Failures), and `/api/sandbox/crashes` (Plan 20-A: persistent
+ * sandbox-crash log). Each endpoint owns its own loading/error refs so
+ * one failing endpoint doesn't collapse the other two.
  */
 export function useDiagnostics() {
   const api = useApi()
@@ -19,6 +23,10 @@ export function useDiagnostics() {
   const failures = ref<AgentRun[]>([])
   const failuresLoading = ref(false)
   const failuresError = ref<string | null>(null)
+
+  const crashes = ref<SandboxCrash[]>([])
+  const crashesLoading = ref(false)
+  const crashesError = ref<string | null>(null)
 
   async function loadDiagnostics(): Promise<void> {
     diagnosticsLoading.value = true
@@ -49,8 +57,23 @@ export function useDiagnostics() {
     }
   }
 
+  async function loadCrashes(limit = 20): Promise<void> {
+    crashesLoading.value = true
+    crashesError.value = null
+    try {
+      crashes.value = await api.get<SandboxCrash[]>('/api/sandbox/crashes', {
+        limit,
+      })
+    } catch (err: unknown) {
+      crashesError.value =
+        err instanceof Error ? err.message : 'Fehler beim Laden.'
+    } finally {
+      crashesLoading.value = false
+    }
+  }
+
   async function loadAll(): Promise<void> {
-    await Promise.all([loadDiagnostics(), loadFailures()])
+    await Promise.all([loadDiagnostics(), loadFailures(), loadCrashes()])
   }
 
   return {
@@ -60,8 +83,12 @@ export function useDiagnostics() {
     failures,
     failuresLoading,
     failuresError,
+    crashes,
+    crashesLoading,
+    crashesError,
     loadDiagnostics,
     loadFailures,
+    loadCrashes,
     loadAll,
   }
 }

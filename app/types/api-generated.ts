@@ -769,6 +769,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sandbox/crashes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Api Sandbox Crashes */
+        get: operations["api_sandbox_crashes_api_sandbox_crashes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/diagnostics": {
         parameters: {
             query?: never;
@@ -1293,6 +1310,31 @@ export interface components {
              */
             version: number;
             data: components["schemas"]["RunData"];
+        };
+        /**
+         * SandboxCrashResponse
+         * @description One row from `sandbox_crashes`. `state` mirrors the
+         *     `SandboxState` enum the watcher reported — kept as a literal so the
+         *     frontend gets exhaustive type coverage if a new state appears.
+         */
+        SandboxCrashResponse: {
+            /** Id */
+            id: number;
+            /** Workspace Id */
+            workspace_id: string;
+            /** Sandbox Id */
+            sandbox_id: string;
+            /** Crashed At */
+            crashed_at: number;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "crashed" | "oom" | "removed";
+            /** Exit Code */
+            exit_code: number | null;
+            /** Last Message */
+            last_message: string | null;
         };
         /**
          * SandboxCrashedData
@@ -3340,6 +3382,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WorkspaceGitResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_sandbox_crashes_api_sandbox_crashes_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SandboxCrashResponse"][];
                 };
             };
             /** @description Validation Error */
