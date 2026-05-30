@@ -54,10 +54,14 @@ it's the single biggest "this feels pro" visual upgrade we can do this week.
 
 ### Backend (`/home/haex/Projekte/Holzi`)
 
-- `src/hermes/schema.sql` — `conversations` table grows two nullable columns:
-  `model TEXT` (override; falls back to the active credential's model) and
-  `reasoning_effort TEXT` (`none|low|medium|high|max`; falls back to global
-  default).
+- `src/hermes/schema.py` — the `conversations` `Table` grows two nullable
+  `Column`s: `model TEXT` (override; falls back to the active credential's
+  model) and `reasoning_effort TEXT` (`none|low|medium|high|max`; falls back
+  to global default). `schema.sql` stays FTS-only (same pattern as
+  [Plan 21](./21-approval-granularity.md)).
+- `src/hermes/db.py` — extend `_apply_lightweight_migrations()` with two
+  guarded `ALTER TABLE conversations ADD COLUMN …` statements so existing
+  databases pick up the new columns on next start.
 - `src/hermes/routes/api.py` — `PATCH /api/conversations/{id}` (already exists
   for rename) accepts the two new fields; null clears the override.
 - `src/hermes/agent.py` / `src/hermes/upstream.py` — when building the
@@ -65,7 +69,10 @@ it's the single biggest "this feels pro" visual upgrade we can do this week.
   pass the reasoning hint through provider-specific params:
   - Anthropic: `extra_body={"thinking": {"type": "enabled", "budget_tokens": …}}` mapped from the level.
   - OpenAI o*-models: `reasoning_effort: 'low'|'medium'|'high'` (the API supports the trio).
-  - Map our 5-level to 3-level cleanly: `none → no reasoning`, `low/medium/high → matched`, `max → high` (or the largest budget).
+  - Map our 5-level to provider params: `none → omit the parameter entirely`
+    (OpenAI rejects unknown values; Anthropic just doesn't add `thinking`),
+    `low/medium/high → matched`, `max → high` (OpenAI) or the largest
+    `budget_tokens` (Anthropic).
 - No new endpoint for the models list — `GET /api/llm/credentials/{id}/models`
   already exists; we just call it from the chip.
 
@@ -112,9 +119,11 @@ it's the single biggest "this feels pro" visual upgrade we can do this week.
 
 ### 1. Backend tests + schema
 
-- Add the two columns with `CREATE TABLE IF NOT EXISTS` and a backfill
-  `ALTER TABLE conversations ADD COLUMN model TEXT;` (SQLite-safe — both
-  nullable, no default required).
+- Add the two `Column`s to the existing `conversations` `Table` in
+  `src/hermes/schema.py` (both nullable, no default required); extend
+  `_apply_lightweight_migrations()` in `src/hermes/db.py` with two guarded
+  `ALTER TABLE conversations ADD COLUMN …` statements for already-deployed
+  databases.
 - Test the PATCH and the agent-loop path that picks the override.
 
 ### 2. Frontend chips
@@ -168,7 +177,8 @@ it's the single biggest "this feels pro" visual upgrade we can do this week.
 ## Files Likely Touched
 
 Backend:
-- `src/hermes/schema.sql`
+- `src/hermes/schema.py`
+- `src/hermes/db.py` (`_apply_lightweight_migrations`)
 - `src/hermes/repository/conversations.py`
 - `src/hermes/routes/api.py`
 - `src/hermes/agent.py` / `src/hermes/upstream.py`

@@ -54,11 +54,11 @@ last-active conversation if one exists.
   `/` and `/chat/:id`.
 - `app/pages/index.vue`:
   - On mount, read `localStorage.holzi.lastConversationId`. If present
-    and the GET request succeeds, `navigateTo(\`/chat/\${id}\`)`. Otherwise
+    and the GET request succeeds, ``navigateTo(`/chat/${id}`)``. Otherwise
     render the empty hub.
   - When the user creates a new conversation (first send), persist
     `lastConversationId` and replace the URL via
-    `navigateTo(\`/chat/\${id}\`, { replace: true })`.
+    ``navigateTo(`/chat/${id}`, { replace: true })``.
 - `app/pages/chat/[id].vue`:
   - Validate the param against `/api/conversations/{id}` on mount.
     On 404, route back to `/` and toast "Konversation nicht gefunden".
@@ -67,7 +67,7 @@ last-active conversation if one exists.
   - Sync the in-memory `activeId` with the route param; route changes
     swap the hub's active id.
 - `app/components/chat/ConversationList.vue`:
-  - Selecting a conversation calls `navigateTo(\`/chat/\${id}\`)` instead
+  - Selecting a conversation calls ``navigateTo(`/chat/${id}`)`` instead
     of just mutating `activeId`.
   - "Neuer Chat" button routes to `/`.
 

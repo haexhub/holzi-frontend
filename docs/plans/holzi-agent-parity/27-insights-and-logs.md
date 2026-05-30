@@ -70,7 +70,7 @@ Control Center after Plan 14 / 20.
       { "model": "claude-opus-4-7", "runs": 8, "input_tokens": …, "output_tokens": …, "errors": 0 },
       …
     ],
-    "by_status": { "success": 11, "error": 1, "cancelled": 0 }
+    "by_status": { "success": 11, "error": 1, "cancelled": 0, "running": 0 }
   }
   ```
 - Pure SQL over `agent_runs`: `GROUP BY date(started_at)` and `GROUP BY
@@ -81,18 +81,28 @@ Control Center after Plan 14 / 20.
 
 - `GET /api/logs?tail=200&min_level=info|warning|error` → newest-last list
   of structlog rows.
-- Reads from a known log file path: configure `HERMES_LOG_FILE` env. If
-  unset, returns 503 with a hint to set it. Default in
-  docker-compose.yml: `/var/log/hermes/agent.log`.
+- Reads from a known log file path. Today `src/hermes/logging.py` only
+  configures structlog's `JSONRenderer` on stdout via `PrintLoggerFactory`
+  (no file, no env toggle), so this plan **adds**:
+  - `HERMES_LOG_FILE` config field (default `None`; when set, a rotating
+    file handler is attached). Default in docker-compose.yml:
+    `/var/log/hermes/agent.log`.
+  - A `RotatingFileHandler` (or `TimedRotatingFileHandler`) wired into
+    `configure_logging()` next to the existing stdout handler — stdout
+    stays so `podman logs` still works.
+  - Rows are already JSON (structlog `JSONRenderer` is the last
+    processor), so no extra format toggle is needed.
+- If `HERMES_LOG_FILE` is unset, the endpoint returns 503 with a hint.
 - Cap `tail` at 1000.
-- Lines are structured JSON (structlog already writes JSON when
-  `HERMES_LOG_FORMAT=json`); endpoint parses safely and returns one
-  decoded object per line (malformed lines pass through as
-  `{ "_raw": "…" }`).
-- Auth-gated; **never** returns environment dumps or secret values —
-  structlog config already drops `Authorization`/`api_key` keys, but
-  add a defensive redaction layer on the endpoint for keys matching
-  `^(api[_-]?key|token|password|secret)`.
+- Endpoint parses safely and returns one decoded object per line
+  (malformed lines pass through as `{ "_raw": "…" }`).
+- Auth-gated; **never** returns environment dumps or secret values. Today
+  structlog has **no** key-redaction processor, so this plan adds:
+  - A redaction processor in `configure_logging()` that scrubs values for
+    keys matching `^(api[_-]?key|token|password|secret|authorization)$`
+    (case-insensitive), applied before `JSONRenderer`.
+  - A second defensive redaction layer on the `/api/logs` response
+    (same regex) so even pre-existing log rows are scrubbed on read.
 
 ### Frontend (`/home/haex/Projekte/holzi-frontend`)
 
@@ -202,6 +212,7 @@ Backend:
 - `src/hermes/main.py` (router registration)
 - `src/hermes/repository/runs.py` (aggregate queries)
 - `src/hermes/config.py` (`HERMES_LOG_FILE`)
+- `src/hermes/logging.py` (file handler + redaction processor)
 - `tests/test_insights.py` *(new)*
 - `tests/test_logs.py` *(new)*
 

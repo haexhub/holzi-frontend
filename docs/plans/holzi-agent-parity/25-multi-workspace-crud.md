@@ -49,15 +49,17 @@ from one place. Closes the `/settings/workspaces` placeholder.
 
 ### Backend (`/home/haex/Projekte/Holzi`)
 
-- `src/hermes/schema.sql` — new `workspaces` table:
+- `src/hermes/schema.py` — new `workspaces` `Table`:
   ```
-  id TEXT PRIMARY KEY            -- stable slug (kebab-case)
-  display_name TEXT NOT NULL
-  created_at INTEGER NOT NULL
-  archived_at INTEGER             -- nullable; soft-delete
+  id            TEXT PRIMARY KEY  -- stable slug (kebab-case)
+  display_name  TEXT NOT NULL
+  created_at    INTEGER NOT NULL
+  archived_at   INTEGER           -- nullable; soft-delete
   ```
   Path is derived: `${sandbox_volume_root}/${id}` — never user-controlled
-  outside the slug.
+  outside the slug. `schema.sql` stays FTS-only; `metadata.create_all()`
+  in `init_db()` picks the new table up automatically (same pattern as
+  [Plan 21](./21-approval-granularity.md)).
 - `src/hermes/repository/workspaces.py` *(new)*: CRUD + list (excluding
   archived by default).
 - `src/hermes/routes/workspace.py`:
@@ -119,8 +121,9 @@ Frontend:
 
 ### 1. Schema + repository + CRUD endpoints
 
-- `CREATE TABLE IF NOT EXISTS` plus a startup-time backfill from
-  `HERMES_WORKSPACE_ROOTS`.
+- Define the `workspaces` `Table` in `src/hermes/schema.py`;
+  `metadata.create_all()` materialises it on next start. Add a startup-time
+  backfill from `HERMES_WORKSPACE_ROOTS` (in `src/hermes/main.py` lifespan).
 - Repository is async, sqlalchemy-style same as the rest.
 
 ### 2. Status aggregation endpoint
@@ -128,7 +131,8 @@ Frontend:
 - `GET /api/workspaces` joins:
   - Sandbox state from `SandboxManager.get_status(workspace_id)` (already
     exists, returns absent/running/exited/crashed).
-  - Git state via the existing `git_status` helper from Plan 13.
+  - Git state via the existing `_is_git_repo` / `GET /api/workspace/git`
+    plumbing from Plan 13 (`src/hermes/routes/workspace.py`).
   - Disk usage via a fresh `du -sb` exec (cap 1s, fall back to None).
 - Aggregate cap: 16 workspaces is the practical ceiling (we should warn
   in docs); above that consider parallelising. Not in this plan.
@@ -178,7 +182,7 @@ Frontend:
 ## Files Likely Touched
 
 Backend:
-- `src/hermes/schema.sql`
+- `src/hermes/schema.py`
 - `src/hermes/repository/workspaces.py` *(new)*
 - `src/hermes/routes/workspace.py`
 - `src/hermes/main.py` (startup backfill from env)
