@@ -1,16 +1,21 @@
 # Plan 20: Onboarding, Diagnostics, And Docs
 
-Status (2026-05-30): **Diagnostics slice shipped.** `GET /api/diagnostics`
-returns a redacted snapshot of six subsystem checks (database, LLM credential,
-messenger, scheduler, workspace roots, sandbox runtime) — never echoes the
-auth token, API key plaintext/ciphertext, master key, or messenger phone
-numbers. `/settings/diagnostics` replaces the placeholder stub with a flat
-status list + a "Letzte Fehlläufe" panel backed by
-`GET /api/runs?status=error`; each failed run can be expanded to reveal the
-persisted trace. The `upcoming` hint was dropped from the diagnostics entry
-in `app/lib/settingsNav.ts`.
+Status: **Diagnostics slice implemented and merged on 2026-05-30.** Cross-repo:
+backend [Holzi#50](https://github.com/haexhub/Holzi/pull/50) (squashed as
+`8e01959`), frontend
+[holzi-frontend#54](https://github.com/haexhub/holzi-frontend/pull/54)
+(squashed as `4dab3f1`).
 
-Explicitly **deferred** to follow-up slices (not in this session):
+`GET /api/diagnostics` returns a redacted snapshot of six subsystem checks
+(database, LLM credential, messenger, scheduler, workspace roots, sandbox
+runtime) — never echoes the auth token, API key plaintext/ciphertext, master
+key, or messenger phone numbers. `/settings/diagnostics` replaces the
+placeholder stub with a flat status list + a "Letzte Fehlläufe" panel backed
+by `GET /api/runs?status=error`; each failed run can be expanded to reveal
+the persisted trace. The `upcoming` hint was dropped from the diagnostics
+entry in `app/lib/settingsNav.ts`.
+
+Explicitly **deferred** to follow-up slices (still open):
 
 - **Persistent sandbox-crash log table.** Plan 11b-b's "Known limit" still
   holds — sandbox crashes only surface live via the `sandbox_crashed` SSE
