@@ -89,16 +89,28 @@ the tool error helps the model self-correct.
 
 ### Backend (`/home/haex/Projekte/Holzi`)
 
-- `src/hermes/agent.py` — `ApprovalDecision` literal grows
-  `"allow_session"` and `"allow_always"`; the agent loop checks the standing
-  allow-lists *before* enqueueing the future.
+- `src/hermes/agent.py` — `ApprovalDecision.decision` is now typed by the
+  shared `ApprovalDecisionLiteral` (four values). The agent loop itself does
+  **not** read the standing allow-lists; it only branches on
+  `decision.decision == "deny"`. Pre-empting on a standing grant happens
+  one layer up in the `on_approval` wrapper (see `routes/api.py` below), so
+  Signal/Telegram workers — which never wire an `on_approval` — stay
+  unchanged.
+- `src/hermes/events.py` — adds `ApprovalDecisionLiteral`
+  (`Literal["allow_once", "allow_session", "allow_always", "deny"]`) as the
+  shared contract for the agent, the HTTP body, and the generated frontend
+  types.
 - `src/hermes/schema.py` — new `tool_approvals` table
-  `{tool_name PRIMARY KEY, scope: 'always', granted_at, last_used_at}`.
-  Session scope stays purely in-memory on `app.state.session_approvals: dict[conversation_id, set[tool_name]]`.
+  `{tool_name PRIMARY KEY, granted_at, last_used_at}`. Sessions-scope stays
+  purely in-memory on
+  `app.state.session_approvals: dict[conversation_id, set[tool_name]]`.
 - `src/hermes/repository/approvals.py` *(new)* — `is_always_allowed(name)`,
   `grant_always(name)`, `revoke_always(name)`, `list_always()`.
-- `src/hermes/routes/api.py` — `POST /api/approvals/{id}` body grows
-  `decision ∈ {allow_once, allow_session, allow_always, deny}` and a free-text
+- `src/hermes/routes/api.py` — the per-`/api/chat` `on_approval` wrapper
+  checks the always-list (DB) and the session-list (`app.state`) *before*
+  enqueueing an approval future, and writes back the new scope after
+  resolution. `POST /api/approvals/{id}` body grows `decision ∈
+  {allow_once, allow_session, allow_always, deny}` and a free-text
   `reason?: str` (cap 500 chars, stripped). `deny` with reason persists the
   reason in the tool result error message so the agent sees it.
 - New: `GET /api/approvals/standing` → `{always: [{tool, granted_at}], session: [{conversation_id, tool}]}` for a future settings page.
@@ -131,16 +143,29 @@ the tool error helps the model self-correct.
 
 ### 2. Endpoint + schema
 
-- Migration is `CREATE TABLE IF NOT EXISTS` in `schema.sql` (Holzi has no
-  Alembic, see [[project-holzi-deployment]]).
-- `agent.py`'s approval gate becomes:
+- The new `tool_approvals` table is a SQLAlchemy `Table` in
+  `src/hermes/schema.py` (Holzi has no Alembic, see
+  [[project-holzi-deployment]]); `schema.sql` stays FTS-only. `init_db()`
+  picks up the new table automatically via `metadata.create_all()`.
+- The standing-approval pre-check lives in the `on_approval` wrapper inside
+  `src/hermes/routes/api.py`, **not** in `agent.py`. That keeps
+  `agent.py` channel-agnostic — `Signal`/`Telegram` workers don't wire an
+  `on_approval` callback, so they bypass the gate as before and never read
+  web-side standing state. `agent.py` continues to only branch on
+  `decision.decision == "deny"`; the wrapper either returns
+  `ApprovalDecision(decision="allow_once")` for a pre-granted tool or, on
+  user resolution, promotes `allow_session`/`allow_always` into the right
+  store before returning the raw decision. Effectively:
 
   ```python
-  if tool.name in self._always_allowed:
-      return ApprovalDecision(decision="allow_once", reason=None)
-  if tool.name in self._session_allowed[conversation_id]:
-      return ApprovalDecision(decision="allow_once", reason=None)
-  # else: enqueue + await as today
+  # src/hermes/routes/api.py — inside the per-request on_approval wrapper
+  if await approvals_repo.is_always_allowed(db, name):
+      return ApprovalDecision(decision="allow_once")
+  if name in session_approvals.get(convo.id, set()):
+      return ApprovalDecision(decision="allow_once")
+  # else: enqueue future + await as today, then on resolve:
+  #   allow_session → session_approvals[convo.id].add(name)
+  #   allow_always  → approvals_repo.grant_always(db, name)
   ```
 
 - The four-decision union lives in `events.py` next to the SSE envelope so
