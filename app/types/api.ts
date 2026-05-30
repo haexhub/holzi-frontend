@@ -37,6 +37,24 @@ export type AgentTaskCreate = components['schemas']['TaskCreate']
 export type AgentTaskUpdate = components['schemas']['TaskUpdate']
 export type AgentTaskRunResponse = components['schemas']['TaskRunResponse']
 
+// --- Sandbox status (Plan 11b-b) ----------------------------------------
+// `GET /api/workspaces/{id}/sandbox` + `POST .../sandbox/restart` —
+// the workspaces page calls restart on demand.
+export type SandboxStatusResponse = components['schemas']['SandboxStatusResponse']
+
+// --- Workspaces CRUD (Plan 25) ------------------------------------------
+// Workspaces are now first-class managed objects. The list response joins
+// each row with its live sandbox / disk / git snapshot so the panel renders
+// in one round-trip.
+export type Workspace = components['schemas']['WorkspaceResponse']
+export type WorkspaceSandbox = components['schemas']['WorkspaceSandbox']
+export type WorkspaceDisk = components['schemas']['WorkspaceDisk']
+export type WorkspaceGit = components['schemas']['WorkspaceGit']
+export type WorkspaceCreate = components['schemas']['WorkspaceCreate']
+export type WorkspaceRename = components['schemas']['WorkspaceRename']
+export type WorkspaceDiskResponse = components['schemas']['WorkspaceDiskResponse']
+export type WorkspaceSandboxState = WorkspaceSandbox['state']
+
 // --- Workspace browser (Plan 12) ----------------------------------------
 export type WorkspaceRoot = components['schemas']['WorkspaceRoot']
 export type WorkspaceRootsResponse = components['schemas']['WorkspaceRootsResponse']

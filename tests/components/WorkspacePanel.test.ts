@@ -3,9 +3,9 @@ import { mount, flushPromises } from '@vue/test-utils'
 import WorkspacePanel from '~/components/panels/WorkspacePanel.vue'
 import type {
   TreeEntry,
+  Workspace,
   WorkspaceFileResponse,
   WorkspaceGitResponse,
-  WorkspaceRootsResponse,
   WorkspaceTreeResponse,
 } from '~/types/api'
 
@@ -51,6 +51,14 @@ const stubs = {
     props: ['content'],
     template: '<div class="rm-stub">{{ content }}</div>',
   },
+  // NuxtLink isn't registered without a Nuxt runtime; render the href so
+  // tests can still inspect the destination. Plan 25's empty-state points
+  // to /settings/workspaces.
+  NuxtLink: {
+    name: 'NuxtLink',
+    props: ['to'],
+    template: '<a :href="to" data-stub-nuxtlink><slot /></a>',
+  },
 }
 
 function httpError(status: number, detail?: string): Error & { statusCode: number; data?: { detail?: string } } {
@@ -63,8 +71,20 @@ function httpError(status: number, detail?: string): Error & { statusCode: numbe
   return err
 }
 
-function rootsResponse(ids: string[]): WorkspaceRootsResponse {
-  return { roots: ids.map((id) => ({ id })) }
+// Plan 25: roots source-of-truth is `/api/workspaces` (DB-backed) — the
+// panel projects the response down to `{ id }` for its tree/file calls.
+// Sandbox/disk/git fields are populated with cheap defaults so the helper
+// stays a one-liner per test.
+function workspacesResponse(ids: string[]): Workspace[] {
+  return ids.map((id) => ({
+    id,
+    display_name: id,
+    created_at: 1_700_000_000,
+    archived_at: null,
+    sandbox: { state: 'absent', exit_code: null },
+    disk: { used_mb: null, quota_mb: null },
+    git: { is_repo: false, branch: null, dirty: false },
+  }))
 }
 
 function treeResponse(root: string, path: string, entries: TreeEntry[]): WorkspaceTreeResponse {
@@ -105,19 +125,19 @@ describe('WorkspacePanel.vue', () => {
 
   it('renders empty-state when no roots are configured', async () => {
     apiGet.mockImplementation((path: string) => {
-      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse([]))
+      if (path === '/api/workspaces') return Promise.resolve(workspacesResponse([]))
       if (path === '/api/workspace/git') return Promise.resolve(NOT_A_REPO)
       throw new Error(`unexpected ${path}`)
     })
     const wrapper = mount(WorkspacePanel, { global: { stubs } })
     await flushPromises()
-    expect(wrapper.text()).toContain('Keine Workspaces konfiguriert')
-    expect(wrapper.text()).toContain('HERMES_WORKSPACE_ROOTS')
+    expect(wrapper.text()).toContain('Keine Workspaces angelegt')
+    expect(wrapper.text()).toContain('Im Control Center anlegen')
   })
 
   it('auto-selects the first root and renders its tree entries', async () => {
     apiGet.mockImplementation((path: string) => {
-      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws-a', 'ws-b']))
+      if (path === '/api/workspaces') return Promise.resolve(workspacesResponse(['ws-a', 'ws-b']))
       if (path === '/api/workspace/tree')
         return Promise.resolve(
           treeResponse('ws-a', '', [
@@ -138,7 +158,7 @@ describe('WorkspacePanel.vue', () => {
 
   it('sorts directories before files alphabetically', async () => {
     apiGet.mockImplementation((path: string) => {
-      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
+      if (path === '/api/workspaces') return Promise.resolve(workspacesResponse(['ws']))
       if (path === '/api/workspace/tree')
         return Promise.resolve(
           treeResponse('ws', '', [
@@ -163,7 +183,7 @@ describe('WorkspacePanel.vue', () => {
 
   it('navigates into a directory and re-fetches /tree with the joined path', async () => {
     apiGet.mockImplementation((path: string, query?: Record<string, unknown>) => {
-      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
+      if (path === '/api/workspaces') return Promise.resolve(workspacesResponse(['ws']))
       if (path === '/api/workspace/tree') {
         if (query?.path === '')
           return Promise.resolve(
@@ -191,7 +211,7 @@ describe('WorkspacePanel.vue', () => {
 
   it('selecting a file fetches /file and renders text content in a <pre>', async () => {
     apiGet.mockImplementation((path: string, query?: Record<string, unknown>) => {
-      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
+      if (path === '/api/workspaces') return Promise.resolve(workspacesResponse(['ws']))
       if (path === '/api/workspace/tree')
         return Promise.resolve(
           treeResponse('ws', '', [{ name: 'a.txt', type: 'file', size: 5 }]),
@@ -218,7 +238,7 @@ describe('WorkspacePanel.vue', () => {
 
   it('markdown kind routes through RenderedMarkdown', async () => {
     apiGet.mockImplementation((path: string) => {
-      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
+      if (path === '/api/workspaces') return Promise.resolve(workspacesResponse(['ws']))
       if (path === '/api/workspace/tree')
         return Promise.resolve(
           treeResponse('ws', '', [{ name: 'README.md', type: 'file', size: 5 }]),
@@ -243,7 +263,7 @@ describe('WorkspacePanel.vue', () => {
   it('image kind renders an <img> with the data_url as src', async () => {
     const dataUrl = 'data:image/png;base64,AAAA'
     apiGet.mockImplementation((path: string) => {
-      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
+      if (path === '/api/workspaces') return Promise.resolve(workspacesResponse(['ws']))
       if (path === '/api/workspace/tree')
         return Promise.resolve(
           treeResponse('ws', '', [{ name: 'logo.png', type: 'file', size: 999 }]),
@@ -267,7 +287,7 @@ describe('WorkspacePanel.vue', () => {
 
   it('binary kind renders the metadata-only message and no <pre> or <img>', async () => {
     apiGet.mockImplementation((path: string) => {
-      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
+      if (path === '/api/workspaces') return Promise.resolve(workspacesResponse(['ws']))
       if (path === '/api/workspace/tree')
         return Promise.resolve(
           treeResponse('ws', '', [{ name: 'app.bin', type: 'file', size: 999 }]),
@@ -291,7 +311,7 @@ describe('WorkspacePanel.vue', () => {
 
   it('shows the "Vorschau gekürzt" banner when truncated is true', async () => {
     apiGet.mockImplementation((path: string) => {
-      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
+      if (path === '/api/workspaces') return Promise.resolve(workspacesResponse(['ws']))
       if (path === '/api/workspace/tree')
         return Promise.resolve(
           treeResponse('ws', '', [{ name: 'big.txt', type: 'file', size: 999999 }]),
@@ -318,7 +338,7 @@ describe('WorkspacePanel.vue', () => {
 
   it('shows "Workspace nicht verfügbar" when /tree returns 503', async () => {
     apiGet.mockImplementation((path: string) => {
-      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
+      if (path === '/api/workspaces') return Promise.resolve(workspacesResponse(['ws']))
       if (path === '/api/workspace/tree') return Promise.reject(httpError(503))
       if (path === '/api/workspace/git') return Promise.resolve(NOT_A_REPO)
       throw new Error(`unexpected ${path}`)
@@ -331,7 +351,7 @@ describe('WorkspacePanel.vue', () => {
   it('shows "Pfad nicht gefunden" on a 404 but the breadcrumb is still navigable', async () => {
     let serveError = true
     apiGet.mockImplementation((path: string, query?: Record<string, unknown>) => {
-      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
+      if (path === '/api/workspaces') return Promise.resolve(workspacesResponse(['ws']))
       if (path === '/api/workspace/tree') {
         if (serveError && query?.path === 'missing') return Promise.reject(httpError(404))
         return Promise.resolve(
@@ -361,7 +381,7 @@ describe('WorkspacePanel.vue', () => {
 
   it('shows "Workspace nicht verfügbar" when /file returns 503 (sandbox crashed)', async () => {
     apiGet.mockImplementation((path: string, query?: Record<string, unknown>) => {
-      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
+      if (path === '/api/workspaces') return Promise.resolve(workspacesResponse(['ws']))
       if (path === '/api/workspace/tree') {
         return Promise.resolve(
           treeResponse('ws', String(query?.path ?? ''), [
@@ -384,7 +404,7 @@ describe('WorkspacePanel.vue', () => {
 
   it('refresh button re-fetches tree and current file preview', async () => {
     apiGet.mockImplementation((path: string, query?: Record<string, unknown>) => {
-      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
+      if (path === '/api/workspaces') return Promise.resolve(workspacesResponse(['ws']))
       if (path === '/api/workspace/tree') {
         return Promise.resolve(
           treeResponse('ws', String(query?.path ?? ''), [
@@ -428,8 +448,8 @@ describe('WorkspacePanel.vue', () => {
       resolveSlow = resolve
     })
     apiGet.mockImplementation((path: string, query?: Record<string, unknown>) => {
-      if (path === '/api/workspace/roots') {
-        return Promise.resolve(rootsResponse(['slow', 'fast']))
+      if (path === '/api/workspaces') {
+        return Promise.resolve(workspacesResponse(['slow', 'fast']))
       }
       if (path === '/api/workspace/tree') {
         if (query?.root === 'slow') return slowTree
@@ -461,7 +481,7 @@ describe('WorkspacePanel.vue', () => {
 
   it('renders branch + dirty badge when /api/workspace/git reports a dirty repo', async () => {
     apiGet.mockImplementation((path: string) => {
-      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
+      if (path === '/api/workspaces') return Promise.resolve(workspacesResponse(['ws']))
       if (path === '/api/workspace/tree')
         return Promise.resolve(treeResponse('ws', '', []))
       if (path === '/api/workspace/git')
@@ -482,7 +502,7 @@ describe('WorkspacePanel.vue', () => {
 
   it('shows the clean indicator when /api/workspace/git reports no changes', async () => {
     apiGet.mockImplementation((path: string) => {
-      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
+      if (path === '/api/workspaces') return Promise.resolve(workspacesResponse(['ws']))
       if (path === '/api/workspace/tree')
         return Promise.resolve(treeResponse('ws', '', []))
       if (path === '/api/workspace/git')
@@ -505,7 +525,7 @@ describe('WorkspacePanel.vue', () => {
 
   it('hides the Edit button when no conversation is selected', async () => {
     apiGet.mockImplementation((path: string) => {
-      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
+      if (path === '/api/workspaces') return Promise.resolve(workspacesResponse(['ws']))
       if (path === '/api/workspace/tree')
         return Promise.resolve(
           treeResponse('ws', '', [{ name: 'a.txt', type: 'file', size: 5 }]),
@@ -550,7 +570,7 @@ describe('WorkspacePanel.vue', () => {
     })
     let nextFile = original
     apiGet.mockImplementation((path: string) => {
-      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
+      if (path === '/api/workspaces') return Promise.resolve(workspacesResponse(['ws']))
       if (path === '/api/workspace/tree')
         return Promise.resolve(
           treeResponse('ws', '', [{ name: 'a.txt', type: 'file', size: 3 }]),
@@ -606,7 +626,7 @@ describe('WorkspacePanel.vue', () => {
 
   it('save: 409 base_sha mismatch surfaces a conflict message', async () => {
     apiGet.mockImplementation((path: string) => {
-      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
+      if (path === '/api/workspaces') return Promise.resolve(workspacesResponse(['ws']))
       if (path === '/api/workspace/tree')
         return Promise.resolve(
           treeResponse('ws', '', [{ name: 'a.txt', type: 'file', size: 3 }]),
@@ -649,7 +669,7 @@ describe('WorkspacePanel.vue', () => {
 
   it('create: POST /api/workspace/file with empty content and conversation_id, then refresh tree', async () => {
     apiGet.mockImplementation((path: string, query?: Record<string, unknown>) => {
-      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
+      if (path === '/api/workspaces') return Promise.resolve(workspacesResponse(['ws']))
       if (path === '/api/workspace/tree')
         return Promise.resolve(treeResponse('ws', String(query?.path ?? ''), []))
       if (path === '/api/workspace/git') return Promise.resolve(NOT_A_REPO)
@@ -690,7 +710,7 @@ describe('WorkspacePanel.vue', () => {
   it('delete: confirms then DELETEs /api/workspace/file with conversation_id', async () => {
     confirmFn.mockResolvedValue(true)
     apiGet.mockImplementation((path: string) => {
-      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
+      if (path === '/api/workspaces') return Promise.resolve(workspacesResponse(['ws']))
       if (path === '/api/workspace/tree')
         return Promise.resolve(
           treeResponse('ws', '', [{ name: 'gone.txt', type: 'file', size: 4 }]),
@@ -739,7 +759,7 @@ describe('WorkspacePanel.vue', () => {
   it('delete: cancelling the confirm dialog does not call the API', async () => {
     confirmFn.mockResolvedValue(false)
     apiGet.mockImplementation((path: string) => {
-      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
+      if (path === '/api/workspaces') return Promise.resolve(workspacesResponse(['ws']))
       if (path === '/api/workspace/tree')
         return Promise.resolve(
           treeResponse('ws', '', [{ name: 'gone.txt', type: 'file', size: 4 }]),
@@ -779,7 +799,7 @@ describe('WorkspacePanel.vue', () => {
   it('rename: prompt → POST /rename → reload tree + navigate to dest parent', async () => {
     promptFn.mockResolvedValue('src/new.md')
     apiGet.mockImplementation((path: string, query?: Record<string, unknown>) => {
-      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
+      if (path === '/api/workspaces') return Promise.resolve(workspacesResponse(['ws']))
       if (path === '/api/workspace/tree') {
         if (query?.path === '' || query?.path === undefined)
           return Promise.resolve(
@@ -840,7 +860,7 @@ describe('WorkspacePanel.vue', () => {
   it('rename: 409 surfaces "Zielpfad existiert bereits"', async () => {
     promptFn.mockResolvedValue('b.md')
     apiGet.mockImplementation((path: string) => {
-      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
+      if (path === '/api/workspaces') return Promise.resolve(workspacesResponse(['ws']))
       if (path === '/api/workspace/tree')
         return Promise.resolve(
           treeResponse('ws', '', [{ name: 'a.md', type: 'file', size: 1 }]),
@@ -874,7 +894,7 @@ describe('WorkspacePanel.vue', () => {
 
   it('git 503 surfaces an inline error and hides the branch badge', async () => {
     apiGet.mockImplementation((path: string) => {
-      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
+      if (path === '/api/workspaces') return Promise.resolve(workspacesResponse(['ws']))
       if (path === '/api/workspace/tree') return Promise.resolve(treeResponse('ws', '', []))
       if (path === '/api/workspace/git') return Promise.reject(httpError(503))
       throw new Error(`unexpected ${path}`)
@@ -890,7 +910,7 @@ describe('WorkspacePanel.vue', () => {
 
   it('create: empty path is rejected client-side without calling the API', async () => {
     apiGet.mockImplementation((path: string) => {
-      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
+      if (path === '/api/workspaces') return Promise.resolve(workspacesResponse(['ws']))
       if (path === '/api/workspace/tree') return Promise.resolve(treeResponse('ws', '', []))
       if (path === '/api/workspace/git') return Promise.resolve(NOT_A_REPO)
       throw new Error(`unexpected ${path}`)
@@ -918,7 +938,7 @@ describe('WorkspacePanel.vue', () => {
 
   it('conversation flipped to null mid-edit drops the unsaved draft and hides Save', async () => {
     apiGet.mockImplementation((path: string) => {
-      if (path === '/api/workspace/roots') return Promise.resolve(rootsResponse(['ws']))
+      if (path === '/api/workspaces') return Promise.resolve(workspacesResponse(['ws']))
       if (path === '/api/workspace/tree')
         return Promise.resolve(
           treeResponse('ws', '', [{ name: 'a.txt', type: 'file', size: 3 }]),
@@ -981,8 +1001,8 @@ describe('WorkspacePanel.vue', () => {
     })
 
     apiGet.mockImplementation((path: string, query?: Record<string, unknown>) => {
-      if (path === '/api/workspace/roots')
-        return Promise.resolve(rootsResponse(['ws-a', 'ws-b']))
+      if (path === '/api/workspaces')
+        return Promise.resolve(workspacesResponse(['ws-a', 'ws-b']))
       if (path === '/api/workspace/tree')
         return Promise.resolve(
           treeResponse(String(query?.root ?? ''), '', [
