@@ -22,6 +22,11 @@ const props = defineProps<{
 // stays the priority — banner only renders when hasCredentials === true.
 const { diagnostics, loadDiagnostics } = useDiagnostics()
 
+// One-shot: the `diagnostics.value === null` guard means we never re-fetch
+// after the first load. A `true → false → true` transition keeps the cached
+// value — fine here because the EmptyState is unmounted as soon as the user
+// sends a first message; credentials don't flip at runtime in the chat-
+// empty surface.
 watch(
   () => props.hasCredentials,
   (val) => {
