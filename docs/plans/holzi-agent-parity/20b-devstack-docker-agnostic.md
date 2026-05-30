@@ -7,15 +7,15 @@ Status: **Planned 2026-05-30.**
 Unblocks the live verification step that [Plan 20-A](./20a-sandbox-crash-log.md)
 had to defer: on a Docker-only developer host, `make up-local-full` currently
 fails because the Makefile defaults to `podman compose`. The
-[`reference-docker-local-devstack`](../../../../.claude/projects/-home-haex-Projekte-holzi-frontend/memory/reference_docker_local_devstack.md)
-memory documents the exact failure modes — this slice fixes them.
+[[reference-docker-local-devstack]] memory documents the exact failure modes —
+this slice fixes them.
 
 This slice does **not** change the production sandbox runtime. Holzi's
 production sandbox-manager stays hard rootless-Podman per
-[`project-holzi-sandbox-podman`](../../../../.claude/projects/-home-haex-Projekte-holzi-frontend/memory/project_holzi_sandbox_podman.md);
-Plan 20-B only makes the *dev-stack wrapper* runtime-agnostic so a frontend-
-focused developer with only Docker installed can still bring the stack up and
-exercise the agent against a working sandbox-less backend.
+[[project-holzi-sandbox-podman]]; Plan 20-B only makes the *dev-stack wrapper*
+runtime-agnostic so a frontend-focused developer with only Docker installed
+can still bring the stack up and exercise the agent against a working
+sandbox-less backend.
 
 ## Goal
 
@@ -111,6 +111,13 @@ the guard is missing, **stop and reopen as a backend slice** — the dev-stack
 fix below depends on the backend tolerating a no-sandbox boot.
 
 ### 2. Backend — smoke test for "no sandbox socket" lifespan
+
+**Already covered — skip unless the existing coverage regresses.**
+`tests/test_api_sandbox.py::test_sandbox_status_503_when_not_configured`
+and `test_sandbox_restart_503_when_not_configured` both drive the full
+lifespan via `LifespanManager(app)` and assert
+`app.state.sandbox_manager is None`, which is exactly the contract this
+slice depends on. Verified during execution; no new test added.
 
 Grep tests first:
 
