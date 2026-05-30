@@ -3,7 +3,9 @@ import {
   AlertCircle,
   FolderTree,
   LogOut,
+  Menu,
   NotebookPen,
+  PanelRight,
   Settings,
   X,
 } from 'lucide-vue-next'
@@ -135,6 +137,14 @@ const currentRunId = ref<string | null>(null)
 // the next send into the same conversation.
 const cancelledConversationId = ref<number | null>(null)
 const error = ref<string | null>(null)
+// Off-canvas sidebar state for screens below the `lg` breakpoint. Above it
+// the sidebars sit in the grid (lg:static + lg:translate-x-0) and ignore
+// these flags.
+const leftSidebarOpen = ref(false)
+const rightSidebarOpen = ref(false)
+const anySidebarOpen = computed(
+  () => leftSidebarOpen.value || rightSidebarOpen.value,
+)
 const activePanel = ref<'notes' | 'workspace'>('notes')
 const messagesScroller = ref<HTMLElement | null>(null)
 // `null` while the credentials list is still loading — EmptyChatState
@@ -227,6 +237,7 @@ async function selectConversation(id: number) {
     cancelledConversationId.value = null
     queue.clear()
     sandboxCrashes.value = []
+    leftSidebarOpen.value = false
   }
   activeId.value = id
   try {
@@ -245,6 +256,7 @@ function newChat() {
   cancelledConversationId.value = null
   queue.clear()
   sandboxCrashes.value = []
+  leftSidebarOpen.value = false
 }
 
 // id of the latest assistant message — the only turn that shows a Retry
@@ -650,16 +662,72 @@ function logout() {
   router.replace('/login')
 }
 
+// Above the lg breakpoint both sidebars sit in the grid. Stale flags from a
+// smaller viewport would otherwise pop the sidebar open the moment the user
+// shrinks the window again — close them as soon as we cross into lg.
+function syncSidebarFlagsToBreakpoint() {
+  if (typeof window === 'undefined') return
+  if (window.matchMedia('(min-width: 1024px)').matches) {
+    leftSidebarOpen.value = false
+    rightSidebarOpen.value = false
+  }
+}
+
+function onKeydownGlobal(e: KeyboardEvent) {
+  if (e.key === 'Escape' && anySidebarOpen.value) {
+    leftSidebarOpen.value = false
+    rightSidebarOpen.value = false
+  }
+}
+
+// Body scroll-lock while an off-canvas sidebar is open so background content
+// doesn't scroll on touch devices.
+watch(anySidebarOpen, (open) => {
+  if (typeof document === 'undefined') return
+  document.body.style.overflow = open ? 'hidden' : ''
+})
+
 onMounted(() => {
   loadConversations()
   loadCredentialState()
+  syncSidebarFlagsToBreakpoint()
+  window.addEventListener('resize', syncSidebarFlagsToBreakpoint)
+  window.addEventListener('keydown', onKeydownGlobal)
+})
+
+onBeforeUnmount(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('resize', syncSidebarFlagsToBreakpoint)
+    window.removeEventListener('keydown', onKeydownGlobal)
+  }
+  if (typeof document !== 'undefined') {
+    document.body.style.overflow = ''
+  }
 })
 </script>
 
 <template>
-  <div class="grid h-screen grid-cols-[260px_1fr_320px]">
-    <!-- Left sidebar: conversations -->
-    <aside class="border-r">
+  <div class="relative h-screen lg:grid lg:grid-cols-[260px_1fr_320px]">
+    <!-- Backdrop for off-canvas sidebars (below lg only). Tapping it closes
+         whichever sidebar is open. Above lg both sidebars sit in the grid
+         and this never renders. -->
+    <div
+      v-if="leftSidebarOpen || rightSidebarOpen"
+      class="fixed inset-0 z-30 bg-black/40 lg:hidden"
+      aria-hidden="true"
+      @click="leftSidebarOpen = false; rightSidebarOpen = false"
+    />
+
+    <!-- Left sidebar: conversations. Off-canvas overlay below lg, in-grid
+         above lg. -->
+    <aside
+      id="left-sidebar"
+      class="fixed inset-y-0 left-0 z-40 w-72 border-r bg-background transition-transform lg:static lg:w-auto lg:translate-x-0"
+      :class="leftSidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+      :role="leftSidebarOpen ? 'dialog' : undefined"
+      :aria-modal="leftSidebarOpen ? 'true' : undefined"
+      aria-label="Conversations"
+    >
       <ConversationList
         :conversations="conversations"
         :active-id="activeId"
@@ -675,9 +743,22 @@ onMounted(() => {
     <!-- Center: chat -->
     <main class="flex h-screen flex-col">
       <header class="flex items-center justify-between border-b px-4 py-2">
-        <h1 class="text-sm font-semibold">
-          {{ activeId === null ? 'Neuer Chat' : `Conversation #${activeId}` }}
-        </h1>
+        <div class="flex items-center gap-2">
+          <Button
+            size="icon"
+            variant="ghost"
+            class="lg:hidden"
+            aria-label="Conversations öffnen"
+            :aria-expanded="leftSidebarOpen"
+            aria-controls="left-sidebar"
+            @click="leftSidebarOpen = true"
+          >
+            <Menu class="size-4" />
+          </Button>
+          <h1 class="text-sm font-semibold">
+            {{ activeId === null ? 'Neuer Chat' : `Conversation #${activeId}` }}
+          </h1>
+        </div>
         <div class="flex items-center gap-1">
           <button
             type="button"
@@ -699,6 +780,17 @@ onMounted(() => {
           <Button size="sm" variant="ghost" @click="logout">
             <LogOut class="mr-1 size-4" />
             Logout
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            class="lg:hidden"
+            aria-label="Notes &amp; Workspace öffnen"
+            :aria-expanded="rightSidebarOpen"
+            aria-controls="right-sidebar"
+            @click="rightSidebarOpen = true"
+          >
+            <PanelRight class="size-4" />
           </Button>
         </div>
       </header>
@@ -875,8 +967,16 @@ onMounted(() => {
       />
     </main>
 
-    <!-- Right panel: notes + workspace -->
-    <aside class="flex h-screen flex-col border-l">
+    <!-- Right panel: notes + workspace. Off-canvas overlay below lg,
+         in-grid above lg. -->
+    <aside
+      id="right-sidebar"
+      class="fixed inset-y-0 right-0 z-40 flex h-screen w-80 flex-col border-l bg-background transition-transform lg:static lg:w-auto lg:translate-x-0"
+      :class="rightSidebarOpen ? 'translate-x-0' : 'translate-x-full'"
+      :role="rightSidebarOpen ? 'dialog' : undefined"
+      :aria-modal="rightSidebarOpen ? 'true' : undefined"
+      aria-label="Notes &amp; Workspace"
+    >
       <nav class="flex border-b">
         <button
           type="button"
