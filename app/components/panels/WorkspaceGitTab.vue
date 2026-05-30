@@ -49,6 +49,13 @@ const selectedPath = ref<string | null>(null)
 // in each group); selectedSide stores which row is active.
 const selectedSide = ref<'unstaged' | 'staged'>('unstaged')
 
+// Mirrors the branch `<select>`'s actual value. We keep this as its own
+// ref (not `branches.current` directly) so that selecting `__create__`
+// + cancelling the prompt, or selecting a target branch and getting a 409
+// from checkout, can reset the dropdown to the current branch without
+// having to mutate the loaded branches payload.
+const selectedBranch = ref<string>('')
+
 const statusLoading = ref(false)
 const branchesLoading = ref(false)
 const diffLoading = ref(false)
@@ -116,11 +123,19 @@ async function fetchBranches(): Promise<void> {
       `/api/workspace/git/branches`,
       { root: props.root },
     )
-    if (seq === branchesSeq) branches.value = res
+    if (seq === branchesSeq) {
+      branches.value = res
+      // Keep the dropdown's actual value in lockstep with the server's
+      // notion of the current branch — otherwise a failed checkout that
+      // left `selectedBranch` pointing at a different ref would silently
+      // stay wrong after the next refresh.
+      selectedBranch.value = res.current ?? ''
+    }
   } catch (err) {
     if (seq === branchesSeq) {
       branchesError.value = errorMsg(err, 'Branches konnten nicht geladen werden.')
       branches.value = null
+      selectedBranch.value = ''
     }
   } finally {
     if (seq === branchesSeq) branchesLoading.value = false
@@ -186,7 +201,20 @@ function selectFile(path: string, side: 'unstaged' | 'staged') {
   fetchDiff()
 }
 
+function clearSelectionIfMatches(path: string) {
+  // After a row is staged / unstaged / discarded, the highlight + diff
+  // header would point at a row that has either moved sides or vanished.
+  // Easiest sane UX: drop the selection so the diff panel goes back to
+  // "Datei auswählen" and the user can pick again from the post-refresh
+  // bucket layout.
+  if (selectedPath.value === path) {
+    selectedPath.value = null
+    diff.value = null
+  }
+}
+
 async function stageOne(path: string) {
+  clearSelectionIfMatches(path)
   await runOp(
     () => api.post<GitOpResponse>(`/api/workspace/git/stage`, {
       root: props.root,
@@ -197,6 +225,7 @@ async function stageOne(path: string) {
 }
 
 async function unstageOne(path: string) {
+  clearSelectionIfMatches(path)
   await runOp(
     () => api.post<GitOpResponse>(`/api/workspace/git/unstage`, {
       root: props.root,
@@ -211,6 +240,7 @@ async function discardOne(path: string) {
     toast.warning('Bitte zuerst eine Konversation auswählen.')
     return
   }
+  clearSelectionIfMatches(path)
   try {
     await api.post<GitOpResponse>(`/api/workspace/git/discard`, {
       root: props.root,
@@ -274,6 +304,15 @@ async function commit() {
   }
 }
 
+function restoreBranchSelection() {
+  // Bring the dropdown back in sync with the server's notion of the
+  // current branch — called whenever a branch action returns early or
+  // fails so the `<select>` doesn't stay stuck on `__create__` or on a
+  // failed target. The reactive bump alone isn't enough because v-model
+  // mirrors the user's last DOM choice, not the underlying ref.
+  selectedBranch.value = branches.value?.current ?? ''
+}
+
 async function onBranchSelect(target: string | '__create__') {
   if (target === '__create__') {
     const name = await prompt({
@@ -281,7 +320,10 @@ async function onBranchSelect(target: string | '__create__') {
       description: 'Name des neuen Branches',
       placeholder: 'feature/x',
     })
-    if (!name) return
+    if (!name) {
+      restoreBranchSelection()
+      return
+    }
     await checkoutBranch(name.trim(), true)
     return
   }
@@ -310,6 +352,9 @@ async function checkoutBranch(branch: string, create: boolean) {
     } else {
       toast.error(errorMsg(err, 'Checkout fehlgeschlagen.'))
     }
+    // Failed checkout = branch didn't change; resync the dropdown so
+    // it doesn't look as if the target was selected.
+    restoreBranchSelection()
   }
 }
 
@@ -379,7 +424,15 @@ async function pushRemote(setUpstream: boolean) {
 // the syntax highlighting we'd otherwise have to wire by hand.
 const diffMarkdown = computed(() => {
   if (!diff.value || diff.value.kind !== 'text' || !diff.value.patch) return ''
-  return `\`\`\`diff\n${diff.value.patch}\n\`\`\``
+  // The patch can include three-backtick lines (e.g. when the diff
+  // touches a markdown file that itself contains a fenced block). A naive
+  // ``` outer fence would be closed prematurely by the inner run. CommonMark
+  // lets us pick a longer outer fence — at least one more backtick than
+  // the longest run found inside the body.
+  const longestRun = (diff.value.patch.match(/`+/g) ?? [])
+    .reduce((max, run) => Math.max(max, run.length), 0)
+  const fence = '`'.repeat(Math.max(3, longestRun + 1))
+  return `${fence}diff\n${diff.value.patch}\n${fence}`
 })
 
 watch(
@@ -404,9 +457,9 @@ defineExpose({ refreshAll })
     <div class="flex items-center gap-2 border-b p-3">
       <GitBranch class="size-4 shrink-0 text-muted-foreground" />
       <select
+        v-model="selectedBranch"
         class="flex-1 truncate rounded-md border bg-background px-2 py-1 text-sm"
         :disabled="branchesLoading || !branches"
-        :value="branches?.current ?? ''"
         @change="onBranchSelect(($event.target as HTMLSelectElement).value)"
       >
         <option v-if="!branches?.current" value="" disabled>

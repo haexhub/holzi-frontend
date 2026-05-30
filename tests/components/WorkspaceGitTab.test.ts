@@ -322,6 +322,110 @@ describe('WorkspaceGitTab.vue', () => {
     expect(text).toContain('src/x.py')
   })
 
+  it('branch <select> snaps back to current on prompt cancel (Neuen Branch)', async () => {
+    wireDefaults()
+    promptFn.mockResolvedValue(null)  // user cancels
+    const wrapper = mount(WorkspaceGitTab, {
+      global: { stubs },
+      props: { root: 'ws', conversationId: 1 },
+    })
+    await flushPromises()
+
+    const select = wrapper.find<HTMLSelectElement>('select')
+    await select.setValue('__create__')
+    await flushPromises()
+
+    expect(promptFn).toHaveBeenCalled()
+    // No checkout posted (user cancelled).
+    const checkoutCalls = apiPost.mock.calls.filter(
+      (c) => c[0] === '/api/workspace/git/checkout',
+    )
+    expect(checkoutCalls.length).toBe(0)
+    // Dropdown snapped back to 'main'.
+    expect((select.element as HTMLSelectElement).value).toBe('main')
+  })
+
+  it('branch <select> snaps back to current on checkout 409', async () => {
+    wireDefaults()
+    apiPost.mockImplementation((path: string) => {
+      if (path === '/api/workspace/git/checkout') {
+        return Promise.reject(httpError(409, 'working tree has uncommitted changes'))
+      }
+      throw new Error(`unexpected POST ${path}`)
+    })
+    const wrapper = mount(WorkspaceGitTab, {
+      global: { stubs },
+      props: { root: 'ws', conversationId: 1 },
+    })
+    await flushPromises()
+
+    const select = wrapper.find<HTMLSelectElement>('select')
+    await select.setValue('feature/x')
+    await flushPromises()
+
+    // Checkout was attempted and failed → dropdown must not stay on
+    // `feature/x` (it's not the current branch).
+    expect((select.element as HTMLSelectElement).value).toBe('main')
+  })
+
+  it('diff patch with embedded triple-backticks gets a longer outer fence', async () => {
+    apiGet.mockImplementation((path: string) => {
+      if (path === '/api/workspace/git') return Promise.resolve(statusOk())
+      if (path === '/api/workspace/git/branches') return Promise.resolve(branchesOk())
+      if (path === '/api/workspace/git/diff')
+        return Promise.resolve({
+          kind: 'text',
+          patch: 'diff --git a/r.md b/r.md\n+```js\n+x\n+```\n',
+          summary: { files: 1, insertions: 3, deletions: 0 },
+          truncated: false,
+        } satisfies GitDiffResponse)
+      throw new Error(`unexpected GET ${path}`)
+    })
+    const wrapper = mount(WorkspaceGitTab, {
+      global: { stubs },
+      props: { root: 'ws', conversationId: 1 },
+    })
+    await flushPromises()
+
+    const stub = wrapper.find('.rm-stub')
+    expect(stub.exists()).toBe(true)
+    const rendered = stub.text()
+    // Outer fence has to be longer than the inner ``` so the markdown
+    // renderer doesn't close prematurely.
+    expect(rendered.startsWith('````diff') || rendered.startsWith('`````diff'))
+      .toBe(true)
+    expect(rendered.endsWith('````') || rendered.endsWith('`````')).toBe(true)
+    // Inner triple-backtick line is still intact in the body.
+    expect(rendered).toContain('+```js')
+  })
+
+  it('staging the selected file clears the selection so the diff panel resets', async () => {
+    wireDefaults()
+    apiPost.mockResolvedValue(gitOk())
+    const wrapper = mount(WorkspaceGitTab, {
+      global: { stubs },
+      props: { root: 'ws', conversationId: 1 },
+    })
+    await flushPromises()
+
+    // Click the unstaged row's path button to select it.
+    const pathBtn = wrapper.findAll('button').find((b) => b.text() === 'src/x.py')
+    await pathBtn!.trigger('click')
+    await flushPromises()
+    // Diff header reflects the selection.
+    expect(wrapper.text()).toContain('unstaged · src/x.py')
+
+    // Stage the same file.
+    const stageBtn = wrapper
+      .findAll('button')
+      .find((b) => b.attributes('aria-label') === 'Stage')
+    await stageBtn!.trigger('click')
+    await flushPromises()
+
+    // Selection cleared, diff header reverts to the placeholder.
+    expect(wrapper.text()).toContain('Datei für Diff auswählen…')
+  })
+
   it('discard 403 surfaces the destructive-flag hint via toast.error', async () => {
     wireDefaults()
     apiPost.mockImplementation((path: string) => {
