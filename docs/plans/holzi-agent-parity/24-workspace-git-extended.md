@@ -2,7 +2,67 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-Status: **Planned.**
+Status: **Implemented (2026-05-31).**
+
+## Verification
+
+- Backend: 11 new endpoints under `/api/workspace/git/*`
+  (`diff`, `branches`, `log`, `checkout`, `stage`, `unstage`, `discard`,
+  `commit`, `fetch`, `pull`, `push`), all routed through the workspace
+  sandbox via `_drain_exec(["git", …])`. Diff returns `kind: text|binary|none`
+  + `summary` from a separate `--numstat` pass and truncates the patch body
+  at 256 KiB. Pull conflicts surface as `ok=false` + a file list at HTTP 200
+  (not a 4xx). Push/fetch surface remote failures as `ok=false` so the UI
+  doesn't have to parse 4xx bodies.
+- New `HERMES_WORKSPACE_GIT_DESTRUCTIVE` config gates `/discard` and
+  `/checkout` with `force=true`; otherwise 403. Tests cover the gated path
+  with and without the flag.
+- Backend tests: `tests/test_api_workspace_git.py` adds 34 cases against
+  `FakeSandboxBackend` (scripted git stdout + `recorded_execs` assertions
+  on the exact argv). Full suite: 676 passed, 3 deselected.
+- `ruff` + `mypy` clean.
+- Frontend: `pnpm run gen:api` regenerated `app/types/api-generated.ts`
+  with the new schemas; `app/types/api.ts` re-exports them under clean
+  names (matches Plan 12/13/25 pattern).
+- New `app/components/panels/WorkspaceGitTab.vue`:
+  - Branch chip = `<select>` of local + remote branches (remote disabled,
+    `origin/HEAD` filtered server-side); a special `+ Neuen Branch erstellen…`
+    option triggers `usePromptDialog` and POSTs `checkout` with `create:true`.
+  - Status section groups porcelain entries into Unstaged / Staged
+    (`MM` files appear in both, intentionally) with stage/unstage/discard
+    per row.
+  - Diff viewer wraps the patch in a ` ```diff ` fence so the existing
+    `RenderedMarkdown` + shiki pipeline does the highlighting (Plan 07
+    already preloaded the `diff` grammar in `app/utils/markdown.ts`).
+  - Commit row: textarea + button that only enables when message + staged
+    entries are both present.
+  - Remote row: Fetch / Pull / Push / Push --set-upstream, with a stderr
+    banner + an inline conflict list when pull reports `ok=false`.
+  - Dirty-checkout 409 surfaces as a toast pointing at commit/discard/stash.
+  - Destructive 403 surfaces as a toast naming
+    `HERMES_WORKSPACE_GIT_DESTRUCTIVE`.
+- `WorkspacePanel.vue` got a `Dateien | Git` tab strip; the dirty badge in
+  the Files-tab header is now a clickable button that switches to the
+  Git tab.
+- Frontend tests: `tests/components/WorkspaceGitTab.test.ts` covers the
+  happy paths (stage / unstage / select-file / diff render / commit /
+  create-branch / pull-conflict) and the 409 + 403 error paths. Vitest
+  234 passed, typecheck clean.
+
+### Deferred to follow-ups
+
+- `POST /git/commit-message` (LLM-generated suggestion).
+- "Origin ahead N, behind M" indicator — needs an extra `rev-list` call
+  and was kept out for simplicity; the Plan-13 dirty/clean badge plus
+  the explicit branch chip already cover the "do I need to push?" signal.
+- `GET /git/log` is wired on the backend and ships as a Plan-24 endpoint,
+  but the Git tab does not yet surface the log list (the plan called it
+  out as a separate "Auto-Commit-Verlauf zeigen" affordance — leaving the
+  endpoint there means a follow-up plan can add the UI without another
+  backend change).
+- Live push/pull against a real `git daemon` — backend tests script
+  scripted-stderr behaviour through `FakeSandboxBackend` rather than spin
+  up a bare remote, on the same grounds as Plans 12/13.
 
 Depends on: [13](./13-workspace-write-git.md) (current Git surface is
 auto-commit-on-write + status badge).

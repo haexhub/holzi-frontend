@@ -11,6 +11,7 @@ import {
 } from 'lucide-vue-next'
 import Button from '@/components/ui/button/Button.vue'
 import RenderedMarkdown from '~/components/chat/RenderedMarkdown.vue'
+import WorkspaceGitTab from '~/components/panels/WorkspaceGitTab.vue'
 import { useApi } from '~/composables/useApi'
 import { useConfirm } from '~/composables/useConfirm'
 import { usePromptDialog } from '~/composables/usePromptDialog'
@@ -57,6 +58,17 @@ const filePreview = ref<WorkspaceFileResponse | null>(null)
 
 const gitStatus = ref<WorkspaceGitResponse | null>(null)
 const gitError = ref<string | null>(null)
+
+// `files` shows the tree + preview (Plan 12/13 surface); `git` shows the
+// Plan-24 status/diff/commit/branch/push-pull workflow. The Git tab is
+// reachable both via the tab strip and by clicking the dirty badge.
+const activeTab = ref<'files' | 'git'>('files')
+
+// After a git mutation (stage/commit/checkout/pull/push) the file tree and
+// the dirty-badge can both have stale state — reload them in lockstep.
+async function onGitChanged() {
+  await Promise.all([loadTree(), loadGit()])
+}
 
 // Edit-mode state. `editing` toggles preview→textarea; `editingContent`
 // holds the in-progress draft so cancel can discard cleanly.
@@ -605,16 +617,54 @@ onMounted(loadRoots)
         >
           <GitBranch class="size-3" />
           <span class="font-mono">{{ gitStatus.branch ?? '(detached)' }}</span>
-          <span
+          <button
             v-if="gitStatus.dirty"
-            class="rounded bg-amber-500/15 px-1.5 py-0.5 font-medium text-amber-700 dark:text-amber-300"
-            :title="`${gitStatus.entries.length} geänderte Datei(en)`"
-          >dirty</span>
+            type="button"
+            class="rounded bg-amber-500/15 px-1.5 py-0.5 font-medium text-amber-700 hover:bg-amber-500/25 dark:text-amber-300"
+            :title="`${gitStatus.entries.length} geänderte Datei(en) — Git-Tab öffnen`"
+            @click="activeTab = 'git'"
+          >dirty</button>
           <span v-else class="text-emerald-700 dark:text-emerald-300">clean</span>
         </div>
         <div v-else-if="gitError" class="text-xs text-muted-foreground">
           {{ gitError }}
         </div>
+      </div>
+
+      <!-- Tab strip (Plan 24): Dateien-Browser ↔ Git-Workflow -->
+      <div role="tablist" class="flex border-b text-xs font-medium">
+        <button
+          type="button"
+          role="tab"
+          :aria-selected="activeTab === 'files'"
+          class="flex-1 border-b-2 px-3 py-2 transition-colors"
+          :class="
+            activeTab === 'files'
+              ? 'border-primary text-foreground'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          "
+          @click="activeTab = 'files'"
+        >
+          Dateien
+        </button>
+        <button
+          type="button"
+          role="tab"
+          :aria-selected="activeTab === 'git'"
+          class="flex-1 border-b-2 px-3 py-2 transition-colors"
+          :class="
+            activeTab === 'git'
+              ? 'border-primary text-foreground'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          "
+          @click="activeTab = 'git'"
+        >
+          Git
+        </button>
+      </div>
+
+      <template v-if="activeTab === 'files'">
+      <div class="space-y-2 border-b p-3">
         <nav class="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
           <button
             type="button"
@@ -817,6 +867,15 @@ onMounted(loadRoots)
           </div>
         </template>
       </div>
+      </template>
+
+      <template v-else-if="activeTab === 'git'">
+        <WorkspaceGitTab
+          :root="selectedRoot"
+          :conversation-id="conversationId"
+          @changed="onGitChanged"
+        />
+      </template>
     </template>
   </div>
 </template>

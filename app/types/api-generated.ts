@@ -820,6 +820,213 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/workspace/git/diff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Api Workspace Git Diff
+         * @description Patch + summary for the working tree (or staged changes when
+         *     `staged=true`). When `path` is set, the diff is restricted to that file —
+         *     relative-path discipline matches the rest of the workspace API.
+         */
+        get: operations["api_workspace_git_diff_api_workspace_git_diff_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspace/git/branches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Api Workspace Git Branches */
+        get: operations["api_workspace_git_branches_api_workspace_git_branches_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspace/git/log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Api Workspace Git Log */
+        get: operations["api_workspace_git_log_api_workspace_git_log_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspace/git/checkout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Api Workspace Git Checkout */
+        post: operations["api_workspace_git_checkout_api_workspace_git_checkout_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspace/git/stage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Api Workspace Git Stage */
+        post: operations["api_workspace_git_stage_api_workspace_git_stage_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspace/git/unstage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Api Workspace Git Unstage */
+        post: operations["api_workspace_git_unstage_api_workspace_git_unstage_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspace/git/discard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Api Workspace Git Discard
+         * @description Destructive: throws away unstaged changes in `paths`. Gated by the
+         *     `HERMES_WORKSPACE_GIT_DESTRUCTIVE` env flag — without it the endpoint
+         *     refuses (403) so a misconfigured deployment can't lose work.
+         */
+        post: operations["api_workspace_git_discard_api_workspace_git_discard_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspace/git/commit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Api Workspace Git Commit
+         * @description Explicit user-message commit. The Plan-13 auto-commit (`user[conv-N]:
+         *     …`) still fires on every file write; this is the path the Git tab uses
+         *     when the user types their own message.
+         */
+        post: operations["api_workspace_git_commit_api_workspace_git_commit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspace/git/fetch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Api Workspace Git Fetch */
+        post: operations["api_workspace_git_fetch_api_workspace_git_fetch_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspace/git/pull": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Api Workspace Git Pull
+         * @description Pulls the upstream; conflicts surface as `ok=false` + a file list,
+         *     *not* an HTTP error — the UI shows the list inline and tells the user
+         *     to resolve in their editor.
+         */
+        post: operations["api_workspace_git_pull_api_workspace_git_pull_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspace/git/push": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Api Workspace Git Push */
+        post: operations["api_workspace_git_push_api_workspace_git_push_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/workspaces": {
         parameters: {
             query?: never;
@@ -1237,12 +1444,155 @@ export interface components {
             version: number;
             data: components["schemas"]["ErrorData"];
         };
+        /** GitBranch */
+        GitBranch: {
+            /** Name */
+            name: string;
+            /** Is Remote */
+            is_remote: boolean;
+            /** Last Commit At */
+            last_commit_at: string | null;
+        };
+        /** GitBranchesResponse */
+        GitBranchesResponse: {
+            /** Current */
+            current: string | null;
+            /** All */
+            all: components["schemas"]["GitBranch"][];
+        };
+        /** GitCheckoutRequest */
+        GitCheckoutRequest: {
+            /** Root */
+            root: string;
+            /** Branch */
+            branch: string;
+            /**
+             * Create
+             * @default false
+             */
+            create: boolean;
+            /**
+             * Force
+             * @default false
+             */
+            force: boolean;
+        };
+        /** GitCommitRequest */
+        GitCommitRequest: {
+            /** Root */
+            root: string;
+            /** Message */
+            message: string;
+            /** Conversation Id */
+            conversation_id: string;
+            /**
+             * All
+             * @default false
+             */
+            all: boolean;
+        };
+        /** GitDiffResponse */
+        GitDiffResponse: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "text" | "binary" | "none";
+            /** Patch */
+            patch?: string | null;
+            summary: components["schemas"]["GitDiffSummary"];
+            /**
+             * Truncated
+             * @default false
+             */
+            truncated: boolean;
+        };
+        /** GitDiffSummary */
+        GitDiffSummary: {
+            /** Files */
+            files: number;
+            /** Insertions */
+            insertions: number;
+            /** Deletions */
+            deletions: number;
+        };
+        /** GitDiscardRequest */
+        GitDiscardRequest: {
+            /** Root */
+            root: string;
+            /** Paths */
+            paths?: string[];
+            /** Conversation Id */
+            conversation_id: string;
+        };
         /** GitEntry */
         GitEntry: {
             /** Status */
             status: string;
             /** Path */
             path: string;
+        };
+        /** GitFetchRequest */
+        GitFetchRequest: {
+            /** Root */
+            root: string;
+        };
+        /** GitLogEntry */
+        GitLogEntry: {
+            /** Sha */
+            sha: string;
+            /** Short Sha */
+            short_sha: string;
+            /** Author */
+            author: string;
+            /** Subject */
+            subject: string;
+            /** Committed At */
+            committed_at: string;
+        };
+        /** GitOpResponse */
+        GitOpResponse: {
+            /** Ok */
+            ok: boolean;
+            /**
+             * Message
+             * @default
+             */
+            message: string;
+        };
+        /** GitPathsRequest */
+        GitPathsRequest: {
+            /** Root */
+            root: string;
+            /** Paths */
+            paths?: string[];
+        };
+        /** GitPullRequest */
+        GitPullRequest: {
+            /** Root */
+            root: string;
+        };
+        /** GitPullResponse */
+        GitPullResponse: {
+            /** Ok */
+            ok: boolean;
+            /**
+             * Message
+             * @default
+             */
+            message: string;
+            /** Conflicts */
+            conflicts?: string[];
+        };
+        /** GitPushRequest */
+        GitPushRequest: {
+            /** Root */
+            root: string;
+            /**
+             * Set Upstream
+             * @default false
+             */
+            set_upstream: boolean;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -3679,6 +4029,367 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WorkspaceGitResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_workspace_git_diff_api_workspace_git_diff_get: {
+        parameters: {
+            query: {
+                root: string;
+                path?: string | null;
+                staged?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GitDiffResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_workspace_git_branches_api_workspace_git_branches_get: {
+        parameters: {
+            query: {
+                root: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GitBranchesResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_workspace_git_log_api_workspace_git_log_get: {
+        parameters: {
+            query: {
+                root: string;
+                path?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GitLogEntry"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_workspace_git_checkout_api_workspace_git_checkout_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GitCheckoutRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GitOpResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_workspace_git_stage_api_workspace_git_stage_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GitPathsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GitOpResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_workspace_git_unstage_api_workspace_git_unstage_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GitPathsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GitOpResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_workspace_git_discard_api_workspace_git_discard_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GitDiscardRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GitOpResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_workspace_git_commit_api_workspace_git_commit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GitCommitRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GitOpResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_workspace_git_fetch_api_workspace_git_fetch_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GitFetchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GitOpResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_workspace_git_pull_api_workspace_git_pull_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GitPullRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GitPullResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_workspace_git_push_api_workspace_git_push_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GitPushRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GitOpResponse"];
                 };
             };
             /** @description Validation Error */
