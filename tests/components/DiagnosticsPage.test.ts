@@ -169,6 +169,40 @@ describe('settings/diagnostics.vue', () => {
     ).toBe(true)
   })
 
+  it('shows a fallback when an expanded run has no stored traceback', async () => {
+    setupGet(diagnostics({ overall: 'error' }), [
+      run({
+        id: 'run-2',
+        error_code: 'WorkspaceMissing',
+        error_message: 'workspace gone',
+        error_trace: null,
+      }),
+    ])
+    const wrapper = mount(DiagnosticsPage)
+    await flushPromises()
+
+    const item = wrapper.get('[data-testid="diagnostics-failure-run-2"]')
+    await item.get('button').trigger('click')
+    await flushPromises()
+
+    expect(item.text()).toContain('Kein Traceback gespeichert')
+  })
+
+  it('surfaces a failures-load error in its own panel', async () => {
+    setupGet(diagnostics(), new Error('runs boom'))
+    const wrapper = mount(DiagnosticsPage)
+    await flushPromises()
+
+    expect(
+      wrapper.get('[data-testid="diagnostics-failures-error"]').text(),
+    ).toContain('runs boom')
+    // Subsystem check list keeps rendering — the failures-load failure
+    // shouldn't collapse the rest of the page.
+    expect(
+      wrapper.find('[data-testid="diagnostics-check-database"]').exists(),
+    ).toBe(true)
+  })
+
   it('refresh button retriggers both endpoints', async () => {
     setupGet(diagnostics(), [])
     const wrapper = mount(DiagnosticsPage)

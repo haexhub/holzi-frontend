@@ -42,16 +42,27 @@ const overall = computed<DiagnosticsStatus | null>(() => {
   return diagnostics.value?.overall ?? null
 })
 
+// `satisfies Record<DiagnosticsStatus, ...>` keeps these maps exhaustive
+// against future schema additions — adding a status value to the backend
+// without updating these maps becomes a TS error.
+const STATUS_LABEL = {
+  ok: 'OK',
+  warning: 'Warnung',
+  error: 'Fehler',
+} as const satisfies Record<DiagnosticsStatus, string>
+
+const STATUS_BADGE_CLASS = {
+  ok: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+  warning: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+  error: 'bg-destructive/10 text-destructive',
+} as const satisfies Record<DiagnosticsStatus, string>
+
 function statusLabel(status: DiagnosticsStatus): string {
-  return { ok: 'OK', warning: 'Warnung', error: 'Fehler' }[status]
+  return STATUS_LABEL[status]
 }
 
 function statusBadgeClass(status: DiagnosticsStatus): string {
-  return {
-    ok: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-    warning: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
-    error: 'bg-destructive/10 text-destructive',
-  }[status]
+  return STATUS_BADGE_CLASS[status]
 }
 
 function formatTimestamp(epoch: number | null): string {
@@ -154,7 +165,7 @@ onMounted(loadAll)
                 {{ statusLabel(check.status) }}
               </span>
             </div>
-            <p class="mt-0.5 break-words text-xs text-muted-foreground">
+            <p class="mt-0.5 wrap-break-word text-xs text-muted-foreground">
               {{ check.message }}
             </p>
           </div>
@@ -204,10 +215,12 @@ onMounted(loadAll)
             <ChevronDown
               v-if="expandedRunIds.has(run.id)"
               class="mt-0.5 size-4 shrink-0 text-muted-foreground"
+              aria-hidden="true"
             />
             <ChevronRight
               v-else
               class="mt-0.5 size-4 shrink-0 text-muted-foreground"
+              aria-hidden="true"
             />
             <div class="min-w-0 flex-1">
               <div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
@@ -225,7 +238,7 @@ onMounted(loadAll)
               </p>
               <p
                 v-if="run.error_message"
-                class="mt-1 break-words text-xs"
+                class="mt-1 wrap-break-word text-xs"
               >
                 {{ run.error_message }}
               </p>
