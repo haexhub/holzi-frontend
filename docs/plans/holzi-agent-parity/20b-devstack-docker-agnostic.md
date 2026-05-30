@@ -2,13 +2,58 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-Status: **Planned 2026-05-30.**
+Status: **Implemented and merged on 2026-05-30.** Cross-repo: backend
+[Holzi#52](https://github.com/haexhub/Holzi/pull/52) (squashed as
+`1fa341b`), frontend
+[holzi-frontend#58](https://github.com/haexhub/holzi-frontend/pull/58)
+(squashed as `525fc50`).
 
 Unblocks the live verification step that [Plan 20-A](./20a-sandbox-crash-log.md)
-had to defer: on a Docker-only developer host, `make up-local-full` currently
-fails because the Makefile defaults to `podman compose`. The
-[[reference-docker-local-devstack]] memory documents the exact failure modes —
-this slice fixes them.
+had to defer: the Makefile now auto-detects docker first then podman
+(override via `CONTAINER_BIN=` / `COMPOSE_BIN=`); sandbox-specific bits
+(HERMES_SANDBOX_* env + Podman control-socket mount) moved to a new
+`docker-compose.local.podman.yml` overlay that the Makefile layers in only
+when `CONTAINER_BIN=podman`. Hand-running compose without the Makefile keeps
+working thanks to `${HERMES_CONTAINER_SOCKET:-/var/run/docker.sock}` in the
+base file. `XDG_RUNTIME_DIR` empty (sudo / cron / minimal CI shells) is
+covered by a `/run/user/$(id -u)` fallback in the Makefile.
+
+CodeRabbit was credits-exhausted on both PRs (per
+[[feedback-coderabbit-workflow]] credit-exhaustion fallback). Two parallel
+general-purpose agents (one per repo) reviewed instead. Findings worth
+addressing: empty-`XDG_RUNTIME_DIR` fallback, compose hand-run default, and
+`.env.example` empty-value trap on the backend; user-local
+`../../../../.claude/projects/...` paths replaced with `[[memory-ref]]`
+form on the frontend, and Task 2 tagged as already-covered by the existing
+`tests/test_api_sandbox.py::test_sandbox_status_503_when_not_configured`.
+
+Verification (2026-05-30):
+
+- `cd /home/haex/Projekte/Holzi && make -n up-local-full` on the user's
+  Docker host → `docker compose -p hermes-local -f docker-compose.local.yml`,
+  no `sandbox-image` build, no Podman overlay.
+- `make -n CONTAINER_BIN=podman up-local-full` → `podman compose` invocation
+  includes `-f docker-compose.local.podman.yml` and `podman build
+  hermes-sandbox:dev`.
+- `make CONTAINER_BIN= up-local-full` → clean error, exit 1.
+- `docker compose -p hermes-local -f docker-compose.local.yml -f
+  docker-compose.local.podman.yml config` → Podman overlay merges cleanly;
+  base alone has no sandbox refs.
+- `make up-local-full` live on the user's Docker host → all five containers
+  (`hermes-server`, `haex-claude-proxy`, `signal-cli-rest-api`,
+  `holzi-frontend`, `hermes-traefik`) come up; `/api/diagnostics` returns
+  six checks with `sandbox: warning ("HERMES_SANDBOX_SOCKET not set")`;
+  frontend serves 200 OK at `app.localhost`; `/api/sandbox/crashes` returns
+  `[]` cleanly.
+- `make down-local` cleans up containers + network.
+- **Podman live verification: deferred.** No Podman host reachable in this
+  session. The compose-config parse smoke covers the overlay merge; the
+  real Plan 20-A end-to-end (Podman crash → DB row → page row → restart
+  survives) still requires a Podman host. Plan 20-A's manager-level
+  `test_sandbox_crash_persistence.py` covers the persistence contract via
+  `FakeSandboxBackend`; the live-Podman re-verification stays on the
+  haex.cloud box as a follow-up.
+- Backend full test suite did not need to run — no Python code changed.
 
 This slice does **not** change the production sandbox runtime. Holzi's
 production sandbox-manager stays hard rootless-Podman per
