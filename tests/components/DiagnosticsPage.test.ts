@@ -1,7 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import DiagnosticsPage from '~/pages/settings/diagnostics.vue'
-import type { AgentRun, DiagnosticsResponse } from '~/types/api'
+import type {
+  AgentRun,
+  DiagnosticsResponse,
+  SandboxCrash,
+} from '~/types/api'
 
 const apiGet = vi.fn()
 
@@ -68,10 +72,26 @@ function run(overrides: Partial<AgentRun> & { id: string }): AgentRun {
   }
 }
 
-// `apiGet` is called twice on mount (loadDiagnostics + loadFailures, in
-// parallel via Promise.all). Helper to resolve them per call site so each
-// test stays explicit about what it's stubbing.
-function setupGet(diag: DiagnosticsResponse | Error, failures: AgentRun[] | Error) {
+function crash(overrides: Partial<SandboxCrash> & { id: number }): SandboxCrash {
+  return {
+    id: overrides.id,
+    workspace_id: overrides.workspace_id ?? 'ws-1',
+    sandbox_id: overrides.sandbox_id ?? 'cont-abc',
+    crashed_at: overrides.crashed_at ?? 1_700_000_000,
+    state: overrides.state ?? 'crashed',
+    exit_code: overrides.exit_code ?? null,
+    last_message: overrides.last_message ?? null,
+  }
+}
+
+// `apiGet` is called three times on mount (loadDiagnostics + loadFailures
+// + loadCrashes, in parallel via Promise.all). Helper to resolve them per
+// call site so each test stays explicit about what it's stubbing.
+function setupGet(
+  diag: DiagnosticsResponse | Error,
+  failures: AgentRun[] | Error,
+  crashes: SandboxCrash[] | Error = [],
+) {
   apiGet.mockImplementation((path: string) => {
     if (path === '/api/diagnostics') {
       return diag instanceof Error ? Promise.reject(diag) : Promise.resolve(diag)
@@ -80,6 +100,11 @@ function setupGet(diag: DiagnosticsResponse | Error, failures: AgentRun[] | Erro
       return failures instanceof Error
         ? Promise.reject(failures)
         : Promise.resolve(failures)
+    }
+    if (path === '/api/sandbox/crashes') {
+      return crashes instanceof Error
+        ? Promise.reject(crashes)
+        : Promise.resolve(crashes)
     }
     return Promise.reject(new Error(`unexpected GET ${path}`))
   })
@@ -203,7 +228,7 @@ describe('settings/diagnostics.vue', () => {
     ).toBe(true)
   })
 
-  it('refresh button retriggers both endpoints', async () => {
+  it('refresh button retriggers all three endpoints', async () => {
     setupGet(diagnostics(), [])
     const wrapper = mount(DiagnosticsPage)
     await flushPromises()
@@ -217,5 +242,122 @@ describe('settings/diagnostics.vue', () => {
       status: 'error',
       limit: 20,
     })
+    expect(apiGet).toHaveBeenCalledWith('/api/sandbox/crashes', { limit: 20 })
+  })
+
+  // ── Sandbox crashes (Plan 20-A) ───────────────────────────────────────
+
+  it('shows the empty state when there are no sandbox crashes', async () => {
+    setupGet(diagnostics(), [], [])
+    const wrapper = mount(DiagnosticsPage)
+    await flushPromises()
+
+    expect(
+      wrapper.get('[data-testid="diagnostics-crashes-empty"]').exists(),
+    ).toBe(true)
+  })
+
+  it('lists sandbox crashes in API order with state badge + exit code', async () => {
+    setupGet(diagnostics(), [], [
+      crash({
+        id: 7,
+        workspace_id: 'projects',
+        sandbox_id: 'cont-newest',
+        crashed_at: 1_700_000_300,
+        state: 'oom',
+        exit_code: null,
+      }),
+      crash({
+        id: 6,
+        workspace_id: 'scratch',
+        sandbox_id: 'cont-older',
+        crashed_at: 1_700_000_000,
+        state: 'crashed',
+        exit_code: 137,
+      }),
+    ])
+    const wrapper = mount(DiagnosticsPage)
+    await flushPromises()
+
+    const newest = wrapper.get('[data-testid="diagnostics-crash-7"]')
+    expect(newest.text()).toContain('projects')
+    expect(newest.text()).toContain('Out of memory')
+    // No exit code → '—' fallback, not "null" or "0".
+    expect(newest.text()).toContain('exit —')
+
+    const older = wrapper.get('[data-testid="diagnostics-crash-6"]')
+    expect(older.text()).toContain('scratch')
+    expect(older.text()).toContain('Crashed')
+    expect(older.text()).toContain('exit 137')
+    expect(older.text()).toContain('cont-older')
+  })
+
+  it('renders the crashes section even when the sandbox subsystem-check is green', async () => {
+    // Past crashes still matter when the live runtime is healthy now.
+    setupGet(
+      diagnostics({
+        overall: 'ok',
+        checks: [
+          { id: 'database', label: 'Database', status: 'ok', message: 'reachable' },
+          { id: 'llm', label: 'LLM', status: 'ok', message: 'active' },
+          { id: 'messenger', label: 'Messenger', status: 'ok', message: 'active' },
+          { id: 'scheduler', label: 'Scheduler', status: 'ok', message: 'running' },
+          { id: 'workspace', label: 'Workspaces', status: 'ok', message: '1 root' },
+          {
+            id: 'sandbox',
+            label: 'Sandbox runtime',
+            status: 'ok',
+            message: 'configured',
+          },
+        ],
+      }),
+      [],
+      [crash({ id: 9, sandbox_id: 'cont-survivor', state: 'crashed', exit_code: 1 })],
+    )
+    const wrapper = mount(DiagnosticsPage)
+    await flushPromises()
+
+    expect(
+      wrapper.get('[data-testid="diagnostics-check-sandbox"]').exists(),
+    ).toBe(true)
+    expect(
+      wrapper.get('[data-testid="diagnostics-crash-9"]').exists(),
+    ).toBe(true)
+  })
+
+  it('surfaces a crashes-load error in its own panel', async () => {
+    setupGet(diagnostics(), [], new Error('crashes boom'))
+    const wrapper = mount(DiagnosticsPage)
+    await flushPromises()
+
+    expect(
+      wrapper.get('[data-testid="diagnostics-crashes-error"]').text(),
+    ).toContain('crashes boom')
+    // The other two sections still render — one failing endpoint must
+    // not collapse the rest.
+    expect(
+      wrapper.find('[data-testid="diagnostics-check-database"]').exists(),
+    ).toBe(true)
+    expect(
+      wrapper.find('[data-testid="diagnostics-failures-empty"]').exists(),
+    ).toBe(true)
+  })
+
+  it('renders last_message when supplied', async () => {
+    setupGet(diagnostics(), [], [
+      crash({
+        id: 12,
+        sandbox_id: 'cont-with-msg',
+        state: 'crashed',
+        exit_code: 1,
+        last_message: 'killed by user',
+      }),
+    ])
+    const wrapper = mount(DiagnosticsPage)
+    await flushPromises()
+
+    expect(
+      wrapper.get('[data-testid="diagnostics-crash-12"]').text(),
+    ).toContain('killed by user')
   })
 })

@@ -25,6 +25,12 @@ export type DiagnosticsCheck = components['schemas']['DiagnosticsCheck']
 export type DiagnosticsResponse = components['schemas']['DiagnosticsResponse']
 export type DiagnosticsStatus = DiagnosticsCheck['status']
 
+// --- Sandbox crashes (Plan 20-A) ----------------------------------------
+// Persistent crash log; backs the third section on /settings/diagnostics so
+// a workspace dying with no chat connected still surfaces after the fact.
+export type SandboxCrash = components['schemas']['SandboxCrashResponse']
+export type SandboxCrashState = SandboxCrash['state']
+
 // --- Agent tasks (Plan 16) ----------------------------------------------
 export type AgentTask = components['schemas']['TaskResponse']
 export type AgentTaskCreate = components['schemas']['TaskCreate']

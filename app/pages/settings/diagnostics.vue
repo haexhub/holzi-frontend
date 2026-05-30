@@ -11,7 +11,12 @@ import {
 import { computed, onMounted, ref } from 'vue'
 import { Button } from '@/components/ui/button'
 import { useDiagnostics } from '~/composables/useDiagnostics'
-import type { AgentRun, DiagnosticsStatus } from '~/types/api'
+import type {
+  AgentRun,
+  DiagnosticsStatus,
+  SandboxCrash,
+  SandboxCrashState,
+} from '~/types/api'
 
 // Plan 20: read-only status snapshot for the Control Center.
 // Two sections — a flat subsystem-check list (one row per check returned
@@ -26,6 +31,9 @@ const {
   failures,
   failuresLoading,
   failuresError,
+  crashes,
+  crashesLoading,
+  crashesError,
   loadAll,
 } = useDiagnostics()
 
@@ -70,6 +78,25 @@ function formatTimestamp(epoch: number | null): string {
   return new Date(epoch * 1000).toLocaleString()
 }
 
+// Plan 20-A: persisted sandbox crashes. Always an "error" badge (a row
+// only exists if the watcher saw a dead transition), but the state value
+// itself — crashed | oom | removed — disambiguates the failure mode for
+// the operator. `satisfies` keeps the map exhaustive against backend
+// schema additions, same pattern as STATUS_LABEL above.
+const CRASH_STATE_LABEL = {
+  crashed: 'Crashed',
+  oom: 'Out of memory',
+  removed: 'Removed',
+} as const satisfies Record<SandboxCrashState, string>
+
+function crashStateLabel(state: SandboxCrashState): string {
+  return CRASH_STATE_LABEL[state]
+}
+
+function formatCrashExitCode(crash: SandboxCrash): string {
+  return crash.exit_code === null ? '—' : String(crash.exit_code)
+}
+
 function describeDuration(run: AgentRun): string {
   if (!run.finished_at) return 'läuft …'
   const ms = (run.finished_at - run.started_at) * 1000
@@ -99,7 +126,7 @@ onMounted(loadAll)
       <Button
         size="sm"
         variant="outline"
-        :disabled="diagnosticsLoading || failuresLoading"
+        :disabled="diagnosticsLoading || failuresLoading || crashesLoading"
         aria-label="Neu laden"
         data-testid="diagnostics-refresh"
         @click="loadAll"
@@ -167,6 +194,70 @@ onMounted(loadAll)
             </div>
             <p class="mt-0.5 wrap-break-word text-xs text-muted-foreground">
               {{ check.message }}
+            </p>
+          </div>
+        </li>
+      </ul>
+    </section>
+
+    <!-- ── Sandbox crashes (Plan 20-A) ──────────────────────────── -->
+    <section class="rounded-md border" data-testid="diagnostics-crashes">
+      <header class="border-b p-3">
+        <h3 class="text-sm font-semibold">Sandbox-Abstürze</h3>
+        <p class="mt-0.5 text-xs text-muted-foreground">
+          Workspace-Sandboxes, die der Health-Watcher als gestorben
+          gemeldet hat — bleibt auch ohne offenen Chat-Stream und über
+          Container-Neustarts hinweg sichtbar.
+        </p>
+      </header>
+
+      <p v-if="crashesLoading" class="p-3 text-xs text-muted-foreground">
+        Lädt…
+      </p>
+      <p
+        v-else-if="crashesError"
+        class="p-3 text-xs text-destructive"
+        data-testid="diagnostics-crashes-error"
+      >
+        {{ crashesError }}
+      </p>
+      <p
+        v-else-if="crashes.length === 0"
+        class="p-3 text-xs text-muted-foreground"
+        data-testid="diagnostics-crashes-empty"
+      >
+        Keine Sandbox-Abstürze registriert. 🎉
+      </p>
+      <ul v-else class="divide-y">
+        <li
+          v-for="crash in crashes"
+          :key="crash.id"
+          class="flex items-start gap-3 p-3"
+          :data-testid="`diagnostics-crash-${crash.id}`"
+        >
+          <AlertCircle
+            class="mt-0.5 size-5 shrink-0 text-destructive"
+            aria-hidden="true"
+          />
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+              <p class="text-sm font-medium">{{ crash.workspace_id }}</p>
+              <span
+                class="rounded-full bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-destructive"
+              >
+                {{ crashStateLabel(crash.state) }}
+              </span>
+            </div>
+            <p class="mt-0.5 truncate text-xs text-muted-foreground">
+              {{ formatTimestamp(crash.crashed_at) }} ·
+              exit {{ formatCrashExitCode(crash) }} ·
+              <span class="font-mono">{{ crash.sandbox_id }}</span>
+            </p>
+            <p
+              v-if="crash.last_message"
+              class="mt-1 wrap-break-word text-xs"
+            >
+              {{ crash.last_message }}
             </p>
           </div>
         </li>
