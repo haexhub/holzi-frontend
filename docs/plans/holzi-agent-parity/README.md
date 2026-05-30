@@ -72,6 +72,27 @@ Completed:
 
 Next up: [17 — Cline/Roo first-class channel](./17-cline-roo-first-class-channel.md), or the remaining Plan 20 follow-up (README quickstart + troubleshooting + provider-setup docs). Plan 18 (Profiles/Spaces) is "do not implement unless a new need appears" per the recommended order; Plan 19 is the bigger production-hardening pass.
 
+### Parity Push (Plans 21–27)
+
+Based on a three-way audit of holzi-frontend vs. the Holzi backend vs.
+`nesquena/hermes-webui` (2026-05-30), these seven session-sized plans close the
+biggest "you-see-it-immediately" parity gaps. They are roughly ordered by
+"impact-per-session" — pick whichever fits the next session.
+
+- [21 — Approval-Granularität](./21-approval-granularity.md) — once/session/always/deny + reason. Small BE+FE, big UX.
+- [22 — UI-Politur](./22-ui-polish-toaster-modals-dnd.md) — Toaster, echte Modals (kill `window.confirm`/`prompt`), Drag&Drop für Attachments. Frontend-only.
+- [23 — Composer-Chips](./23-composer-chips.md) — Model + Reasoning-Stufe (5-level) + Workspace pro Conversation. BE+FE.
+- [24 — Workspace Git extended](./24-workspace-git-extended.md) — Diff/Stage/Branch/Commit-Compose/Push/Pull on top of Plan 13's auto-commit. BE+FE.
+- [25 — Multi-Workspace CRUD](./25-multi-workspace-crud.md) — Workspaces als DB-Row, `/settings/workspaces` als echte Seite, per-workspace Sandbox + Disk + Git Status. BE+FE.
+- [26 — Conversation Deep-Links](./26-conversation-deep-links.md) — `/chat/[id]`-Route + reload-stabile URLs. Frontend-only.
+- [27 — Insights + Logs](./27-insights-and-logs.md) — Token-Usage-Aggregate + Logs-Tail im Control Center. BE+FE.
+
+Strategic-judgement plans (not part of this push, separate decisions):
+
+- **Skills / System-Prompts in DB** — depends on the bigger "system prompt is hardcoded" lift; sketch when needed.
+- **i18n foundation** (`@nuxtjs/i18n` + string extraction) — pure FE but a multi-day refactor; do when localisation actually has a user.
+- **Kanban / Voice / Embedded Terminal / Plugins / Passkeys / Self-Update** — hermes-webui ships these; whether Holzi *should* is a product call, not an automatic parity goal.
+
 ## Recommended Order
 
 1. [Conversation lifecycle](./01-conversation-lifecycle.md)
@@ -98,6 +119,13 @@ Next up: [17 — Cline/Roo first-class channel](./17-cline-roo-first-class-chann
 18. [Profiles, spaces, and model routing](./18-profiles-spaces-model-routing.md) — likely supplanted by workspaces; do not implement unless a new need appears
 19. [Production hardening](./19-production-hardening.md)
 20. [Onboarding, diagnostics, and docs](./20-onboarding-diagnostics-docs.md)
+21. [Approval granularity](./21-approval-granularity.md)
+22. [UI polish — toaster, modals, drag&drop](./22-ui-polish-toaster-modals-dnd.md)
+23. [Composer chips — model, reasoning, workspace](./23-composer-chips.md)
+24. [Workspace Git extended](./24-workspace-git-extended.md)
+25. [Multi-workspace CRUD](./25-multi-workspace-crud.md)
+26. [Conversation deep-links](./26-conversation-deep-links.md)
+27. [Insights and logs viewer](./27-insights-and-logs.md)
 
 ### Dependencies
 

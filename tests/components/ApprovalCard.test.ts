@@ -8,6 +8,12 @@ const baseApproval = {
   reason: 'Sends a real message to your linked Signal account.',
 }
 
+function clickByLabel(buttons: ReturnType<ReturnType<typeof mount>['findAll']>, label: string) {
+  const btn = buttons.find((b) => b.text().includes(label))
+  if (!btn) throw new Error(`button with label "${label}" not found`)
+  return btn
+}
+
 describe('ApprovalCard.vue', () => {
   it('shows the risk reason, tool name and arguments while pending', () => {
     const wrapper = mount(ApprovalCard, {
@@ -21,26 +27,84 @@ describe('ApprovalCard.vue', () => {
     expect(wrapper.text()).toContain('signal')
   })
 
-  it('emits the decision when a button is clicked', async () => {
+  it('renders the four Plan 21 decision buttons', () => {
+    const wrapper = mount(ApprovalCard, {
+      props: { approval: baseApproval, status: 'pending' },
+    })
+    const labels = wrapper.findAll('button').map((b) => b.text())
+    expect(labels).toEqual(
+      expect.arrayContaining([
+        'Ablehnen',
+        'Einmal erlauben',
+        'In dieser Session',
+        expect.stringContaining('Immer erlauben'),
+      ]),
+    )
+  })
+
+  it('emits each decision with no reason when the textarea stays hidden', async () => {
     const wrapper = mount(ApprovalCard, {
       props: { approval: baseApproval, status: 'pending' },
     })
     const buttons = wrapper.findAll('button')
-    const allow = buttons.find((b) => b.text().includes('erlauben'))
-    const deny = buttons.find((b) => b.text().includes('Ablehnen'))
-    expect(allow).toBeTruthy()
-    expect(deny).toBeTruthy()
 
-    await allow!.trigger('click')
-    await deny!.trigger('click')
-    expect(wrapper.emitted('decide')).toEqual([['allow_once'], ['deny']])
+    await clickByLabel(buttons, 'Ablehnen').trigger('click')
+    await clickByLabel(buttons, 'Einmal erlauben').trigger('click')
+    await clickByLabel(buttons, 'In dieser Session').trigger('click')
+    await clickByLabel(buttons, 'Immer erlauben').trigger('click')
+
+    expect(wrapper.emitted('decide')).toEqual([
+      [{ decision: 'deny' }],
+      [{ decision: 'allow_once' }],
+      [{ decision: 'allow_session' }],
+      [{ decision: 'allow_always' }],
+    ])
   })
 
-  it('disables the buttons while a decision is submitting', () => {
+  it('round-trips a reason from the textarea into the emit payload', async () => {
+    const wrapper = mount(ApprovalCard, {
+      props: { approval: baseApproval, status: 'pending' },
+    })
+    // Textarea is collapsed by default — expand it via the "Mit Begründung" link.
+    const expand = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Mit Begründung'))
+    expect(expand).toBeTruthy()
+    await expand!.trigger('click')
+
+    const textarea = wrapper.find('textarea')
+    expect(textarea.exists()).toBe(true)
+    await textarea.setValue('  this would page oncall  ')
+
+    await clickByLabel(wrapper.findAll('button'), 'Ablehnen').trigger('click')
+
+    // Reason is trimmed before emit.
+    expect(wrapper.emitted('decide')).toEqual([
+      [{ decision: 'deny', reason: 'this would page oncall' }],
+    ])
+  })
+
+  it('caps the reason textarea at 500 characters', async () => {
+    const wrapper = mount(ApprovalCard, {
+      props: { approval: baseApproval, status: 'pending' },
+    })
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Mit Begründung'))!
+      .trigger('click')
+    const textarea = wrapper.find('textarea')
+    expect(textarea.attributes('maxlength')).toBe('500')
+  })
+
+  it('disables every decision button while a decision is submitting', () => {
     const wrapper = mount(ApprovalCard, {
       props: { approval: baseApproval, status: 'submitting' },
     })
-    for (const button of wrapper.findAll('button')) {
+    const buttons = wrapper
+      .findAll('button')
+      .filter((b) => !b.text().includes('Mit Begründung'))
+    expect(buttons.length).toBe(4)
+    for (const button of buttons) {
       expect(button.attributes('disabled')).toBeDefined()
     }
   })
