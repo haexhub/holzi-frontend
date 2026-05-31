@@ -22,12 +22,16 @@ export interface ModelPricing {
   output_per_1m: number
 }
 
+// Keep keys aligned with whatever string ends up in `agent_runs.model` —
+// for Anthropic-OAuth that's the curated short aliases in the backend's
+// `provider_models.ANTHROPIC_OAUTH_MODELS`; for API-key providers it's
+// whatever the upstream returns. A mismatch silently misses and the
+// cost cell renders "—", which is honest but easy to overlook.
 export const MODEL_PRICING: Record<string, ModelPricing> = {
   // Anthropic Claude 4.x — same tiering as the 3.x line.
   'claude-opus-4-7': { input_per_1m: 15, output_per_1m: 75 },
-  'claude-opus-4-6': { input_per_1m: 15, output_per_1m: 75 },
   'claude-sonnet-4-6': { input_per_1m: 3, output_per_1m: 15 },
-  'claude-haiku-4-5-20251001': { input_per_1m: 1, output_per_1m: 5 },
+  'claude-haiku-4-5': { input_per_1m: 1, output_per_1m: 5 },
 
   // OpenAI flagship + smaller siblings.
   'gpt-4o': { input_per_1m: 5, output_per_1m: 15 },
@@ -39,12 +43,20 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   'gemini-1.5-flash': { input_per_1m: 0.075, output_per_1m: 0.3 },
 }
 
+/** Strip a trailing `-YYYYMMDD` snapshot suffix so a versioned model id
+ *  still matches its short-alias pricing entry. Returns the input
+ *  unchanged when no suffix is present. */
+function normalisedModelId(model: string): string {
+  return model.replace(/-\d{8}$/, '')
+}
+
 export function estimateCostUsd(
   model: string,
   input_tokens: number,
   output_tokens: number,
 ): number | null {
-  const rate = MODEL_PRICING[model]
+  const rate =
+    MODEL_PRICING[model] ?? MODEL_PRICING[normalisedModelId(model)]
   if (!rate) return null
   return (
     (input_tokens * rate.input_per_1m + output_tokens * rate.output_per_1m) /

@@ -190,4 +190,38 @@ describe('settings/insights.vue', () => {
       'boom',
     )
   })
+
+  it('refetches on the 60s auto-refresh tick while visible', async () => {
+    apiGet.mockResolvedValue(insights())
+    mount(InsightsPage)
+    await flushPromises()
+    apiGet.mockClear()
+
+    await vi.advanceTimersByTimeAsync(60_000)
+    await flushPromises()
+
+    expect(apiGet).toHaveBeenCalledTimes(1)
+    expect(apiGet).toHaveBeenCalledWith('/api/insights', { period: '7d' })
+  })
+
+  it('renders zero-height bars when the period has no runs', async () => {
+    apiGet.mockResolvedValue(
+      insights({
+        totals: { runs: 0, input_tokens: 0, output_tokens: 0, errors: 0 },
+        series: [
+          { bucket: '2026-05-25', input_tokens: 0, output_tokens: 0, runs: 0 },
+          { bucket: '2026-05-26', input_tokens: 0, output_tokens: 0, runs: 0 },
+        ],
+        by_model: [],
+      }),
+    )
+    const wrapper = mount(InsightsPage)
+    await flushPromises()
+
+    // No NaN%/Infinity% — every bucket's inner bar renders height: 0%.
+    const bar = wrapper.get('[data-testid="insights-bucket-2026-05-25"]')
+    const inner = bar.find('div')
+    expect(inner.exists()).toBe(true)
+    expect(inner.attributes('style') ?? '').toContain('height: 0%')
+  })
 })

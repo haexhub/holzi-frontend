@@ -187,4 +187,51 @@ describe('settings/logs.vue', () => {
 
     expect(wrapper.get('[data-testid="logs-no-match"]').exists()).toBe(true)
   })
+
+  it('copy-all writes only the visible rows after a search filter', async () => {
+    apiGet.mockResolvedValue(logs(SAMPLE_ROWS))
+    const wrapper = mount(LogsPage)
+    await flushPromises()
+
+    await wrapper
+      .get('[data-testid="logs-search"]')
+      .setValue('upstream_timeout')
+    await flushPromises()
+    await wrapper.get('[data-testid="logs-copy"]').trigger('click')
+    await flushPromises()
+
+    const written = (navigator.clipboard.writeText as ReturnType<typeof vi.fn>)
+      .mock.calls[0][0] as string
+    expect(written.split('\n').length).toBe(1)
+    expect(written).toContain('upstream_timeout')
+    expect(written).not.toContain('hermes_starting')
+  })
+
+  it('refetches on the 5s auto-refresh tick while visible', async () => {
+    apiGet.mockResolvedValue(logs(SAMPLE_ROWS))
+    mount(LogsPage)
+    await flushPromises()
+    apiGet.mockClear()
+
+    await vi.advanceTimersByTimeAsync(5_000)
+    await flushPromises()
+
+    expect(apiGet).toHaveBeenCalledTimes(1)
+    expect(apiGet).toHaveBeenCalledWith('/api/logs', {
+      tail: 100,
+      min_level: 'info',
+    })
+  })
+
+  it('drops _raw from the detail span on malformed lines (no duplication)', async () => {
+    const raw = '<<not json>>'
+    apiGet.mockResolvedValue(logs([{ _raw: raw }]))
+    const wrapper = mount(LogsPage)
+    await flushPromises()
+
+    const row = wrapper.get('[data-testid="logs-row-0"]')
+    // The event slot already carries _raw; counting occurrences guards
+    // against the prior bug where the detail span re-stringified it.
+    expect(row.text().split(raw).length - 1).toBe(1)
+  })
 })

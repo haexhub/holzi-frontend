@@ -86,11 +86,17 @@ function rowTimestamp(row: LogRow): string | null {
 
 function rowDetails(row: LogRow): string {
   // Render every key except the ones already shown in the header so the
-  // detail line doesn't repeat itself.
-  const { level, event, timestamp, ...rest } = row as Record<string, unknown>
+  // detail line doesn't repeat itself. `_raw` is the malformed-line
+  // fallback — its content is already in the event slot via rowEvent(),
+  // so drop it here too or it'd appear twice on every unparseable line.
+  const { level, event, timestamp, _raw, ...rest } = row as Record<
+    string,
+    unknown
+  >
   void level
   void event
   void timestamp
+  void _raw
   if (Object.keys(rest).length === 0) return ''
   return JSON.stringify(rest)
 }
@@ -170,6 +176,8 @@ async function copyAll(): Promise<void> {
     <div class="flex flex-wrap items-center gap-3">
       <div
         class="inline-flex rounded-md border bg-background p-0.5"
+        role="group"
+        aria-label="Schweregrad"
         data-testid="logs-level"
       >
         <button
@@ -192,6 +200,8 @@ async function copyAll(): Promise<void> {
 
       <div
         class="inline-flex rounded-md border bg-background p-0.5"
+        role="group"
+        aria-label="Anzahl Zeilen"
         data-testid="logs-tail"
       >
         <button
@@ -217,6 +227,7 @@ async function copyAll(): Promise<void> {
         type="search"
         class="h-8 flex-1 min-w-48 rounded-md border bg-background px-3 text-xs"
         placeholder="Suche (Substring)…"
+        aria-label="Logs durchsuchen"
         data-testid="logs-search"
       />
     </div>

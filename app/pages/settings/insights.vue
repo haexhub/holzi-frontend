@@ -66,6 +66,10 @@ function formatTokens(n: number): string {
 
 function formatCost(usd: number | null): string {
   if (usd === null) return '—'
+  // Pure-zero cost is meaningful ("0 tokens this period" or "0-priced
+  // model") — render it as $0.00 rather than the "<$0.01" placeholder
+  // that signals a non-zero-but-tiny amount.
+  if (usd === 0) return '$0.00'
   if (usd >= 1) return `$${usd.toFixed(2)}`
   if (usd >= 0.01) return `$${usd.toFixed(3)}`
   return `<$0.01`
@@ -103,6 +107,8 @@ const sortedByModel = computed(() => {
       <div class="flex items-center gap-2">
         <div
           class="inline-flex rounded-md border bg-background p-0.5"
+          role="group"
+          aria-label="Zeitraum"
           data-testid="insights-period"
         >
           <button
@@ -244,38 +250,66 @@ const sortedByModel = computed(() => {
       <table class="w-full text-sm">
         <thead>
           <tr class="bg-muted/40 text-left text-xs text-muted-foreground">
-            <th class="px-3 py-2 font-medium">Modell</th>
+            <th class="px-3 py-2 font-medium" scope="col">Modell</th>
             <th
-              class="cursor-pointer px-3 py-2 text-right font-medium tabular-nums"
-              :class="sortKey === 'runs' ? 'text-foreground' : ''"
-              data-testid="insights-by-model-sort-runs"
-              @click="sortKey = 'runs'"
+              class="px-3 py-2 text-right font-medium tabular-nums"
+              scope="col"
+              :aria-sort="sortKey === 'runs' ? 'descending' : 'none'"
             >
-              Runs
+              <button
+                type="button"
+                class="w-full text-right font-medium tabular-nums"
+                :class="sortKey === 'runs' ? 'text-foreground' : ''"
+                data-testid="insights-by-model-sort-runs"
+                @click="sortKey = 'runs'"
+              >
+                Runs
+              </button>
             </th>
             <th
-              class="cursor-pointer px-3 py-2 text-right font-medium tabular-nums"
-              :class="sortKey === 'input_tokens' ? 'text-foreground' : ''"
-              data-testid="insights-by-model-sort-input"
-              @click="sortKey = 'input_tokens'"
+              class="px-3 py-2 text-right font-medium tabular-nums"
+              scope="col"
+              :aria-sort="sortKey === 'input_tokens' ? 'descending' : 'none'"
             >
-              In
+              <button
+                type="button"
+                class="w-full text-right font-medium tabular-nums"
+                :class="sortKey === 'input_tokens' ? 'text-foreground' : ''"
+                data-testid="insights-by-model-sort-input"
+                @click="sortKey = 'input_tokens'"
+              >
+                In
+              </button>
             </th>
             <th
-              class="cursor-pointer px-3 py-2 text-right font-medium tabular-nums"
-              :class="sortKey === 'output_tokens' ? 'text-foreground' : ''"
-              data-testid="insights-by-model-sort-output"
-              @click="sortKey = 'output_tokens'"
+              class="px-3 py-2 text-right font-medium tabular-nums"
+              scope="col"
+              :aria-sort="sortKey === 'output_tokens' ? 'descending' : 'none'"
             >
-              Out
+              <button
+                type="button"
+                class="w-full text-right font-medium tabular-nums"
+                :class="sortKey === 'output_tokens' ? 'text-foreground' : ''"
+                data-testid="insights-by-model-sort-output"
+                @click="sortKey = 'output_tokens'"
+              >
+                Out
+              </button>
             </th>
             <th
-              class="cursor-pointer px-3 py-2 text-right font-medium tabular-nums"
-              :class="sortKey === 'errors' ? 'text-foreground' : ''"
-              data-testid="insights-by-model-sort-errors"
-              @click="sortKey = 'errors'"
+              class="px-3 py-2 text-right font-medium tabular-nums"
+              scope="col"
+              :aria-sort="sortKey === 'errors' ? 'descending' : 'none'"
             >
-              Errors
+              <button
+                type="button"
+                class="w-full text-right font-medium tabular-nums"
+                :class="sortKey === 'errors' ? 'text-foreground' : ''"
+                data-testid="insights-by-model-sort-errors"
+                @click="sortKey = 'errors'"
+              >
+                Errors
+              </button>
             </th>
           </tr>
         </thead>
