@@ -1,8 +1,11 @@
 # Plan 25-A: Diagnostics + Workspace-Browser onto the `workspaces` table
 
-Status: **Implemented (PR pending).** Direct follow-up to
-[Plan 25](./25-multi-workspace-crud.md), closing the two env-driven
-remnants that the parent plan deliberately deferred.
+Status: **Merged 2026-05-31.** Cross-repo
+[Holzi#59](https://github.com/haexhub/Holzi/pull/59) +
+[holzi-frontend#75](https://github.com/haexhub/holzi-frontend/pull/75).
+Direct follow-up to [Plan 25](./25-multi-workspace-crud.md), closing
+the two env-driven remnants that the parent plan deliberately
+deferred.
 
 Backend (`src/hermes/routes/diagnostics.py`): `_check_workspace` is
 now async, takes the engine, reads `workspaces_repo.list_active(db)`.
