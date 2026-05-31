@@ -25,6 +25,19 @@ export type DiagnosticsCheck = components['schemas']['DiagnosticsCheck']
 export type DiagnosticsResponse = components['schemas']['DiagnosticsResponse']
 export type DiagnosticsStatus = DiagnosticsCheck['status']
 
+// --- Insights + Logs (Plan 27) ------------------------------------------
+export type InsightsResponse = components['schemas']['InsightsResponse']
+export type InsightsPeriod = InsightsResponse['period']
+export type InsightsTotals = components['schemas']['TotalsResponse']
+export type InsightsDailyBucket = components['schemas']['DailyBucket']
+export type InsightsModelBreakdown = components['schemas']['ModelBreakdown']
+export type InsightsStatusCounts = components['schemas']['StatusCounts']
+export type LogsResponse = components['schemas']['LogsResponse']
+// A single tailed structlog row. Untyped on the backend (it's whatever
+// structlog wrote), but always at least carries an optional `level` and
+// `event`, plus `_raw` when the line failed to parse as JSON.
+export type LogRow = LogsResponse['rows'][number]
+
 // --- Sandbox crashes (Plan 20-A) ----------------------------------------
 // Persistent crash log; backs the third section on /settings/diagnostics so
 // a workspace dying with no chat connected still surfaces after the fact.

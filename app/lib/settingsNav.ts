@@ -1,7 +1,9 @@
 import {
   Activity,
+  BarChart3,
   Cpu,
   Database,
+  FileText,
   FolderTree,
   ListChecks,
   MessageSquare,
@@ -26,4 +28,6 @@ export const settingsNav: readonly SettingsNavItem[] = [
   { to: '/settings/skills', label: 'Skills & Tools', icon: Wrench, upcoming: 'Skills, MCP-Server und Tools, die der Agent ausführen darf.' },
   { to: '/settings/workspaces', label: 'Workspaces', icon: FolderTree },
   { to: '/settings/diagnostics', label: 'Diagnostics', icon: Activity },
+  { to: '/settings/insights', label: 'Insights', icon: BarChart3 },
+  { to: '/settings/logs', label: 'Logs', icon: FileText },
 ] as const
