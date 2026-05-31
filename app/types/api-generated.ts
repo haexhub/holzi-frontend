@@ -734,11 +734,12 @@ export interface paths {
         };
         /**
          * Api Workspace Roots
-         * @description List the configured workspace roots.
+         * @description List the active workspace roots.
          *
          *     Returns 200 with an empty list when nothing is configured — the frontend
          *     distinguishes "not configured" from "sandbox unavailable" by the absence
-         *     of a 503 here.
+         *     of a 503 here. The slug list is sourced from `workspaces.list_active`
+         *     (Plan 25-A); the legacy `HERMES_WORKSPACE_ROOTS` env is bootstrap-only.
          */
         get: operations["api_workspace_roots_api_workspace_roots_get"];
         put?: never;

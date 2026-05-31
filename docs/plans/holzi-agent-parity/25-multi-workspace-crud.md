@@ -23,13 +23,17 @@ Verification:
   probes against a real workspace sandbox haven't been exercised
   outside the FakeSandboxBackend tests.
 
+Resolved follow-ups:
+
+- `routes/workspace.py` (singular) is now on the table too — closed by
+  [Plan 25-A](./25a-workspace-source-of-truth-followups.md).
+- The same plan also fixed `routes/diagnostics.py`'s `_check_workspace`,
+  which still read the env, so `/settings/diagnostics` no longer warns
+  about "no workspace roots" after a UI-create.
+
 Known follow-ups deliberately deferred:
 
-- `routes/workspace.py` (singular) still derives roots from
-  `HERMES_WORKSPACE_ROOTS`. The new `/api/workspaces` table is the
-  source of truth for the frontend; rebasing the browser/write
-  endpoints onto the table is a small follow-up plan.
-- Hard-delete (rmtree) is the documented non-goal.
+- Hard-delete (rmtree) of archived workspaces is the documented non-goal.
 
 Depends on: [11b-a](./11b-a-sandbox-spine.md), [11b-b](./11b-sandbox-runtime.md)
 (sandbox-per-workspace lifecycle), [12](./12-workspace-browser-readonly.md),
