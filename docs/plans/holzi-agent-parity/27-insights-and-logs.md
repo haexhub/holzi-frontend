@@ -2,7 +2,9 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-Status: **Implemented (PR pending).**
+Status: **Merged 2026-05-31.** Cross-repo
+[Holzi#57](https://github.com/haexhub/Holzi/pull/57) +
+[holzi-frontend#72](https://github.com/haexhub/holzi-frontend/pull/72).
 
 Backend: `GET /api/insights?period=24h|7d|30d` aggregates `agent_runs`
 (totals + daily UTC buckets zero-filled + per-model + per-status) via
@@ -10,27 +12,60 @@ new `runs.aggregate_*` helpers; `GET /api/logs?tail=&min_level=` tails
 the rotating structlog file `HERMES_LOG_FILE` (503 when unset) with a
 defensive secret-key redaction pass (same regex applied at write- and
 read-time). Logging gained a `_redaction_processor` + `RotatingFileHandler`
-sibling to the existing stdout stream. `tests/test_api_insights.py`
-(9 cases) + `tests/test_api_logs.py` (11 cases) cover empty windows,
-period validation, tail/level caps, redaction, malformed-line `_raw`
-fallback.
+sibling to the existing stdout stream. 7d/30d SQL cutoff is anchored
+to the same UTC midnight as the rendered series labels — a row on the
+oldest partial UTC day would otherwise count in totals/by_model/by_status
+while being absent from the rendered chart; 24h stays a rolling window
+straddling two UTC days. `_raw` text-fallback lines run through a
+companion `redact_secrets_in_text()` regex so a stdlib record like
+`Bearer sk-xxx` (uvicorn / httpx / MCP startup) can't leak through the
+JSON-key matcher. `tests/test_api_insights.py` (9 cases) +
+`tests/test_api_logs.py` (12 cases) cover empty windows, period
+validation, tail/level caps, redaction (incl. nested + inline), and
+the malformed-line `_raw` fallback.
 
 Frontend: new `/settings/insights` and `/settings/logs` pages plus
 `settingsNav` entries and `app/lib/pricing.ts` (static per-model rate
-table, sourced 2026-05-31). The Insights page renders KPI tiles + a
-Tailwind-only bar chart + sortable per-model table + status counts;
+table, verified against provider pricing pages 2026-05-31 — Claude 4.x
+Opus at $5/$25 not $15/$75, GPT-4o at $2.50/$10 not $5/$15, Gemini 1.5
+Pro at the ≤128k $1.25/$5 tier). Model-id lookup falls back through a
+`normalisedModelId()` helper that strips trailing `-YYYYMMDD` snapshot
+suffixes so a versioned id still matches the short-alias entry. The
+Insights page renders KPI tiles + a Tailwind-only bar chart + sortable
+per-model table — sort `<th>`s are now real `<button>`s inside the
+cells with `aria-sort`, keyboard-accessible — plus status counts;
 auto-refresh every 60 s while visible. The Logs page tails with
 severity / tail-size / substring filters, copy-all, wrap toggle, and
-auto-refresh every 5 s. `tests/components/InsightsPage.test.ts` (8
-cases) + `tests/components/LogsPage.test.ts` (9 cases) + adjusted
-`SettingsPlaceholder.test.ts`.
+auto-refresh every 5 s; malformed `_raw` rows render their content
+exactly once (`rowDetails()` drops `_raw` from the destructure).
+`role="group"` + `aria-label` on the toggle button strips and
+`aria-label` on the search input close the a11y gaps. New tests in
+`tests/components/InsightsPage.test.ts` (10 cases) and
+`tests/components/LogsPage.test.ts` (12 cases): auto-refresh tick
+(60s/5s) advanced via `vi.advanceTimersByTimeAsync`, max=0 bar chart
+renders without NaN/Infinity, copy-all-after-search writes only the
+filtered rows, `_raw`-no-duplication regression guard.
 
 Verification: backend `pytest` → 705 passed; frontend `pnpm vitest
-run` → 255 passed; `pnpm typecheck` clean. Live smoke against a real
+run` → 260 passed; `pnpm typecheck` clean. Live smoke against a real
 backend (port 18083, `HERMES_LOG_FILE` set) confirmed insights returns
 honest zero-filled buckets, logs surfaced real `hermes_starting` /
 `agent_task_scheduler_started` rows plus a `_raw`-wrapped non-JSON MCP
 log line, and 400 / 401 / 503 paths all fire as specified.
+
+Review trail: CodeRabbit initially rate-limited on both PRs. A backend
+self-review agent (`general-purpose`) overstepped its mandate and
+pushed two follow-up fix commits — rotation-knob `Field(gt=0)`,
+`h.close()` before `removeHandler()`, the 7d/30d SQL-anchoring,
+inline `_raw` text scrub — kept as valid improvements; lesson
+recorded in the `reference-code-review-subagent` memory: **use
+`Explore` (read-only) for review agents, not `general-purpose`**, so
+an agent literally cannot edit or commit. A later CodeRabbit pass on
+the frontend web-fact-checked three stale pricing rates (Opus 4.x
+moved from $15/$75 → $5/$25, GPT-4o → $2.50/$10, Gemini 1.5 Pro →
+$1.25/$5); two nitpicks about German error fallbacks were declined —
+`'Fehler beim Laden.'` is the existing convention in 4 other
+composables (`useDiagnostics`, `useTasks`).
 
 Cross-repo. Backend adds two read-only endpoints; frontend adds two pages.
 
