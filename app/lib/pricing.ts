@@ -28,18 +28,21 @@ export interface ModelPricing {
 // whatever the upstream returns. A mismatch silently misses and the
 // cost cell renders "—", which is honest but easy to overlook.
 export const MODEL_PRICING: Record<string, ModelPricing> = {
-  // Anthropic Claude 4.x — same tiering as the 3.x line.
-  'claude-opus-4-7': { input_per_1m: 15, output_per_1m: 75 },
+  // Anthropic Claude 4.x — Opus tier dropped from 3.x's $15/$75 to $5/$25.
+  'claude-opus-4-7': { input_per_1m: 5, output_per_1m: 25 },
   'claude-sonnet-4-6': { input_per_1m: 3, output_per_1m: 15 },
   'claude-haiku-4-5': { input_per_1m: 1, output_per_1m: 5 },
 
-  // OpenAI flagship + smaller siblings.
-  'gpt-4o': { input_per_1m: 5, output_per_1m: 15 },
+  // OpenAI flagship + smaller siblings. gpt-4o standard rate dropped to
+  // $2.50/$10; gpt-4-turbo legacy rate kept for older deployments.
+  'gpt-4o': { input_per_1m: 2.5, output_per_1m: 10 },
   'gpt-4o-mini': { input_per_1m: 0.15, output_per_1m: 0.6 },
   'gpt-4-turbo': { input_per_1m: 10, output_per_1m: 30 },
 
-  // Google Gemini.
-  'gemini-1.5-pro': { input_per_1m: 3.5, output_per_1m: 10.5 },
+  // Google Gemini 1.5 — using the ≤128k tier (>128k doubles both rates).
+  // Newer Gemini 3.x is unlisted here; add when the backend starts
+  // surfacing those model ids.
+  'gemini-1.5-pro': { input_per_1m: 1.25, output_per_1m: 5 },
   'gemini-1.5-flash': { input_per_1m: 0.075, output_per_1m: 0.3 },
 }
 
