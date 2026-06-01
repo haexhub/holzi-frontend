@@ -2,7 +2,46 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-Status: **Planned.**
+Status: **Implemented 2026-06-01.** Cross-repo PRs pending review.
+
+Backend: new `src/hermes/personas.py` owns the `CHANNEL_REGISTRY`
+(web/task/signal/telegram), the `DEFAULT_PERSONA_*` seeds, the
+idempotent `ensure_backfill(db)` lifespan hook, and the
+`get_effective_system_prompt(channel, db)` resolver. Two new tables
+(`personas` + `channel_prompts`) via `schema.py` + a single-default
+trigger pair in `schema.sql`. Repos: `repository/personas.py` (CRUD +
+`get_default`, refuses to delete the default) and `repository/channels.py`
+(`ensure_seeded` per registry, `update` with a sentinel-arg so
+`default_persona_id: null` differs from "omitted", `reset_prompt`). The
+new `routes/preferences.py` exposes `GET/POST/PUT/DELETE /api/personas`
+and `GET/PUT/POST /api/channels`; Pydantic response models so OpenAPI
+emits proper `PersonaResponse` / `ChannelPromptResponse` shapes for
+`gen:api`. The four `*_SYSTEM_PROMPT` constants are gone; the four
+call-sites (`routes/api.py:393`, `scheduler.py:187`, `main.py:209`,
+`main.py:261`) now call `get_effective_system_prompt(channel, db)`. New
+tests: `test_personas_repo.py` (12), `test_channels_repo.py` (9),
+`test_personas_resolver.py` (7), `test_api_preferences.py` (18). End-
+to-end "composition flows through" coverage added in `test_api_chat.py`
+(web channel) and `test_scheduler.py` (task channel).
+
+Frontend: new `app/composables/usePersonas.ts` + `app/composables/useChannels.ts`,
+new generated types `Persona`, `PersonaCreate`, `PersonaUpdate`,
+`ChannelPrompt`, `ChannelPromptUpdate`. `/settings/preferences` is now
+a two-section page (Personas: inline CRUD + Default-Badge + 'Als
+Default setzen' + delete-disabled-for-default; Channels: one card per
+registry entry with persona dropdown, prompt textarea, and 'Prompt
+zurücksetzen' when non-default). `settingsNav` drops the `upcoming`
+hint on the entry. Page-test (`tests/components/PreferencesPage.test.ts`)
+covers initial render, create + 409 mapping, set-default + badge move,
+channel persona pick, custom prompt + reset.
+
+Verification: backend `uv run pytest` → 757 passed (3 deselected) +
+`uv run ruff check src/ tests/` + `uv run mypy src/` clean. Frontend
+`pnpm vitest run` → 267 passed (31 files) + `pnpm typecheck` clean.
+Live smoke via uvicorn on port 18083 confirmed the boot backfill (1
+default Hermes persona + 4 channel rows), create-new-persona,
+promote-to-default demotes the prior default, 422 on default-delete,
+channel prompt + persona update, reset, and 404 for unknown channel.
 
 Cross-repo. Backend bekommt zwei neue Tabellen + Endpoints; Frontend baut die
 `/settings/preferences`-Placeholder zur ersten echten Preferences-Seite um.
