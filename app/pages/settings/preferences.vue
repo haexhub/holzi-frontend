@@ -70,6 +70,11 @@ const formPrompt = ref('')
 const formIsDefault = ref(false)
 const formError = ref<string | null>(null)
 const saving = ref(false)
+// Guards the "Als Default setzen" + "Löschen" buttons against double-
+// clicks — those mutations don't go through the form (no `saving`
+// flag) so they need their own latch. Held for the whole request +
+// its trailing `load()`.
+const personaMutating = ref(false)
 
 function openCreate() {
   editing.value = 'new'
@@ -140,28 +145,36 @@ async function submitPersonaForm() {
 }
 
 async function setDefaultPersona(persona: Persona) {
+  if (personaMutating.value) return
+  personaMutating.value = true
   error.value = null
   try {
     await personasApi.update(persona.id, { is_default: true })
     await load()
   } catch (err: unknown) {
     error.value = mapPersonaError(err)
+  } finally {
+    personaMutating.value = false
   }
 }
 
 async function deletePersona(persona: Persona) {
+  if (personaMutating.value) return
   const ok = await confirm({
     title: 'Persona löschen?',
     description: `"${persona.name}" wird endgültig gelöscht.`,
     destructive: true,
   })
   if (!ok) return
+  personaMutating.value = true
   error.value = null
   try {
     await personasApi.delete(persona.id)
     await load()
   } catch (err: unknown) {
     error.value = mapPersonaError(err)
+  } finally {
+    personaMutating.value = false
   }
 }
 
@@ -208,14 +221,45 @@ function draftFor(channel: ChannelPrompt): ChannelDraft {
   return draft
 }
 
+// Preserve in-flight channel-draft edits across reloads. A persona
+// mutation (set-default, delete) reloads both lists; without this
+// merge, the unconditional reseed would silently wipe an unsaved
+// channel-prompt edit. Heuristic: if the existing draft equals what
+// was persisted just before this fire, it's untouched → reseed to the
+// new server value. Otherwise the user has uncommitted edits → keep
+// the draft as-is. Single-user app, so an external mutation on the
+// same channel mid-edit is not a real scenario.
+function isPersisted(draft: ChannelDraft, channel: ChannelPrompt): boolean {
+  const persistedId =
+    channel.default_persona_id === null
+      ? ''
+      : String(channel.default_persona_id)
+  return (
+    draft.prompt === channel.prompt
+    && draft.defaultPersonaId === persistedId
+  )
+}
+
 watch(
   channels,
-  (next) => {
-    const out: Record<string, ChannelDraft> = {}
+  (next, prev) => {
+    const prevByKey = new Map(
+      (prev ?? []).map((c) => [c.channel, c] as const),
+    )
+    const merged: Record<string, ChannelDraft> = {}
     for (const c of next) {
-      out[c.channel] = emptyDraft(c)
+      const existing = channelDrafts.value[c.channel]
+      const prior = prevByKey.get(c.channel)
+      // Preserve only when the draft existed AND it's still in sync
+      // with the prior persisted snapshot — anything else means the
+      // user has edits (or this is the first paint).
+      if (existing !== undefined && prior !== undefined && !isPersisted(existing, prior)) {
+        merged[c.channel] = existing
+      } else {
+        merged[c.channel] = emptyDraft(c)
+      }
     }
-    channelDrafts.value = out
+    channelDrafts.value = merged
   },
   { immediate: true },
 )
@@ -453,6 +497,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                   v-if="!persona.is_default"
                   size="sm"
                   variant="outline"
+                  :disabled="personaMutating"
                   :data-testid="`persona-set-default-${persona.id}`"
                   @click="setDefaultPersona(persona)"
                 >
@@ -462,7 +507,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                   size="sm"
                   variant="ghost"
                   aria-label="Löschen"
-                  :disabled="persona.is_default"
+                  :disabled="persona.is_default || personaMutating"
                   :data-testid="`persona-delete-${persona.id}`"
                   @click="deletePersona(persona)"
                 >

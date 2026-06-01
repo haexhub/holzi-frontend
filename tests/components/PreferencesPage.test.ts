@@ -300,6 +300,73 @@ describe('settings/preferences.vue', () => {
     })
   })
 
+  it('surfaces a 422 channel error in the per-card error slot', async () => {
+    mockInitialLoad()
+    apiPut.mockRejectedValueOnce({
+      statusCode: 422,
+      data: { detail: 'persona 99 does not exist' },
+    })
+
+    const wrapper = mount(PreferencesPage)
+    await vi.waitFor(() =>
+      expect(
+        wrapper.find('[data-testid="channel-card-web"]').exists(),
+      ).toBe(true),
+    )
+
+    await wrapper
+      .get('[data-testid="channel-prompt-web"]')
+      .setValue('something custom')
+
+    await wrapper.get('[data-testid="channel-save-web"]').trigger('click')
+    await flushPromises()
+
+    const cardError = wrapper.get('[data-testid="channel-error-web"]')
+    expect(cardError.text()).toContain('persona 99 does not exist')
+    // Page-level error stays empty — only this card's error fires.
+    expect(
+      wrapper.find('[data-testid="preferences-global-error"]').exists(),
+    ).toBe(false)
+  })
+
+  it('preserves an in-flight channel prompt draft across a persona reload', async () => {
+    // User edits a channel prompt (does NOT save), then clicks "Als
+    // Default setzen" on a non-default persona. The trailing load()
+    // must NOT wipe the unsaved channel edit.
+    const second = persona({ id: 2, name: 'Reviewer' })
+    mockInitialLoad([defaultPersona, second])
+    apiPut.mockResolvedValueOnce({ ...second, is_default: true })
+
+    const wrapper = mount(PreferencesPage)
+    await vi.waitFor(() =>
+      expect(
+        wrapper.find('[data-testid="channel-card-web"]').exists(),
+      ).toBe(true),
+    )
+
+    const promptInput = wrapper.get(
+      '[data-testid="channel-prompt-web"]',
+    ) as ReturnType<typeof wrapper.get>
+    await promptInput.setValue('WIP draft — not yet saved')
+
+    // After the promotion the page reloads both lists; channels' content
+    // is unchanged from the server side.
+    mockInitialLoad([
+      { ...defaultPersona, is_default: false },
+      { ...second, is_default: true },
+    ])
+
+    await wrapper
+      .get('[data-testid="persona-set-default-2"]')
+      .trigger('click')
+    await flushPromises()
+
+    expect(
+      (wrapper.get('[data-testid="channel-prompt-web"]')
+        .element as HTMLTextAreaElement).value,
+    ).toBe('WIP draft — not yet saved')
+  })
+
   it('resets a customised channel prompt back to the default', async () => {
     const customised: ChannelPrompt = {
       ...fourChannels[2]!,
