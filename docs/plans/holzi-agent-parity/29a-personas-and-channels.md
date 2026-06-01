@@ -2,7 +2,9 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-Status: **Implemented 2026-06-01.** Cross-repo PRs pending review.
+Status: **Implemented 2026-06-01.** Cross-repo
+[Holzi#61](https://github.com/haexhub/Holzi/pull/61) +
+[holzi-frontend#79](https://github.com/haexhub/holzi-frontend/pull/79).
 
 Backend: new `src/hermes/personas.py` owns the `CHANNEL_REGISTRY`
 (web/task/signal/telegram), the `DEFAULT_PERSONA_*` seeds, the
