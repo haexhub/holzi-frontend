@@ -2,8 +2,10 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-Status: **Implemented 2026-06-01.** Cross-repo
+Status: **Merged 2026-06-01.** Cross-repo
 [Holzi#61](https://github.com/haexhub/Holzi/pull/61) +
+[Holzi#62](https://github.com/haexhub/Holzi/pull/62) (response_model
+follow-up) +
 [holzi-frontend#79](https://github.com/haexhub/holzi-frontend/pull/79).
 
 Backend: new `src/hermes/personas.py` owns the `CHANNEL_REGISTRY`
