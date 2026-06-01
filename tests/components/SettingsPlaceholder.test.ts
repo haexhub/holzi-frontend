@@ -51,6 +51,7 @@ describe('settingsNav model', () => {
     expect(shipped).toEqual([
       '/settings/llm',
       '/settings/messenger',
+      '/settings/preferences',
       '/settings/memory',
       '/settings/tasks',
       '/settings/workspaces',
