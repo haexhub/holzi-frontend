@@ -697,6 +697,14 @@ watch(isLgScreen, (now, before) => {
 onMounted(() => {
   loadConversations()
   loadCredentialState()
+  // Sub-lg initial load (e.g. mobile reload): the lg→sub-lg watcher above
+  // never fires, so collapse explicitly. Runs after the splitter children
+  // have mounted (and applied any auto-save state), so this overrides any
+  // restored expanded layout for small viewports.
+  if (!isLgScreen.value) {
+    leftPanelRef.value?.collapse()
+    rightPanelRef.value?.collapse()
+  }
 })
 </script>
 
