@@ -22,7 +22,11 @@ import ConversationList from '~/components/chat/ConversationList.vue'
 import EmptyChatState from '~/components/chat/EmptyChatState.vue'
 import NotesPanel from '~/components/panels/NotesPanel.vue'
 import WorkspacePanel from '~/components/panels/WorkspacePanel.vue'
+import { useMediaQuery } from '@vueuse/core'
 import ThemeToggle from '~/components/ThemeToggle.vue'
+import ResizableHandle from '~/components/ui/resizable/ResizableHandle.vue'
+import ResizablePanel from '~/components/ui/resizable/ResizablePanel.vue'
+import ResizablePanelGroup from '~/components/ui/resizable/ResizablePanelGroup.vue'
 import { useApi } from '~/composables/useApi'
 import { useChatQueue } from '~/composables/useChatQueue'
 import { useToast } from '~/composables/useToast'
@@ -137,14 +141,23 @@ const currentRunId = ref<string | null>(null)
 // the next send into the same conversation.
 const cancelledConversationId = ref<number | null>(null)
 const error = ref<string | null>(null)
-// Off-canvas sidebar state for screens below the `lg` breakpoint. Above it
-// the sidebars sit in the grid (lg:static + lg:translate-x-0) and ignore
-// these flags.
-const leftSidebarOpen = ref(false)
-const rightSidebarOpen = ref(false)
-const anySidebarOpen = computed(
-  () => leftSidebarOpen.value || rightSidebarOpen.value,
-)
+// Resizable sidebar panels. Widths persist via reka-ui's `auto-save-id`
+// (localStorage). `*Collapsed` mirror the panel's collapsed state, driven by
+// the panel's @collapse / @expand callbacks — used by the header toggle
+// buttons to flip aria-expanded labels and decide whether a click expands
+// or collapses.
+const leftPanelRef = ref<InstanceType<typeof ResizablePanel> | null>(null)
+const rightPanelRef = ref<InstanceType<typeof ResizablePanel> | null>(null)
+const leftCollapsed = ref(false)
+const rightCollapsed = ref(false)
+// Flipped by ResizableHandle's @dragging emit. Used to suppress the
+// collapse/expand transition while the user is actively dragging — otherwise
+// each pointer-move frame interpolates over 200ms and the handle feels laggy.
+const isDragging = ref(false)
+// Below the `lg` breakpoint the chat takes priority, so we auto-collapse
+// both sidebars on the lg → md crossing. md → lg leaves them collapsed
+// until the user re-opens via the header buttons.
+const isLgScreen = useMediaQuery('(min-width: 1024px)')
 const activePanel = ref<'notes' | 'workspace'>('notes')
 const messagesScroller = ref<HTMLElement | null>(null)
 // `null` while the credentials list is still loading — EmptyChatState
@@ -237,7 +250,6 @@ async function selectConversation(id: number) {
     cancelledConversationId.value = null
     queue.clear()
     sandboxCrashes.value = []
-    leftSidebarOpen.value = false
   }
   activeId.value = id
   try {
@@ -256,7 +268,6 @@ function newChat() {
   cancelledConversationId.value = null
   queue.clear()
   sandboxCrashes.value = []
-  leftSidebarOpen.value = false
 }
 
 // id of the latest assistant message — the only turn that shows a Retry
@@ -662,96 +673,98 @@ function logout() {
   router.replace('/login')
 }
 
-// Above the lg breakpoint both sidebars sit in the grid. Stale flags from a
-// smaller viewport would otherwise pop the sidebar open the moment the user
-// shrinks the window again — close them as soon as we cross into lg.
-function syncSidebarFlagsToBreakpoint() {
-  if (typeof window === 'undefined') return
-  if (window.matchMedia('(min-width: 1024px)').matches) {
-    leftSidebarOpen.value = false
-    rightSidebarOpen.value = false
-  }
+function toggleLeftSidebar() {
+  const panel = leftPanelRef.value
+  if (!panel) return
+  if (leftCollapsed.value) panel.expand()
+  else panel.collapse()
 }
 
-function onKeydownGlobal(e: KeyboardEvent) {
-  if (e.key === 'Escape' && anySidebarOpen.value) {
-    leftSidebarOpen.value = false
-    rightSidebarOpen.value = false
-  }
+function toggleRightSidebar() {
+  const panel = rightPanelRef.value
+  if (!panel) return
+  if (rightCollapsed.value) panel.expand()
+  else panel.collapse()
 }
 
-// Body scroll-lock while an off-canvas sidebar is open so background content
-// doesn't scroll on touch devices.
-watch(anySidebarOpen, (open) => {
-  if (typeof document === 'undefined') return
-  document.body.style.overflow = open ? 'hidden' : ''
+watch(isLgScreen, (now, before) => {
+  if (before && !now) {
+    leftPanelRef.value?.collapse()
+    rightPanelRef.value?.collapse()
+  }
 })
 
 onMounted(() => {
   loadConversations()
   loadCredentialState()
-  syncSidebarFlagsToBreakpoint()
-  window.addEventListener('resize', syncSidebarFlagsToBreakpoint)
-  window.addEventListener('keydown', onKeydownGlobal)
-})
-
-onBeforeUnmount(() => {
-  if (typeof window !== 'undefined') {
-    window.removeEventListener('resize', syncSidebarFlagsToBreakpoint)
-    window.removeEventListener('keydown', onKeydownGlobal)
-  }
-  if (typeof document !== 'undefined') {
-    document.body.style.overflow = ''
+  // Sub-lg initial load (e.g. mobile reload): the lg→sub-lg watcher above
+  // never fires, so collapse explicitly. Runs after the splitter children
+  // have mounted (and applied any auto-save state), so this overrides any
+  // restored expanded layout for small viewports.
+  if (!isLgScreen.value) {
+    leftPanelRef.value?.collapse()
+    rightPanelRef.value?.collapse()
   }
 })
 </script>
 
 <template>
-  <div class="relative h-screen lg:grid lg:grid-cols-[260px_1fr_320px]">
-    <!-- Backdrop for off-canvas sidebars (below lg only). Tapping it closes
-         whichever sidebar is open. Above lg both sidebars sit in the grid
-         and this never renders. -->
-    <div
-      v-if="leftSidebarOpen || rightSidebarOpen"
-      class="fixed inset-0 z-30 bg-black/40 lg:hidden"
-      aria-hidden="true"
-      @click="leftSidebarOpen = false; rightSidebarOpen = false"
-    />
-
-    <!-- Left sidebar: conversations. Off-canvas overlay below lg, in-grid
-         above lg. -->
-    <aside
-      id="left-sidebar"
-      class="fixed inset-y-0 left-0 z-40 w-72 border-r bg-background transition-transform lg:static lg:w-auto lg:translate-x-0"
-      :class="leftSidebarOpen ? 'translate-x-0' : '-translate-x-full'"
-      :role="leftSidebarOpen ? 'dialog' : undefined"
-      :aria-modal="leftSidebarOpen ? 'true' : undefined"
-      aria-label="Conversations"
+  <ResizablePanelGroup
+    direction="horizontal"
+    auto-save-id="holzi-chat-layout"
+    class="h-screen"
+  >
+    <!-- Left sidebar: conversations. Collapsible + resizable via reka-ui
+         Splitter; sizes persist in localStorage via `auto-save-id`. -->
+    <ResizablePanel
+      id="left-sidebar-panel"
+      ref="leftPanelRef"
+      :default-size="20"
+      :min-size="14"
+      :max-size="35"
+      :collapsed-size="0"
+      collapsible
+      :class="isDragging ? undefined : 'transition-[flex] duration-200 ease-out'"
+      @collapse="leftCollapsed = true"
+      @expand="leftCollapsed = false"
     >
-      <ConversationList
-        :conversations="conversations"
-        :active-id="activeId"
-        @select="selectConversation"
-        @new-chat="newChat"
-        @toggle-bookmark="toggleBookmark"
-        @rename="renameConversation"
-        @delete="deleteConversation"
-        @search="onSearch"
-      />
-    </aside>
+      <aside
+        id="left-sidebar"
+        class="h-screen overflow-hidden border-r bg-background"
+        aria-label="Conversations"
+      >
+        <ConversationList
+          :conversations="conversations"
+          :active-id="activeId"
+          @select="selectConversation"
+          @new-chat="newChat"
+          @toggle-bookmark="toggleBookmark"
+          @rename="renameConversation"
+          @delete="deleteConversation"
+          @search="onSearch"
+        />
+      </aside>
+    </ResizablePanel>
+
+    <ResizableHandle @dragging="isDragging = $event" />
 
     <!-- Center: chat -->
-    <main class="flex h-screen flex-col">
+    <ResizablePanel
+      id="main-panel"
+      :default-size="56"
+      :min-size="30"
+      :class="isDragging ? undefined : 'transition-[flex] duration-200 ease-out'"
+    >
+      <main class="flex h-screen flex-col">
       <header class="flex items-center justify-between border-b px-4 py-2">
         <div class="flex items-center gap-2">
           <Button
             size="icon"
             variant="ghost"
-            class="lg:hidden"
-            aria-label="Conversations öffnen"
-            :aria-expanded="leftSidebarOpen"
+            :aria-label="leftCollapsed ? 'Conversations einblenden' : 'Conversations ausblenden'"
+            :aria-expanded="!leftCollapsed"
             aria-controls="left-sidebar"
-            @click="leftSidebarOpen = true"
+            @click="toggleLeftSidebar"
           >
             <Menu class="size-4" />
           </Button>
@@ -784,11 +797,10 @@ onBeforeUnmount(() => {
           <Button
             size="icon"
             variant="ghost"
-            class="lg:hidden"
-            aria-label="Notes &amp; Workspace öffnen"
-            :aria-expanded="rightSidebarOpen"
+            :aria-label="rightCollapsed ? 'Notes &amp; Workspace einblenden' : 'Notes &amp; Workspace ausblenden'"
+            :aria-expanded="!rightCollapsed"
             aria-controls="right-sidebar"
-            @click="rightSidebarOpen = true"
+            @click="toggleRightSidebar"
           >
             <PanelRight class="size-4" />
           </Button>
@@ -965,44 +977,56 @@ onBeforeUnmount(() => {
         @send="send"
         @stop="stopStreaming"
       />
-    </main>
+      </main>
+    </ResizablePanel>
 
-    <!-- Right panel: notes + workspace. Off-canvas overlay below lg,
-         in-grid above lg. -->
-    <aside
-      id="right-sidebar"
-      class="fixed inset-y-0 right-0 z-40 flex h-screen w-80 flex-col border-l bg-background transition-transform lg:static lg:w-auto lg:translate-x-0"
-      :class="rightSidebarOpen ? 'translate-x-0' : 'translate-x-full'"
-      :role="rightSidebarOpen ? 'dialog' : undefined"
-      :aria-modal="rightSidebarOpen ? 'true' : undefined"
-      aria-label="Notes &amp; Workspace"
+    <ResizableHandle @dragging="isDragging = $event" />
+
+    <!-- Right panel: notes + workspace. Collapsible + resizable. -->
+    <ResizablePanel
+      id="right-sidebar-panel"
+      ref="rightPanelRef"
+      :default-size="24"
+      :min-size="18"
+      :max-size="40"
+      :collapsed-size="0"
+      collapsible
+      :class="isDragging ? undefined : 'transition-[flex] duration-200 ease-out'"
+      @collapse="rightCollapsed = true"
+      @expand="rightCollapsed = false"
     >
-      <nav class="flex border-b">
-        <button
-          type="button"
-          class="flex flex-1 items-center justify-center gap-1 border-r px-3 py-2 text-xs font-medium transition-colors"
-          :class="activePanel === 'notes' ? 'bg-accent' : 'hover:bg-muted'"
-          @click="activePanel = 'notes'"
-        >
-          <NotebookPen class="size-3.5" /> Notes
-        </button>
-        <button
-          type="button"
-          class="flex flex-1 items-center justify-center gap-1 px-3 py-2 text-xs font-medium transition-colors"
-          :class="activePanel === 'workspace' ? 'bg-accent' : 'hover:bg-muted'"
-          @click="activePanel = 'workspace'"
-        >
-          <FolderTree class="size-3.5" /> Workspace
-        </button>
-      </nav>
-      <Separator />
-      <div class="flex-1 overflow-hidden">
-        <NotesPanel v-if="activePanel === 'notes'" />
-        <WorkspacePanel
-          v-else-if="activePanel === 'workspace'"
-          :conversation-id="activeId"
-        />
-      </div>
-    </aside>
-  </div>
+      <aside
+        id="right-sidebar"
+        class="flex h-screen flex-col overflow-hidden border-l bg-background"
+        aria-label="Notes &amp; Workspace"
+      >
+        <nav class="flex border-b">
+          <button
+            type="button"
+            class="flex flex-1 items-center justify-center gap-1 border-r px-3 py-2 text-xs font-medium transition-colors"
+            :class="activePanel === 'notes' ? 'bg-accent' : 'hover:bg-muted'"
+            @click="activePanel = 'notes'"
+          >
+            <NotebookPen class="size-3.5" /> Notes
+          </button>
+          <button
+            type="button"
+            class="flex flex-1 items-center justify-center gap-1 px-3 py-2 text-xs font-medium transition-colors"
+            :class="activePanel === 'workspace' ? 'bg-accent' : 'hover:bg-muted'"
+            @click="activePanel = 'workspace'"
+          >
+            <FolderTree class="size-3.5" /> Workspace
+          </button>
+        </nav>
+        <Separator />
+        <div class="flex-1 overflow-hidden">
+          <NotesPanel v-if="activePanel === 'notes'" />
+          <WorkspacePanel
+            v-else-if="activePanel === 'workspace'"
+            :conversation-id="activeId"
+          />
+        </div>
+      </aside>
+    </ResizablePanel>
+  </ResizablePanelGroup>
 </template>
