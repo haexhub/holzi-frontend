@@ -101,6 +101,16 @@ export type GitPushRequest = components['schemas']['GitPushRequest']
 export type GitOpResponse = components['schemas']['GitOpResponse']
 export type GitPullResponse = components['schemas']['GitPullResponse']
 
+// --- Preferences: personas + channel prompts (Plan 29-A) ----------------
+export type Persona = components['schemas']['PersonaResponse']
+export type PersonaListResponse = components['schemas']['PersonaListResponse']
+export type PersonaCreate = components['schemas']['PersonaCreate']
+export type PersonaUpdate = components['schemas']['PersonaUpdate']
+export type ChannelPrompt = components['schemas']['ChannelPromptResponse']
+export type ChannelPromptListResponse =
+  components['schemas']['ChannelPromptListResponse']
+export type ChannelPromptUpdate = components['schemas']['ChannelUpdate']
+
 // --- Chat SSE event envelope (Plan 08) ----------------------------------
 // One versioned envelope per stream event; the discriminated union is the
 // single source of truth shared with the backend's src/hermes/events.py.

@@ -22,7 +22,7 @@ export interface SettingsNavItem {
 export const settingsNav: readonly SettingsNavItem[] = [
   { to: '/settings/llm', label: 'LLM', icon: Cpu },
   { to: '/settings/messenger', label: 'Messenger', icon: MessageSquare },
-  { to: '/settings/preferences', label: 'Preferences', icon: SlidersHorizontal, upcoming: 'Agent-weite Einstellungen wie Sprache, Default-Modell, Tastatur.' },
+  { to: '/settings/preferences', label: 'Preferences', icon: SlidersHorizontal },
   { to: '/settings/memory', label: 'Memory', icon: Database },
   { to: '/settings/tasks', label: 'Tasks', icon: ListChecks },
   { to: '/settings/skills', label: 'Skills & Tools', icon: Wrench, upcoming: 'Skills, MCP-Server und Tools, die der Agent ausführen darf.' },
