@@ -112,9 +112,11 @@ number allowlist, no shared secret, no UI for managing trust. The original
   reconnect backoff:
   - `async for envelope in self.client.receive_stream(): await self.process_envelope(envelope)`
   - On `websockets.ConnectionClosed` / network error: log
-    `signal_ws_disconnected`, sleep with exponential backoff (1s, 2s,
-    5s, 10s, capped 30s), retry. Reset backoff to 1s after a successful
-    frame.
+    `signal_ws_disconnected`, sleep with incremental backoff using a
+    manually chosen sequence (1s, 2s, 5s, 10s, capped 30s — not strict
+    2^n; the early steps are faster than exponential so a brief
+    signal-cli-rest-api restart doesn't add a needless multi-second
+    gap), retry. Reset backoff to 1s after a successful frame.
   - On `asyncio.CancelledError`: propagate up so `stop()` exits clean.
 - Replace `_extract_note_to_self_text` with `_extract_self_text` that
   reads **both** envelope shapes:
@@ -143,9 +145,10 @@ number allowlist, no shared secret, no UI for managing trust. The original
 **`tests/test_signal_worker.py`**
 
 - Replace the `respx` HTTP-mock harness with a fake-stream harness:
-  - `FakeSignalClient` with an async `receive_stream` that yields from a
-    scripted list of envelopes (deque), then optionally raises
-    `ConnectionClosed` to exercise reconnect.
+  - `FakeSignalClient` lives in `tests/conftest.py` (single canonical
+    location so Task 3 and Task 5 share it). Async `receive_stream`
+    yields from a scripted list of envelopes (deque), then optionally
+    raises `ConnectionClosed` to exercise reconnect.
 - New tests:
   - `test_extract_self_text_sync_message` — syncMessage.sentMessage with
     matching source+destination → text returned.
@@ -208,6 +211,12 @@ In order:
   certain Note-to-Self edges (e.g. deletes producing empty syncMessage).
   Worker treats unparseable / unknown envelopes as no-op skips, not errors
   — log at debug level but don't surface as Diagnostics warnings.
+- **Malformed JSON frames.** A bug in signal-cli-rest-api or a corrupted
+  frame could yield non-JSON bytes on the WS. `json.JSONDecodeError`
+  inside the stream parser is treated identically to the unknown-envelope
+  case above: log at debug, skip the frame, **do not** disconnect or
+  raise a Diagnostics warning. Only `ConnectionClosed`/network errors
+  trigger the reconnect-backoff path.
 - **Diagnostics drift.** The Plan 20 messenger check counts `is_active=true`
   rows in `messenger_accounts`. It does *not* check that the WS is actually
   connected. Out of scope for this plan, but worth a `liveness` field on
@@ -279,9 +288,9 @@ time.
 **Steps:**
 1. Write a failing test
    `test_worker_processes_envelope_from_stream` using `FakeSignalClient`
-   (define it inline in the test file or `tests/conftest.py`): script the
-   stream to yield one Note-to-Self envelope; assert `process_envelope`
-   runs and the conversation row gets created.
+   (imported from `tests/conftest.py` — see Scope): script the stream
+   to yield one Note-to-Self envelope; assert `process_envelope` runs
+   and the conversation row gets created.
 2. Run — expected: FAIL (`receive_stream` not consumed by `_run` yet).
 3. Rewrite `_run` to iterate `receive_stream`; remove `poll_timeout` and
    the now-dead `convo_gap_seconds` ctor param (move the constant inline).
