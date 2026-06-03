@@ -109,6 +109,40 @@ describe('ApprovalCard.vue', () => {
     }
   })
 
+  it('renders specialized mcp_install details instead of the raw JSON block', () => {
+    const wrapper = mount(ApprovalCard, {
+      props: {
+        approval: {
+          name: 'mcp_install',
+          arguments: {
+            name: 'filesystem',
+            transport: 'stdio',
+            command_argv: ['npx', 'server-filesystem', '/tmp'],
+          },
+          reason: 'Installs an external MCP server.',
+        },
+        status: 'pending',
+      },
+    })
+    expect(wrapper.find('[data-testid="mcp-install-details"]').exists()).toBe(true)
+    // The generic raw-JSON <pre> is suppressed for mcp_install.
+    expect(wrapper.find('pre').exists()).toBe(false)
+    expect(wrapper.text()).toContain('stdio')
+    expect(wrapper.text()).toContain('npx server-filesystem /tmp')
+    // Buttons are still the four generic Plan-21 decisions.
+    expect(
+      wrapper.findAll('button').filter((b) => !b.text().includes('Mit Begründung')),
+    ).toHaveLength(4)
+  })
+
+  it('keeps the raw JSON block for non-mcp_install tools', () => {
+    const wrapper = mount(ApprovalCard, {
+      props: { approval: baseApproval, status: 'pending' },
+    })
+    expect(wrapper.find('[data-testid="mcp-install-details"]').exists()).toBe(false)
+    expect(wrapper.find('pre').exists()).toBe(true)
+  })
+
   it('hides the buttons and shows a verdict once decided', () => {
     const allowed = mount(ApprovalCard, {
       props: { approval: baseApproval, status: 'allowed' },

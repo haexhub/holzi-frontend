@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-Status: **Planned.**
+Status: **Implemented (on `feat/plan-32a-agent-self-inventory`, pending review/merge).**
 
 Cross-repo. Backend bekommt Meta-Tools, die der Agent aufrufen kann, um seine eigene Tool- und MCP-Surface zu inspizieren und (mit User-Approval) zu erweitern. Frontend bekommt MCP-spezifische Approval-Card-Felder.
 
@@ -273,3 +273,59 @@ Frontend:
 - **Recursion-Schutz bei `mcp_install` während laufender Agent-Run:** technisch geht das, aber tool_catalog-Reassembly mitten im Run würde dem laufenden Agent neue Tools unter dem Hintern wegziehen. → Vorschlag: **Reassembly verzögert** bis Ende des aktuellen Runs (Pending-Reload-Flag); nächster Run sieht die neuen Tools.
 - **Mass-Audit-Trail:** soll `mcp_install` zusätzlich in eine separate `audit_log`-Tabelle schreiben, oder reicht `agent_runs.events`? → Vorschlag: erstmal nur Events; Audit-Log wenn der User es vermisst.
 - **`mcp_remove` als zukünftiger Tool**: explizit Non-Goal in 32-A, aber wenn Plan 32 das UI hat und Nutzer es vermissen, eigener Folgeplan (mit erhöhter Approval-Stufe „always-confirm").
+
+## Implementation Notes & Deviations
+
+Plan 32-A was written before Plan 32 merged; the implementation reconciled the
+plan against the shipped API:
+
+- **Manager name:** `app.state.mcp_servers_manager` (`McpServerManager`), not
+  the plan's `mcp_manager` (which is the *inbound* StreamableHTTP server).
+- **`mcp_restart` → no approval.** Deliberately `requires_approval=False`
+  (mirrors the `/settings/skills` restart button — it only relaunches existing
+  config). This supersedes the plan body's `requires_approval=True`. Consequence:
+  the frontend `mcp_restart` approval-card variant is dead code and was **not**
+  built; only `<McpInstallApprovalDetails>` (for `mcp_install`) ships.
+- **`agent_runs.events` doesn't exist** as a column — tool calls persist to
+  `messages.meta_json`. The redaction contract therefore targets the persisted
+  message rows (the assistant turn's `tool_calls` + the tool turn's
+  `arguments`) plus the SSE events, not a separate events table.
+- **Redaction wiring:** a new `Tool.redact_arguments` callable carries
+  `redact_mcp_install_params`; `agent.run_agent` computes `display_args` once and
+  routes it to the approval callback, the `tool_call` SSE event, and both
+  persisted `meta_json` sites, while raw args still reach the handler and the
+  upstream request. No new approval gate — rides Plan 21's existing gate.
+- **Catalog freshness:** wired the manager's `on_catalog_change` hook in the
+  lifespan so agent-driven `mcp_install`/`mcp_restart` refresh
+  `app.state.tool_catalog` (the route CRUD path already did via its own
+  `_refresh_catalog`). `build_tool_catalog` gained optional `encryptor` +
+  `tool_catalog_provider`.
+- **No `gen:api`** — no new endpoints.
+
+- **Inbound `/mcp` reads the live catalog.** CodeRabbit flagged that the
+  inbound `/mcp` StreamableHTTP server (`mcp_session_manager`, used by external
+  clients like Cline/HaexChat) snapshotted its tools + name→Tool `lookup` at
+  mount, so it served a stale set after any runtime catalog change — a
+  pre-existing Plan-32 issue (its `_refresh_catalog` already rebinds). Fixed in
+  this PR: `build_mcp_server` takes a `tools_provider` and reads it live in both
+  `list_tools`/`call_tool`, bound to the lifespan's `_live_catalog`. A
+  runtime-installed server now appears on `/mcp` without a restart (regression
+  test in `test_mcp_server.py`).
+
+### Verification
+
+Backend (`/home/haex/Projekte/Holzi`): `uv run pytest` → **861 passed**
+(`test_meta_tools.py` 18 unit, `test_chat_meta_approval.py` 3 integration:
+approve/deny/list_tools-no-approval, `test_meta_tools_redaction.py` 2:
+approval-event + persisted-records + emission-sequence, and log-boundary;
+`test_tool_catalog_merge.py` extended). `uv run ruff check` clean,
+`uv run mypy src` clean.
+
+Frontend (`/home/haex/Projekte/holzi-frontend`): `pnpm test` → **301 passed**
+(`McpInstallApprovalDetails.test.ts` + extended `ApprovalCard.test.ts`).
+`pnpm typecheck` clean.
+
+Live dev-stack smoke (chat "install the filesystem MCP for /tmp" → approval
+card → list_tools follow-up): **not yet run** — covered by the integration
+tests against the faked connector; recommend one manual pass once staging
+carries a real filesystem-MCP server.
