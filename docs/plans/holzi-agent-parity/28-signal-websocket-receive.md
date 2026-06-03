@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-Status: **Planned.**
+Status: **Implemented, awaiting merge.** Backend PR https://github.com/haexhub/Holzi/pull/69 (5 commits — deps, `SignalClient.receive_stream`, `SignalWorker` WS loop + reconnect, recorded envelope fixtures, `_extract_self_text` both shapes + security boundaries). 919 pytest passing (+5 new `_extract_self_text` cases), ruff + mypy clean on `src/hermes/signal/`. Tasks 1–7 done in-repo; Tasks 4 (live-recorded fixture diff) and 8–10 (Ansible quadlet flip + live verification on haex.cloud + roadmap README + memory rewrite) are deferred to a follow-up session once the backend PR merges and a maintenance window on the box opens up.
 
 Depends on: existing Signal integration (Plan 19 baseline + the messenger
 accounts CRUD already on main). No frontend-facing changes — pure backend +
