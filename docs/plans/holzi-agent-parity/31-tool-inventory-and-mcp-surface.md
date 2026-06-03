@@ -2,7 +2,42 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-Status: **Planned.**
+Status: **Merged 2026-06-03.** Cross-repo
+[Holzi#65](https://github.com/haexhub/Holzi/pull/65) +
+[holzi-frontend#83](https://github.com/haexhub/holzi-frontend/pull/83).
+
+Backend: `GET /api/tools` returning `ToolsResponse { tools: ToolInfo[],
+total }` sorted alphabetically from `app.state.tool_catalog` (one build
+path — the same list MCP exposes). `source` projected statically to
+`"builtin"`; Plan 32 will swap that for pass-through once the catalog
+carries MCP-sourced tools. `GET /api/mcp/health` is state-only
+(`app.state.mcp_manager` presence + `len(tool_catalog)`); no HTTP self-
+probe to avoid an ASGI re-entry that the StreamableHTTPSessionManager
+would reject without a full MCP handshake.
+
+Frontend: `/settings/skills` placeholder replaced with two sections —
+MCP-Surface card (status pill, URL+copy, exponierte Tool-Anzahl, „vor
+X s" relative timestamp, Refresh, disabled „MCP-Server konfigurieren"-
+Button als Plan-32-Sprungpunkt) und flache alphabetische Tool-Liste
+(Name monospace, `source`-Pille, Approval-Badge + risk_reason nur bei
+`requires_approval`, JSON-Schema-Toggle mit „keine Parameter"-Fallback,
+disabled per-Tool-„Konfigurieren"-Button mit Plan-32/33-Tooltip).
+`settingsNav.ts` verliert den `upcoming`-Hint für `/settings/skills`;
+das ist der letzte abgeschaltete Control-Center-Placeholder.
+
+## Verification
+
+- Backend: `uv run pytest` (773 passed including 9 neue Cases in
+  `tests/test_api_tools.py` + `tests/test_api_mcp_health.py`), `ruff
+  check` clean, `mypy src` clean (73 source files).
+- Frontend: `pnpm vitest run` (280 passed including 11 neue Cases in
+  `tests/components/SkillsPage.test.ts` und das mitgezogene
+  `SettingsPlaceholder.test.ts`), `pnpm typecheck` exit 0.
+- Manual review pass von Claude (CodeRabbit rate-limited) fand keine
+  Blocker; ein NIT-Fix nachgezogen (`parameters_schema: dict[str,
+  Any]` für Konsistenz mit dem Rest von `src/hermes/routes/`).
+
+
 
 Cross-repo. Backend bekommt zwei kleine read-only Endpoints (Tool-Katalog
 + MCP-Health); Frontend baut den `/settings/skills`-Placeholder zur ersten
