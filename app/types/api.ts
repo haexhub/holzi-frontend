@@ -101,6 +101,14 @@ export type GitPushRequest = components['schemas']['GitPushRequest']
 export type GitOpResponse = components['schemas']['GitOpResponse']
 export type GitPullResponse = components['schemas']['GitPullResponse']
 
+// --- Tool inventory + MCP surface (Plan 31) -----------------------------
+// `/settings/skills` reads `GET /api/tools` for the flat alphabetical
+// catalog and `GET /api/mcp/health` for the streamable-HTTP surface card.
+export type ToolInfo = components['schemas']['ToolInfo']
+export type ToolsResponse = components['schemas']['ToolsResponse']
+export type McpHealthResponse = components['schemas']['McpHealthResponse']
+export type McpHealthStatus = McpHealthResponse['status']
+
 // --- Preferences: personas + channel prompts (Plan 29-A) ----------------
 export type Persona = components['schemas']['PersonaResponse']
 export type PersonaListResponse = components['schemas']['PersonaListResponse']

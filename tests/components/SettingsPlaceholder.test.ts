@@ -54,6 +54,7 @@ describe('settingsNav model', () => {
       '/settings/preferences',
       '/settings/memory',
       '/settings/tasks',
+      '/settings/skills',
       '/settings/workspaces',
       '/settings/diagnostics',
       '/settings/insights',
