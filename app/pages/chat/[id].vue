@@ -2,14 +2,17 @@
 // Plan 26: deep-link route. Parses the id from the URL, validates the
 // conversation exists (404 → toast + back to /), and hands the numeric
 // id to <ChatHub>. The hub handles all chat state — this page is just
-// the URL adapter.
+// the URL adapter. `useHead({ title })` updates the browser tab so
+// multi-tab workflows don't all show "Neuer Chat".
 import ChatHub from '~/components/ChatHub.vue'
 import { useApi } from '~/composables/useApi'
+import { useLastConversationStore } from '~/stores/lastConversation'
 import { useToast } from '~/composables/useToast'
 
 const route = useRoute()
 const api = useApi()
 const toast = useToast()
+const lastConv = useLastConversationStore()
 
 // Route param is always a string. Bookmarks and copy-paste can land
 // here with garbage; reject anything that isn't a positive integer so
@@ -23,6 +26,13 @@ const conversationId = computed<number | null>(() => {
 })
 
 const valid = ref<boolean | null>(null)
+
+useHead({
+  title: () =>
+    valid.value && conversationId.value !== null
+      ? `Chat ${conversationId.value} · Holzi`
+      : 'Holzi',
+})
 
 async function validate(id: number | null) {
   if (id === null) {
@@ -45,7 +55,7 @@ async function validate(id: number | null) {
     toast.error('Konversation nicht gefunden.')
     // Drop the last-active pointer too — if it was pointing here we
     // don't want `/` to bounce straight back.
-    try { localStorage.removeItem('holzi.lastConversationId') } catch { /* */ }
+    lastConv.clear()
     await navigateTo('/', { replace: true })
   }
 }

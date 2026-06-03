@@ -44,6 +44,7 @@ import {
 } from '~/composables/useChatStream'
 import { useLlmCredentials } from '~/composables/useLlmCredentials'
 import { useReasoningPreference } from '~/composables/useReasoningPreference'
+import { useLastConversationStore } from '~/stores/lastConversation'
 import { useAuthStore } from '~/stores/auth'
 import type {
   Attachment,
@@ -74,6 +75,12 @@ const { showReasoningByDefault, setShowReasoningByDefault } = useReasoningPrefer
 const conversations = ref<Conversation[]>([])
 const activeId = ref<number | null>(props.conversationId)
 const messages = ref<Message[]>([])
+// Plan 26: true while a conversation's messages are being fetched. Used
+// to suppress EmptyChatState on cold deep-link load — otherwise the
+// "Sag Hermes Hallo." greeting flashes briefly before the real history
+// appears. Pre-seeded `true` when the hub mounts with a non-null id so
+// the very first paint already hides the empty state.
+const loadingConversation = ref<boolean>(props.conversationId !== null)
 // Turn lifecycle. `streaming` is the only state that gates sending — every
 // other state leaves the composer free, so a follow-up typed during a turn
 // gets queued rather than dropped.
@@ -178,22 +185,14 @@ const searchQuery = ref('')
 // overlapping requests).
 let loadSeq = 0
 
-// Plan 26: persist the last-active conversation id so `/` can redirect
-// back to it on the next visit. Updated whenever a conversation becomes
-// active (selection / fresh-chat first-send / route param load) and
-// cleared on logout or when "Neuer Chat" routes back to `/`.
+// Plan 26: persist the last-active conversation id via the Pinia store
+// (which wraps VueUse `useLocalStorage` — same pattern as `auth.ts`).
+// Updated whenever a conversation becomes active (selection / fresh-chat
+// first-send / route param load) and cleared on logout or when "Neuer
+// Chat" routes back to `/`.
+const lastConv = useLastConversationStore()
 function rememberLastConversation(id: number | null) {
-  try {
-    if (id === null) {
-      localStorage.removeItem('holzi.lastConversationId')
-    }
-    else {
-      localStorage.setItem('holzi.lastConversationId', String(id))
-    }
-  }
-  catch {
-    // SSR or storage disabled — silent, the URL still works.
-  }
+  lastConv.remember(id)
 }
 
 async function loadConversations() {
@@ -287,6 +286,7 @@ async function loadConversation(id: number) {
   }
   activeId.value = id
   rememberLastConversation(id)
+  loadingConversation.value = true
   try {
     const detail = await api.get<ConversationDetail>(`/api/conversations/${id}`)
     messages.value = detail.messages
@@ -294,6 +294,8 @@ async function loadConversation(id: number) {
     // 404 fallback for direct deep-links lives in pages/chat/[id].vue.
     // Here we just surface the error if reload fails for other reasons.
     error.value = err instanceof Error ? err.message : 'Fehler beim Laden.'
+  } finally {
+    loadingConversation.value = false
   }
   await nextTick()
   scrollToBottom()
@@ -320,6 +322,7 @@ function newChat() {
   cancelledConversationId.value = null
   queue.clear()
   sandboxCrashes.value = []
+  loadingConversation.value = false
   rememberLastConversation(null)
   // Drop the id from the URL so a reload doesn't reopen the previous chat.
   if (router.currentRoute.value.path !== '/') {
@@ -781,6 +784,7 @@ watch(
         cancelledConversationId.value = null
         queue.clear()
         sandboxCrashes.value = []
+        loadingConversation.value = false
       }
       return
     }
@@ -930,7 +934,7 @@ onMounted(() => {
           />
         </div>
         <EmptyChatState
-          v-if="messages.length === 0 && !isStreaming"
+          v-if="messages.length === 0 && !isStreaming && !loadingConversation"
           :has-credentials="hasCredentials"
         />
         <ChatMessage

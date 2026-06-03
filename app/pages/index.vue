@@ -1,46 +1,33 @@
 <script setup lang="ts">
-// Plan 26: `/` is now just a redirect-or-empty-hub shell. On mount we
-// try to restore the last conversation id from localStorage and verify
-// it still exists; if so we replace `/` with `/chat/<id>` so reloads
-// land on the same chat. Otherwise we render the empty hub (null id).
-// The hub component handles the rest — selection, send, etc. all flow
-// through `navigateTo(/chat/:id)` so the URL stays the source of truth.
+// Plan 26: `/` is a redirect-or-empty-hub shell. On mount we read the
+// last-active conversation id from the Pinia store (VueUse
+// `useLocalStorage` under the hood) and verify it still exists on the
+// server. If so we replace `/` with `/chat/<id>` so reloads land on
+// the same chat. Otherwise the empty hub renders. `ready` keeps the
+// hub unmounted during the redirect so its onMounted doesn't fire a
+// stray fetch we'd immediately throw away.
 import ChatHub from '~/components/ChatHub.vue'
 import { useApi } from '~/composables/useApi'
+import { useLastConversationStore } from '~/stores/lastConversation'
 
 const api = useApi()
+const lastConv = useLastConversationStore()
 
-// We intentionally never *render* ChatHub during a pending redirect: if
-// we mounted the hub immediately and then navigated away on the next
-// tick, its onMounted would fire a stray /api/conversations fetch.
-// `ready` flips true once we've decided whether to redirect or stay.
 const ready = ref(false)
 
 onMounted(async () => {
-  let lastId: number | null = null
-  try {
-    const raw = localStorage.getItem('holzi.lastConversationId')
-    if (raw) {
-      const parsed = Number(raw)
-      if (Number.isFinite(parsed) && parsed > 0) lastId = parsed
-    }
-  }
-  catch {
-    // Storage disabled — fall through to the empty hub.
-  }
+  const lastId = lastConv.id
   if (lastId === null) {
     ready.value = true
     return
   }
   try {
     await api.get(`/api/conversations/${lastId}`)
-    // Still reachable — hand off to the deep-link route. `replace` so
-    // the back button still returns to wherever the user came from.
     await navigateTo(`/chat/${lastId}`, { replace: true })
   }
   catch {
-    // 404 / 401 / network — drop the stale pointer and render the empty hub.
-    try { localStorage.removeItem('holzi.lastConversationId') } catch { /* */ }
+    // 404 / 401 / network — drop the stale pointer, render the empty hub.
+    lastConv.clear()
     ready.value = true
   }
 })
