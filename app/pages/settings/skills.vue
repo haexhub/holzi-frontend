@@ -10,25 +10,27 @@ import {
   Wrench,
 } from 'lucide-vue-next'
 import Button from '@/components/ui/button/Button.vue'
+import McpServersSection from '@/components/settings/McpServersSection.vue'
 import { useMcpHealth } from '~/composables/useMcpHealth'
 import { useTools } from '~/composables/useTools'
 import { useToast } from '~/composables/useToast'
 import type { ToolInfo } from '~/types/api'
 
-// Plan 31: read-only inventory of what the agent can do.
-//   1. MCP-Surface card — the streamable-HTTP mount that lets external
-//      clients (Cline, HaexChat) reuse this agent's tools. Refresh
-//      button re-polls `/api/mcp/health`. Configure-button is disabled
-//      until Plan 32 ships the CRUD page.
-//   2. Tool catalog — flat alphabetical list with `source` pill,
-//      approval badge when relevant, JSON-schema toggle for parameters,
-//      and a disabled per-tool Configure button as the Plan 32/33
-//      sprungpunkt. No grouping (13-ish tools today; `source` becomes
-//      the natural axis once Plan 32 brings MCP-sourced tools).
+// Plan 31 + 32: skills & tools page.
+//   0. MCP-Servers section (Plan 32) — registered external MCP servers.
+//      CRUD form + per-server lifecycle controls. Plan 31's
+//      "Konfigurieren"-button now scrolls here.
+//   1. MCP-Surface card — the inbound streamable-HTTP mount external
+//      clients (Cline, HaexChat) connect to. Refresh button re-polls
+//      `/api/mcp/health` (now also lists per-server statuses).
+//   2. Tool catalog — flat alphabetical list with `source` pill.
+//      `mcp:<server-name>`-sourced tools' "Konfigurieren"-Button jumps
+//      to the matching server card.
 
 const toolsApi = useTools()
 const mcpApi = useMcpHealth()
 const toast = useToast()
+const mcpSectionRef = ref<InstanceType<typeof McpServersSection> | null>(null)
 
 const expandedToolNames = ref<Set<string>>(new Set())
 
@@ -39,8 +41,6 @@ const now = ref(Date.now())
 let nowTimer: ReturnType<typeof setInterval> | null = null
 
 onMounted(() => {
-  // Two endpoints, two independent loaders — one failing doesn't hide
-  // the other section.
   void toolsApi.list()
   void mcpApi.check()
   nowTimer = setInterval(() => {
@@ -88,8 +88,6 @@ const SOURCE_PILL_CLASS =
 
 function sourceLabel(source: string): string {
   if (source === 'builtin') return 'built-in'
-  // Plan 32: `mcp:<server-name>` — show the short form so the pill stays
-  // readable while still naming the source server.
   if (source.startsWith('mcp:')) return source
   return source
 }
@@ -103,6 +101,38 @@ async function copyMcpUrl() {
     toast.error('Kopieren fehlgeschlagen.')
   }
 }
+
+function scrollToSection(id: string) {
+  document
+    .getElementById(id)
+    ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+// Plan 32: when a tool is sourced from an MCP server, surface the
+// "Konfigurieren"-Button as a jump-to-server-card link. Built-in tools
+// stay disabled (Plan 33 will give them a real configure surface).
+function mcpServerNameForTool(source: string): string | null {
+  if (!source.startsWith('mcp:')) return null
+  return source.slice('mcp:'.length)
+}
+
+function scrollToMcpServer(source: string) {
+  const name = mcpServerNameForTool(source)
+  if (name === null) return
+  const el = document.getElementById(`mcp-server-${name}`)
+  // Fall back to the section anchor when the registered server doesn't
+  // match a card (deleted between refreshes etc.).
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  else scrollToSection('mcp-section')
+}
+
+function onMcpCatalogChanged() {
+  // The catalog endpoint reads `app.state.tool_catalog` live, so a
+  // re-fetch picks up the new MCP-sourced tools. The MCP-health card
+  // also refreshes so the "X Tools exponiert" line stays in sync.
+  void toolsApi.list()
+  void mcpApi.check()
+}
 </script>
 
 <template>
@@ -113,11 +143,17 @@ async function copyMcpUrl() {
       <h2 class="text-base font-semibold">Skills &amp; Tools</h2>
     </header>
 
+    <!-- ── MCP-Servers (Plan 32) ───────────────────────────────── -->
+    <McpServersSection
+      ref="mcpSectionRef"
+      :on-catalog-changed="onMcpCatalogChanged"
+    />
+
     <!-- ── MCP-Surface card ────────────────────────────────────── -->
     <section class="rounded-md border" data-testid="mcp-card">
       <header class="flex flex-wrap items-start justify-between gap-3 border-b p-3">
         <div class="min-w-0 flex-1">
-          <h3 class="text-sm font-semibold">MCP-Server</h3>
+          <h3 class="text-sm font-semibold">MCP-Endpoint (eingehend)</h3>
           <p class="mt-0.5 text-xs text-muted-foreground">
             Externe Clients wie Cline oder HaexChat können die Tools dieses
             Agents über MCP ansprechen.
@@ -217,10 +253,9 @@ async function copyMcpUrl() {
           <div>
             <button
               type="button"
-              class="inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium opacity-50"
-              disabled
-              title="Externe MCP-Server hinzufügen kommt mit Plan 32"
+              class="inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
               data-testid="mcp-configure"
+              @click="scrollToSection('mcp-section')"
             >
               MCP-Server konfigurieren
             </button>
@@ -339,11 +374,26 @@ async function copyMcpUrl() {
           </div>
 
           <div>
+            <!--
+              Plan 32 sprungpunkt: for MCP-sourced tools the Konfigurieren
+              button scrolls to the server's card. For built-ins it stays
+              disabled (Plan 33 will give them their own surface).
+            -->
             <button
+              v-if="mcpServerNameForTool(tool.source)"
+              type="button"
+              class="inline-flex h-8 items-center justify-center rounded-md border border-input bg-background px-3 text-xs font-medium hover:bg-accent hover:text-accent-foreground"
+              :data-testid="`tool-configure-${tool.name}`"
+              @click="scrollToMcpServer(tool.source)"
+            >
+              Konfigurieren
+            </button>
+            <button
+              v-else
               type="button"
               class="inline-flex h-8 items-center justify-center rounded-md border border-input bg-background px-3 text-xs font-medium opacity-50"
               disabled
-              title="Tool-Konfiguration kommt mit Plan 32 / 33"
+              title="Tool-Konfiguration für built-in Tools kommt mit Plan 33"
               :data-testid="`tool-configure-${tool.name}`"
             >
               Konfigurieren

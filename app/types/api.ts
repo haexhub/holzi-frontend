@@ -138,6 +138,22 @@ export type SubagentDoneData = components['schemas']['SubagentDoneData']
 // stream so the UI can offer a Restart action.
 export type SandboxCrashedData = components['schemas']['SandboxCrashedData']
 
+// --- MCP servers (Plan 32) ----------------------------------------------
+// Registered external MCP servers — the agent pulls their tools into its
+// catalog (alongside built-ins) with `source="mcp:<server-name>"`. Two
+// transports today: `http` (StreamableHTTP, `url` set) and `stdio`
+// (local subprocess, `command_argv` set). Secret handling: writes accept
+// `env` (raw map) and `credentials` (plaintext); reads only ever see
+// `env_keys` (variable names only) and never see ciphertext.
+export type McpServer = components['schemas']['McpServerResponse']
+export type McpServerList = components['schemas']['McpServerListResponse']
+export type McpServerCreate = components['schemas']['McpServerCreate']
+export type McpServerUpdate = components['schemas']['McpServerUpdate']
+export type McpServerHealth = components['schemas']['McpServerHealthResponse']
+export type McpServerSummary = components['schemas']['McpServerSummary']
+export type McpServerTransport = McpServer['transport']
+export type McpServerStatus = McpServer['status']
+
 // --- LLM credentials ----------------------------------------------------
 // Declared manually until `pnpm run gen:api` is re-run against a Hermes
 // build that ships the OAuth + CRUD endpoints (Phase 3+4 of the

@@ -2,7 +2,43 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-Status: **Planned.**
+Status: **In review** — backend + frontend implemented on the branches
+`plan-32-mcp-server-crud` in both repos (Holzi + holzi-frontend),
+unit-tested end to end. Live verification against a real
+filesystem-MCP server (Suggested Implementation §9) is open until the
+PRs are merged and the staging environment picks up the change.
+
+### Verification
+
+**Backend** (`/home/haex/Projekte/Holzi`):
+
+- `.venv/bin/python -m pytest` → 835 passed, 3 deselected (was 778
+  before Plan 32; 57 new tests across
+  `test_mcp_servers_repo.py` (29), `test_mcp_manager.py` (11),
+  `test_tool_catalog_merge.py` (3), `test_api_mcp_servers.py` (14)).
+- `.venv/bin/ruff check src/hermes tests` → clean.
+
+**Frontend** (`/home/haex/Projekte/holzi-frontend`):
+
+- `pnpm run gen:api` regenerated `app/types/api-generated.ts` against
+  the live Plan-32 backend; new schemas surface as
+  `McpServer*` types in `app/types/api.ts`.
+- `pnpm run typecheck` → exit 0.
+- `pnpm run test` → 293 passed (was 269 pre-Plan-32; +12 new in
+  `tests/components/McpServersSection.test.ts` plus 12 in the updated
+  `tests/components/SkillsPage.test.ts`).
+
+**Manual verification still TODO** (post-merge):
+
+- Register the filesystem-MCP server
+  (`npx -y @modelcontextprotocol/server-filesystem /tmp`) via
+  `/settings/skills` → expect status `ready`, ~5 tools labelled
+  `source="mcp:filesystem"`.
+- Trigger `read_file` from a chat turn to confirm the tool handler
+  reaches the live `ClientSession`.
+- Hit the Neustart button → status flickers `starting` → `ready`.
+- Delete the row → the wrapped tools disappear from both `/api/tools`
+  and the Skills page within one refresh tick.
 
 Cross-repo. Backend bekommt persistente MCP-Server-Konfigurationen, Lifecycle-Management und Catalog-Merge; Frontend bekommt CRUD-UI als neue Section auf `/settings/skills`.
 
