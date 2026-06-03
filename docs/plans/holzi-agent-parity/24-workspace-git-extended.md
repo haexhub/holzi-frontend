@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-Status: **Implemented (2026-05-31).**
+Status: **Merged 2026-05-31** (cross-repo [Holzi#56](https://github.com/haexhub/Holzi/pull/56) + [holzi-frontend#70](https://github.com/haexhub/holzi-frontend/pull/70)).
 
 ## Verification
 

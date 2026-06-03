@@ -2,8 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-Status: **Implemented on 2026-05-30, awaiting merge** on branch
-`plan-22-ui-polish`.
+Status: **Merged 2026-05-30** (frontend-only [holzi-frontend#62](https://github.com/haexhub/holzi-frontend/pull/62)).
 
 Verification (2026-05-30):
 

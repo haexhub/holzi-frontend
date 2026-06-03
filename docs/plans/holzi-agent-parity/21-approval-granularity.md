@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-Status: **Implemented (pending PR / merge).**
+Status: **Merged 2026-05-30** (cross-repo [Holzi#53](https://github.com/haexhub/Holzi/pull/53) + [holzi-frontend#63](https://github.com/haexhub/holzi-frontend/pull/63)).
 
 Cross-repo branches `plan-21-approval-granularity` (Holzi + holzi-frontend).
 

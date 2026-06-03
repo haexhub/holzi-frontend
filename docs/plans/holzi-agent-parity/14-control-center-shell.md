@@ -1,6 +1,6 @@
 # Plan 14: Control Center Shell
 
-Status: implemented on 2026-05-29.
+Status: **Merged 2026-05-29** (frontend-only [holzi-frontend#46](https://github.com/haexhub/holzi-frontend/pull/46)).
 
 Verification:
 

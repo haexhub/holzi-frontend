@@ -1,8 +1,8 @@
 # Plan 11b-a: Sandbox Spine (lifecycle + exec + isolation)
 
-Status: implemented (2026-05-27), backend-only; live Podman verified
+Status: **Merged 2026-05-28** (cross-repo [Holzi#43](https://github.com/haexhub/Holzi/pull/43) + [holzi-frontend#38](https://github.com/haexhub/holzi-frontend/pull/38)), backend-only; live Podman verified
 (2026-05-28, 3/3 integration tests green incl. network isolation). First half
-of the split of [11b](./11b-sandbox-runtime.md). Awaiting review/merge.
+of the split of [11b](./11b-sandbox-runtime.md).
 Depends on: [01b](./01b-conversation-retention-and-bookmarks.md) (data layout).
 
 ## Why this is split
