@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { AlertOctagon, Check, Loader2, ShieldAlert, X } from 'lucide-vue-next'
+import McpInstallApprovalDetails from '~/components/chat/McpInstallApprovalDetails.vue'
 import type { ApprovalDecision } from '~/composables/useChatStream'
 
 // A risky tool call paused for the user's go-ahead. `status` is owned by the
@@ -27,6 +28,11 @@ const hasArguments = computed(() => {
   const a = props.approval.arguments
   return a != null && Object.keys(a).length > 0
 })
+
+// Plan 32-A: mcp_install gets a structured render (transport pill, URL/command,
+// env keys) instead of the raw-JSON block — its params are gnarly enough that
+// a <pre> dump reads poorly. Every other tool keeps the generic JSON view.
+const isMcpInstall = computed(() => props.approval.name === 'mcp_install')
 
 const prettyArguments = computed(() =>
   hasArguments.value ? JSON.stringify(props.approval.arguments, null, 2) : '',
@@ -87,7 +93,11 @@ function decide(decision: ApprovalDecision) {
       <p class="text-muted-foreground">
         Tool: <span class="font-mono font-medium text-foreground">{{ approval.name }}</span>
       </p>
-      <div v-if="hasArguments">
+      <div v-if="isMcpInstall">
+        <p class="mb-1 font-medium text-muted-foreground">Details</p>
+        <McpInstallApprovalDetails :params="approval.arguments" />
+      </div>
+      <div v-else-if="hasArguments">
         <p class="mb-1 font-medium text-muted-foreground">Argumente</p>
         <pre class="max-h-48 overflow-auto rounded bg-muted p-2 font-mono whitespace-pre-wrap break-words">{{ prettyArguments }}</pre>
       </div>
