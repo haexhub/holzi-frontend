@@ -140,7 +140,7 @@ Tool(
 )
 ```
 
-Handler: ruft `mcp_servers_repo.create` + `mcp_manager.start_server(id)` auf; bei Erfolg `app.state.tool_catalog` neu assemblieren. Return: JSON `{success: true, server: {…ohne credentials, ohne env-Werte…}, tools_added: [name, …]}` oder Fehler-JSON mit `{success: false, error: "…"}`.
+Handler-Sequenz: `mcp_servers_repo.create(...)` (gibt id zurück) → `mcp_manager.start_server(id)` mit Wait-Loop bis `status="ready"` ODER 15 s Timeout. Bei Erfolg: `app.state.tool_catalog` Pending-Reload flaggen (siehe Catalog-Integration unten), Return `{success: true, server: {…ohne credentials, ohne env-Werte…}, tools_added: [name, …]}`. Bei Timeout / Start-Fehler: **Cleanup-Pfad** — `mcp_manager.stop_server(id)` (Best-Effort) + `mcp_servers_repo.delete(id)`, damit kein Zombie-Eintrag in der DB hängen bleibt; Return `{success: false, error: "Server startup timed out (15s) — try mcp_restart or check /settings/skills"}` oder eine konkrete Fehlermeldung aus `last_error`.
 
 **Redaction-Contract für `mcp_install` (verbindlich):**
 
@@ -269,7 +269,7 @@ Frontend:
 ## Open Questions
 
 - **Sollen Meta-Tools für alle Personas verfügbar sein, oder nur für eine privilegierte „Admin"-Persona?** Plan 29-E hat Persona-Allowlists; eine Tutor-Persona sollte vermutlich kein `mcp_install` haben. → Vorschlag: **Default-Allowlist** für eine Persona enthält Meta-Tools; neue Personas erben das, der User kann es per-Persona entziehen. Wird in Plan 29-E-Followup ausgearbeitet.
-- **`mcp_install`-Result-Verifizierung:** wartet der Handler synchron, bis der Server `status="ready"` erreicht, oder returnt er sofort und überlässt dem Agent das Polling via `mcp_status`? → Vorschlag: **synchron mit Timeout (15 s);** Agent bekommt im Fehler-Fall einen klaren Status, statt zu raten.
+- **`mcp_install`-Result-Verifizierung:** Geklärt im Scope-Block — synchron mit 15 s Timeout, bei Fehler vollständiger Cleanup (stop_server + delete-Row), damit kein Zombie zurückbleibt.
 - **Recursion-Schutz bei `mcp_install` während laufender Agent-Run:** technisch geht das, aber tool_catalog-Reassembly mitten im Run würde dem laufenden Agent neue Tools unter dem Hintern wegziehen. → Vorschlag: **Reassembly verzögert** bis Ende des aktuellen Runs (Pending-Reload-Flag); nächster Run sieht die neuen Tools.
 - **Mass-Audit-Trail:** soll `mcp_install` zusätzlich in eine separate `audit_log`-Tabelle schreiben, oder reicht `agent_runs.events`? → Vorschlag: erstmal nur Events; Audit-Log wenn der User es vermisst.
 - **`mcp_remove` als zukünftiger Tool**: explizit Non-Goal in 32-A, aber wenn Plan 32 das UI hat und Nutzer es vermissen, eigener Folgeplan (mit erhöhter Approval-Stufe „always-confirm").

@@ -50,7 +50,15 @@ slot with them.
 - Any operation that runs code, executes shell, or performs unbounded file
   writes lives in a sandbox container, not the agent. See Plan 11b for
   topology (workspace sandboxes + ephemeral execution sandboxes). The agent
-  itself stays unkillable.
+  itself stays unkillable: "unkillable" means the core agent loop is never
+  killed by user code or tool calls — sandbox crashes are isolated by
+  design. **MCP servers (Plan 32) are an exception worth knowing:** they
+  run in-process inside the agent container, not in a sandbox. A
+  pathological MCP server can therefore exhaust agent resources (memory,
+  fds, CPU). Mitigations are user-side: only install trusted servers,
+  `mcp_install` requires approval (Plan 21 / 32-A), and Plan 32's
+  health-watcher surfaces crashes. Future isolation for MCP servers is a
+  separate plan, not part of the 31–33 family.
 
 ## Status
 

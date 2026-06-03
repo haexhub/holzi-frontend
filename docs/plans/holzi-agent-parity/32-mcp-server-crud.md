@@ -76,6 +76,10 @@ Constraint per Application-Layer: `transport="http"` → `url NOT NULL` & `comma
 
 **Secret-Bereinigung in Responses:** `env_json` kann bei stdio-Servern Secrets enthalten (z. B. `GITHUB_TOKEN=…`), genauso wie `credentials_data`. Beides darf nie raw in GET-Responses, agent_runs.events oder Logs landen. GET-Responses geben statt `env_json` ein `env_keys: list[str]` zurück (nur die Variablen-Namen), `credentials_data` taucht überhaupt nicht auf. Write-Pfade (POST/PUT) akzeptieren `env` und `credentials` als reguläre Body-Felder; das Repository verschlüsselt `credentials` und persistiert `env_json` als opaken Blob. Tests verifizieren, dass nach `create` / `update` die GET-Response weder Bearer-Token noch Env-Werte enthält.
 
+Hinweis im UI: Variablen-Namen selbst tauchen in Responses und Logs auf. Falls ein Name selbst sensitive Topologie verrät (z. B. `INTERNAL_PROD_DB_PASSWORD_V2`), sollte der User ihn abstrahieren (`DB_PASSWORD` o. ä.) — das ist eine Empfehlung, kein technischer Constraint.
+
+**HTTP-Client-Fehler-Handling:** Beim `httpx.AsyncClient` / `StreamableHTTP-Session` können beliebige Fehler auftreten (TLS-Handshake-Fail, Connection-Reset, Server-500 beim initialen `list_tools`). Der Manager fängt jeden solchen Fehler im `start_server` / `restart_server`-Pfad, setzt `status="crashed"` + `last_error` (auf 256 Zeichen gekappt), und propagiert ihn NICHT in den Caller-Stack. **Kein Auto-Retry** im Lifecycle-Manager — Re-Trigger nur via User-Aktion (UI-Button, `mcp_restart`-Tool). Konsistent mit dem Sandbox-Crash-Pattern aus Plan 11b-b (Health-Watcher persistiert, Auto-Restart ist Non-Goal).
+
 **Repository `src/hermes/repository/mcp_servers.py`:**
 
 - `list_all(db) -> list[McpServerRow]`

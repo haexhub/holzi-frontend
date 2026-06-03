@@ -169,6 +169,7 @@ Alle Endpoints auth-gated.
       - Edit-Modus: `name` / `description` / `when_to_use` / `body_markdown`-Textarea + Slug (read-only nach create) + Save/Cancel.
   - „Neuer Skill"-Inline-Form (Modal oder im rechten Pane): wie Edit, plus Slug-Eingabe (mit Live-Validation).
   - Cross-Link: „Skill in N Personas aktiv" → klickbar zum Filtern in `/settings/preferences`.
+  - **Sicherheitshinweis** unter dem Editor (subtil, einzeilig): „Skill-Inhalte fließen in jeden System-Prompt der aktivierenden Personas und sind damit in `/settings/logs` und `/settings/insights` sichtbar — keine API-Keys oder Geheimnisse hier einfügen." Skills sind reines Markdown ohne Secret-Redaction-Layer; der Hinweis ist die einzige Schutzmaßnahme gegen versehentliches Pasten.
 
   **Bestehende Sections aus Plan 31 + 32:** MCP-Server bleibt zwischen Skills und Tool-Katalog; Tool-Katalog ganz unten.
 
