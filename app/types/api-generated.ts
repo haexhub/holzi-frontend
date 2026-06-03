@@ -1262,6 +1262,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tools": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Api List Tools */
+        get: operations["api_list_tools_api_tools_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mcp/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Api Mcp Health */
+        get: operations["api_mcp_health_api_mcp_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -1820,6 +1854,20 @@ export interface components {
             rows: {
                 [key: string]: unknown;
             }[];
+        };
+        /** McpHealthResponse */
+        McpHealthResponse: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "error";
+            /** Url */
+            url: string;
+            /** Tool Count */
+            tool_count: number;
+            /** Message */
+            message: string;
         };
         /** MessageResponse */
         MessageResponse: {
@@ -2423,6 +2471,23 @@ export interface components {
             /** Error */
             error?: string | null;
         };
+        /** ToolInfo */
+        ToolInfo: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Requires Approval */
+            requires_approval: boolean;
+            /** Risk Reason */
+            risk_reason: string | null;
+            /** Parameters Schema */
+            parameters_schema: {
+                [key: string]: unknown;
+            };
+            /** Source */
+            source: string;
+        };
         /**
          * ToolResultData
          * @description A tool invocation finished. ``result`` is set on success, ``error`` on
@@ -2454,6 +2519,13 @@ export interface components {
              */
             version: number;
             data: components["schemas"]["ToolResultData"];
+        };
+        /** ToolsResponse */
+        ToolsResponse: {
+            /** Tools */
+            tools: components["schemas"]["ToolInfo"][];
+            /** Total */
+            total: number;
         };
         /** TotalsResponse */
         TotalsResponse: {
@@ -5123,6 +5195,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_list_tools_api_tools_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ToolsResponse"];
+                };
+            };
+        };
+    };
+    api_mcp_health_api_mcp_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpHealthResponse"];
                 };
             };
         };
