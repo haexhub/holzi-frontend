@@ -20,6 +20,17 @@ clients. New capabilities should live in the backend whenever they affect agent
 state, memory, tools, conversations, approvals, workspaces, or model routing.
 The frontend should make those capabilities visible and pleasant to operate.
 
+**Holzi konfigurierbar via Holzi.** Every persistent configuration —
+personas, channels, workspaces, LLM credentials, messenger accounts, tools,
+MCP servers, skills — must be reachable from `/settings/*` in the Control
+Center. No piece of Holzi's runtime behaviour should require editing files
+on the host or restarting a container to change. The agent itself should
+ultimately be able to inspect and (with the user's approval) provision the
+same surfaces via meta-tools, so the question „has Holzi got service X?"
+has the same answer whether the user clicks through the UI or asks the
+agent in chat. Plans that add a new runtime knob carry a Control-Center
+slot with them.
+
 ## Naming
 
 - **Holzi** is the name of the agent and of the whole system as observed from
@@ -39,7 +50,15 @@ The frontend should make those capabilities visible and pleasant to operate.
 - Any operation that runs code, executes shell, or performs unbounded file
   writes lives in a sandbox container, not the agent. See Plan 11b for
   topology (workspace sandboxes + ephemeral execution sandboxes). The agent
-  itself stays unkillable.
+  itself stays unkillable: "unkillable" means the core agent loop is never
+  killed by user code or tool calls — sandbox crashes are isolated by
+  design. **MCP servers (Plan 32) are an exception worth knowing:** they
+  run in-process inside the agent container, not in a sandbox. A
+  pathological MCP server can therefore exhaust agent resources (memory,
+  fds, CPU). Mitigations are user-side: only install trusted servers,
+  `mcp_install` requires approval (Plan 21 / 32-A), and Plan 32's
+  health-watcher surfaces crashes. Future isolation for MCP servers is a
+  separate plan, not part of the 31–33 family.
 
 ## Status
 
@@ -76,7 +95,7 @@ Completed:
 
 - [29-A](./29a-personas-and-channels.md) — Personas-Core + Channel-Prompts (2026-06-01; cross-repo [Holzi#61](https://github.com/haexhub/Holzi/pull/61) + [Holzi#62](https://github.com/haexhub/Holzi/pull/62) (response_model follow-up) + [holzi-frontend#79](https://github.com/haexhub/holzi-frontend/pull/79) merged). Two new tables (`personas` + `channel_prompts`), single-default-persona invariant via SQLite triggers, `ON DELETE SET NULL` on `channel_prompts.default_persona_id`. Lifespan calls idempotent `ensure_backfill` that seeds the default Hermes persona + one row per `CHANNEL_REGISTRY` key (`web` / `task` / `signal` / `telegram`). `get_effective_system_prompt(channel, db)` composes `persona.prompt + "\n\n" + channel.prompt`; the four call-sites (`routes/api.py`, `scheduler.py`, `main.py` × 2) lost their inlined `*_SYSTEM_PROMPT` constants. New `routes/preferences.py` with typed Pydantic response models so `gen:api` emits proper `Persona` / `ChannelPrompt` shapes (added in #62 after #61's squash dropped them in a working-tree-dirty race — lesson recorded as `feedback-gh-pr-merge-dirty-tree`). Frontend `/settings/preferences` is a two-section page (Personas: inline CRUD + Default-Badge + "Als Default setzen" + delete-disabled-for-default; Channels: one card per registry entry with persona dropdown + prompt textarea + "Prompt zurücksetzen" when divergent). The `useChannels`/`usePersonas` composables wrap the new endpoints. Code-review findings addressed in the fix-up commit: channel-watch now preserves in-flight drafts across `load()` (previously a persona mutation silently wiped unsaved channel-prompt edits) and `setDefaultPersona`/`deletePersona` gained a `personaMutating` latch against double-click concurrent PUTs. Backend 757 tests + ruff/mypy clean, frontend 269 tests + typecheck clean; live smoke confirmed backfill + create + promote + 422 on default-delete + channel edit + reset + 404 on unknown channel.
 
-Next up: [29-B — Persona pro `agent_task`](./29b-persona-per-task.md), or [29-C — Persona pro Conversation](./29c-persona-per-conversation.md), or [17 — Cline/Roo first-class channel](./17-cline-roo-first-class-channel.md), or the remaining Plan 20 follow-up (README quickstart + troubleshooting + provider-setup docs), or another parity-push plan ([23](./23-composer-chips.md) / [26](./26-conversation-deep-links.md)), or [28 — Signal websocket receive](./28-signal-websocket-receive.md). Plan 18 (Profiles/Spaces) is "do not implement unless a new need appears" per the recommended order; Plan 19 is the bigger production-hardening pass.
+Next up: [31 — Tool-Inventar + MCP-Surface](./31-tool-inventory-and-mcp-surface.md) (first slice of the Skills & Tools trio — kills the last `/settings/skills` placeholder), or [29-B — Persona pro `agent_task`](./29b-persona-per-task.md), or [29-C — Persona pro Conversation](./29c-persona-per-conversation.md), or [17 — Cline/Roo first-class channel](./17-cline-roo-first-class-channel.md), or the remaining Plan 20 follow-up (README quickstart + troubleshooting + provider-setup docs), or another parity-push plan ([23](./23-composer-chips.md) / [26](./26-conversation-deep-links.md)), or [28 — Signal websocket receive](./28-signal-websocket-receive.md). Plan 18 (Profiles/Spaces) is "do not implement unless a new need appears" per the recommended order; Plan 19 is the bigger production-hardening pass.
 
 ### Preferences Family (Plans 29–30)
 
@@ -100,6 +119,32 @@ Triggered by the `/settings/preferences` placeholder needing real content
 - [30 — i18n-Foundation (DE/EN)](./30-i18n-foundation.md) — `@nuxtjs/i18n`,
   String-Extraktion, Sprach-Picker in Preferences. Multi-Session-Refactor.
 
+### Skills & Tools Family (Plans 31–33)
+
+Triggered by the `/settings/skills` placeholder needing real content
+(2026-06-03). Per-session scope, in dependency order:
+
+- [31 — Tool-Inventar + MCP-Surface](./31-tool-inventory-and-mcp-surface.md) —
+  read-only `GET /api/tools` + `GET /api/mcp/health`, `/settings/skills`
+  rendert flache alphabetische Tool-Liste mit `source`-Pille +
+  MCP-Health-Card + deaktivierte Konfigurieren-Sprungpunkte. Liefert
+  gleichzeitig die Datenquelle, die [29-E](./29e-persona-tools-and-mcps.md)
+  als Multi-Select-Picker konsumiert. **Start hier.**
+- [32 — MCP-Server CRUD](./32-mcp-server-crud.md) — externe MCP-Server
+  registrieren, Lifecycle (start/stop/restart), Credentials, exponierte
+  Tools in den Catalog mergen (mit `source="mcp:<name>"`). Aktiviert die
+  Konfigurieren-Sprungpunkte aus Plan 31.
+- [32-A — Agent-Self-Inventory + Self-Provisioning](./32a-agent-self-inventory.md) —
+  Meta-Tools `list_tools` / `mcp_status` / `mcp_install` / `mcp_restart`,
+  sodass der Agent auf Nutzer-Fragen wie „hast du Service X?" antworten
+  und (mit Approval) selbst MCP-Server einrichten kann. Hängt an Plan 32
+  (Backend-CRUD muss zuerst existieren) und an Plan 21 (Approval-
+  Granularität für `mcp_install`).
+- [33 — Skills als DB-Artefakte](./33-skills-as-db-artifacts.md) —
+  Anthropic-Skill-Modell (Markdown + Frontmatter), Storage,
+  Persona-Aktivierung, Resolver komponiert `persona + skills + channel`.
+  Hängt an 29-A.
+
 ### Parity Push (Plans 21–27)
 
 Based on a three-way audit of holzi-frontend vs. the Holzi backend vs.
@@ -116,7 +161,7 @@ biggest "you-see-it-immediately" parity gaps. They are roughly ordered by
 
 Strategic-judgement plans (not part of this push, separate decisions):
 
-- **Skills / System-Prompts in DB** — depends on the bigger "system prompt is hardcoded" lift; sketch when needed.
+- **Skills / System-Prompts in DB** — system-prompt half is closed by [29-A](./29a-personas-and-channels.md); the skills half is [Plan 33](./33-skills-as-db-artifacts.md) in the [Skills & Tools family](#skills--tools-family-plans-3133) below.
 - **i18n foundation** (`@nuxtjs/i18n` + string extraction) — pure FE but a multi-day refactor; do when localisation actually has a user.
 - **Kanban / Voice / Embedded Terminal / Plugins / Passkeys / Self-Update** — hermes-webui ships these; whether Holzi *should* is a product call, not an automatic parity goal.
 
