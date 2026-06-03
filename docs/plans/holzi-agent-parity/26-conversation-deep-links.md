@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-Status: **Implemented, awaiting merge.**
+Status: **Merged 2026-06-04** ([holzi-frontend#88](https://github.com/haexhub/holzi-frontend/pull/88)).
 
 Verification (2026-06-04):
 
@@ -13,8 +13,20 @@ Verification (2026-06-04):
 - The hub body was extracted into `app/components/ChatHub.vue`;
   `app/pages/index.vue` is now the redirect-or-empty shell and
   `app/pages/chat/[id].vue` is the deep-link adapter. Both routes
-  render the same `ChatHub` surface. `holzi.lastConversationId` is the
-  persistence key for the `/` → `/chat/:id` restore on cold load.
+  render the same `ChatHub` surface.
+- `holzi.lastConversationId` persistence moved into a Pinia store
+  (`app/stores/lastConversation.ts`) modelled on `auth.ts` — VueUse
+  `useLocalStorage` ref + custom serializer that normalises garbage
+  values to `null` on read. Self-review pushback against the
+  subagent's initial naked `localStorage.getItem/setItem/removeItem`
+  pattern: the project already had the Pinia+VueUse precedent, so the
+  fix-up commit migrated the three call-sites.
+- Two more self-review fix-ups in the same commit: pre-seeded
+  `loadingConversation` ref in `ChatHub` hides `EmptyChatState` while
+  a deep-linked conversation's messages are still loading (otherwise
+  the "Sag Hermes Hallo." greeting flashes briefly on cold load);
+  `useHead({ title })` per route so multi-tab workflows show the
+  active conversation id instead of every tab reading "Neuer Chat".
 
 Frontend-only. No backend changes required (the `GET /api/conversations/{id}`
 endpoint is already there).

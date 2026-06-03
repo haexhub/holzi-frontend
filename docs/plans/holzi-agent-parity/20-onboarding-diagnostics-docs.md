@@ -6,6 +6,13 @@ backend [Holzi#50](https://github.com/haexhub/Holzi/pull/50) (squashed as
 [holzi-frontend#54](https://github.com/haexhub/holzi-frontend/pull/54)
 (squashed as `4dab3f1`).
 
+**Docs slice merged 2026-06-04** — backend [Holzi#70](https://github.com/haexhub/Holzi/pull/70):
+README quickstart rewritten against current Makefile targets +
+`*.localhost` routing + bearer-token paste-into-UI flow,
+`docs/providers.md` (per-provider setup for the five `ProviderLiteral`
+values), `docs/troubleshooting.md` (11 diagnoses keyed off the
+diagnostics endpoint).
+
 `GET /api/diagnostics` returns a redacted snapshot of six subsystem checks
 (database, LLM credential, messenger, scheduler, workspace roots, sandbox
 runtime) — never echoes the auth token, API key plaintext/ciphertext, master
