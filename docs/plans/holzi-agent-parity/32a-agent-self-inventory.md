@@ -302,6 +302,22 @@ plan against the shipped API:
   `tool_catalog_provider`.
 - **No `gen:api`** — no new endpoints.
 
+### Known limitation (Plan 32 follow-up)
+
+The **inbound** `/mcp` StreamableHTTP server (`mcp_session_manager`, consumed by
+external clients like Cline/HaexChat) snapshots its tools at mount time —
+`build_mcp_server` builds a `lookup` dict once. Any runtime catalog change
+(agent `mcp_install` **or** UI-driven CRUD) rebinds `app.state.tool_catalog`,
+so the mounted `/mcp` keeps serving the old tool set until the process
+restarts, while `/mcp/manifest` (read per request) reflects the new set. This
+predates Plan 32-A (Plan 32's `_refresh_catalog` already rebinds) and only
+affects the inbound surface — the agent's own self-provisioning (`list_tools`,
+`/api/chat`, `/settings/skills`) reads the live catalog and is correct. An
+in-place `app.state.tool_catalog[:] = …` would only fix listing, not
+`call_tool` (the snapshotted `lookup`); the proper fix is remounting the
+session manager on catalog change, which is a Plan-32-surface change deferred
+to its own PR. Surfaced by CodeRabbit on [Holzi#67](https://github.com/haexhub/Holzi/pull/67).
+
 ### Verification
 
 Backend (`/home/haex/Projekte/Holzi`): `uv run pytest` → **861 passed**
