@@ -29,7 +29,7 @@ Persona „Strenger Reviewer" aktiviert `code-style-typescript`; Persona „Sokr
 
 Composition (in `get_effective_system_prompt`):
 
-```
+```text
 persona.prompt
 + "\n\n"
 + join(active_skills_for_persona, sep="\n\n")
@@ -63,7 +63,7 @@ persona.prompt
 ```sql
 CREATE TABLE IF NOT EXISTS skills (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    slug TEXT NOT NULL UNIQUE,      -- ^[a-z0-9][a-z0-9-]{0,62}[a-z0-9]$
+    slug TEXT NOT NULL UNIQUE,      -- ^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$  (1..64 chars, kebab-case)
     name TEXT NOT NULL,             -- display name
     description TEXT NOT NULL,      -- frontmatter.description (short)
     when_to_use TEXT,               -- frontmatter.when_to_use (optional)
@@ -231,7 +231,7 @@ Frontend:
 
 - **YAML-Frontmatter-Import/Export-Endpoint** für Skill-Dateien? → Vorschlag: **nicht in 33.** Wenn der User es vermisst, eigener Followup.
 - **Composition-Reihenfolge:** `persona + skills + channel` ist der naive Default. Manche LLMs reagieren besser auf `skills + persona + channel`. → Vorschlag: **erstmal Persona zuerst** (Persona ist Identität, Skills sind Anweisungen, Channel ist Form); falls schlechte Ergebnisse, konfigurierbar machen.
-- **Maximum-Length** für `body_markdown`: 16 KiB technisch arbiträr. LLM-Context-Budgets sind die echte Grenze, aber 16 KiB pro Skill * N Skills * Persona-Composition kann eskalieren. → Soft-Warning ab 8 KiB im UI; Hard-Cap 16 KiB.
+- **Maximum-Length** für `body_markdown`: 16 KiB technisch arbiträr. LLM-Context-Budgets sind die echte Grenze, aber 16 KiB pro Skill × N Skills × Persona-Composition kann eskalieren. → Soft-Warning ab 8 KiB im UI; Hard-Cap 16 KiB.
 - **Skills von MCP-Servern bereitgestellt:** das Anthropic-Modell sieht das vor (MCP-Server kann Skills exposen). → **Non-Goal in 33;** wenn Plan 32 sich stabilisiert hat, eigener Plan.
 - **Per-Channel Skill-Override** (Skill „brief-mode" nur für Signal-Channel auch wenn Persona auf alle Channels läuft)? → **Non-Goal.** Persona-Skills sind global pro Persona; wenn unterschiedliches Verhalten pro Channel gewünscht ist, ist das Channel-Prompts-Sache (Plan 29-A).
 - **Skill-Tags / -Kategorien:** sinnvoll bei 50+ Skills, overkill bei 5. → **Nicht jetzt;** wenn der Skill-Set wächst, eigener Followup.

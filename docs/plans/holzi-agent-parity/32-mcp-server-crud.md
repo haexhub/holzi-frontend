@@ -74,6 +74,8 @@ Constraint per Application-Layer: `transport="http"` → `url NOT NULL` & `comma
 
 **Credentials-Storage:** `crypto.py` existiert (AES-256-GCM, IV/Tag/Data-Tripel wie in `llm_credentials`). Wird 1:1 wiederverwendet. `credentials_data` enthält bei HTTP-Transport den Bearer-Token oder API-Key (provider-spezifisch); bei stdio ist es typischerweise leer (Auth läuft via `env_json`).
 
+**Secret-Bereinigung in Responses:** `env_json` kann bei stdio-Servern Secrets enthalten (z. B. `GITHUB_TOKEN=…`), genauso wie `credentials_data`. Beides darf nie raw in GET-Responses, agent_runs.events oder Logs landen. GET-Responses geben statt `env_json` ein `env_keys: list[str]` zurück (nur die Variablen-Namen), `credentials_data` taucht überhaupt nicht auf. Write-Pfade (POST/PUT) akzeptieren `env` und `credentials` als reguläre Body-Felder; das Repository verschlüsselt `credentials` und persistiert `env_json` als opaken Blob. Tests verifizieren, dass nach `create` / `update` die GET-Response weder Bearer-Token noch Env-Werte enthält.
+
 **Repository `src/hermes/repository/mcp_servers.py`:**
 
 - `list_all(db) -> list[McpServerRow]`
@@ -155,7 +157,7 @@ def build_tool_catalog(*, db, signal_client, signal_self_number,
 
 **Endpoints — neue Datei `src/hermes/routes/mcp_servers.py`:**
 
-- `GET /api/mcp/servers` → `{ "servers": [{id, name, display_name, transport, url?, command_argv?, env_json?, enabled, status, last_error, last_checked_at}, …] }` — Credentials NIE in der Response.
+- `GET /api/mcp/servers` → `{ "servers": [{id, name, display_name, transport, url?, command_argv?, env_keys?, enabled, status, last_error, last_checked_at}, …] }` — `env_keys` ist die Liste der Env-Variablen-Namen ohne Values; `credentials_data` und Roh-`env_json` tauchen NIE in der Response auf (siehe „Secret-Bereinigung in Responses" oben).
 - `POST /api/mcp/servers` → 201 mit neuer Row; löst sofort `manager.start_server(id)` aus. Validation: slug, transport-spezifische Felder, Credential-Format.
 - `PUT /api/mcp/servers/{id}` → 200 oder 404; triggert `manager.restart_server(id)` falls relevant geändert (transport / url / command_argv / env / credentials / enabled).
 - `DELETE /api/mcp/servers/{id}` → 204; vorher `manager.stop_server(id)`. Persona-Tool-Allowlists (Plan 29-E) müssen den Tool-Namen ggf. später aufräumen (Followup für 29-E).
@@ -198,7 +200,7 @@ Backend:
 
 - `tests/test_mcp_servers_repo.py` — CRUD, slug-Validation, UNIQUE name, credentials roundtrip.
 - `tests/test_mcp_manager.py` — Lifecycle mit Fake-Subprocess + Fake-HTTP-Client; restart-Resilienz, crash-status-set, aggregate_tools-Reihenfolge.
-- `tests/test_api_mcp_servers.py` — Endpoints inkl. 401, 409 für Duplicate slug, 422 für Validation-Fehler, 404, 200, 201, 204. Credentials niemals in Response.
+- `tests/test_api_mcp_servers.py` — Endpoints inkl. 401, 409 für Duplicate slug, 422 für Validation-Fehler, 404, 200, 201, 204. Redaction-Cases: nach `POST` mit `credentials="bearer-xyz"` + `env={"GITHUB_TOKEN": "ghp_…"}` enthält die anschließende GET-Response weder `bearer-xyz` noch `ghp_…` noch ein `env_json`-Feld; `env_keys` listet aber `["GITHUB_TOKEN"]`.
 - `tests/test_tool_catalog_merge.py` — `build_tool_catalog` mit gemocktem Manager: built-in + remote concatenated, source-Werte korrekt.
 
 Frontend:

@@ -140,7 +140,20 @@ Tool(
 )
 ```
 
-Handler: ruft `mcp_servers_repo.create` + `mcp_manager.start_server(id)` auf; bei Erfolg `app.state.tool_catalog` neu assemblieren. Return: JSON `{success: true, server: {…}, tools_added: [name, …]}` oder Fehler-JSON mit `{success: false, error: "…"}`.
+Handler: ruft `mcp_servers_repo.create` + `mcp_manager.start_server(id)` auf; bei Erfolg `app.state.tool_catalog` neu assemblieren. Return: JSON `{success: true, server: {…ohne credentials, ohne env-Werte…}, tools_added: [name, …]}` oder Fehler-JSON mit `{success: false, error: "…"}`.
+
+**Redaction-Contract für `mcp_install` (verbindlich):**
+
+`mcp_install`-Parameter (`credentials`, Werte in `env`) sind Geheimnisse und dürfen ausschließlich im Klartext durch den Repo-/Manager-Write-Pfad fließen. An jeder anderen Stelle werden sie maskiert oder weggelassen:
+
+- **Approval-Card-Payload (Frontend-UI):** Backend redaktiert die Parameter, bevor sie in das SSE-`approval_request`-Event gehen. `credentials` wird zu `"[redacted, N chars]"`; Werte in `env` werden zu `"[redacted]"`, Keys bleiben sichtbar (User soll sehen, dass `GITHUB_TOKEN` gesetzt wird, ohne den Wert zu sehen). `url`, `command_argv`, `display_name`, `transport`, `name` bleiben sichtbar.
+- **`agent_runs.events`:** Persistierte Tool-Call-Records nutzen denselben redaktierten Payload — nicht den Roh-Input.
+- **Logs (`logger.info("meta_tool_invoked", ...)`):** Nutzt den redaktierten Payload + zusätzlich `redact_secrets()` (Plan 27 Logging-Processor) als Defense-in-Depth.
+- **Handler-Return:** `server`-Sub-Objekt im Return-JSON nutzt dieselbe `env_keys`-Repräsentation wie `GET /api/mcp/servers` aus Plan 32 — niemals raw `env_json` oder `credentials`.
+
+`mcp_restart` hat keine Secrets in den Parametern und braucht keine spezielle Redaction; der Defense-in-Depth-Logger-Processor läuft trotzdem.
+
+Single source of truth ist ein Helper `redact_mcp_install_params(params: dict) -> dict` in `tools/meta.py`, der von Approval-Emitter, Run-Event-Writer und Logger gemeinsam aufgerufen wird.
 
 `mcp_restart`:
 
@@ -215,6 +228,7 @@ Backend:
 - `tests/test_chat_meta_approval.py` — Integration:
   - End-to-End-Flow: User-Message → Agent ruft `mcp_install` → Approval-Card erscheint → User approve → MCP-Server gestartet → tool_catalog enthält neue Tools.
   - Deny-Pfad: Approval verweigert → kein DB-Schreib, Agent erhält klare Fehler-Message.
+- `tests/test_meta_tools_redaction.py` — Redaction-Contract: `mcp_install`-Aufruf mit `credentials="bearer-xyz"` + `env={"GITHUB_TOKEN": "ghp_secret"}` löst (a) ein `approval_request`-Event aus, dessen Payload weder `bearer-xyz` noch `ghp_secret` enthält, aber den Key `GITHUB_TOKEN` zeigt; (b) einen `agent_runs.events`-Eintrag mit identisch redaktiertem Payload; (c) eine `meta_tool_invoked`-Log-Zeile, die nach Logger-Processor-Pipe keine der beiden Secrets enthält. Sequenz-Reihenfolge ist Teil der Assertion (kein Race, der das Secret kurzzeitig leakt).
 
 Frontend:
 
