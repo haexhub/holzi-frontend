@@ -78,6 +78,7 @@ const draft = reactive({
 
 const restartingId = ref<number | null>(null)
 const togglingId = ref<number | null>(null)
+const deletingId = ref<number | null>(null)
 
 let pollTimer: ReturnType<typeof setInterval> | null = null
 
@@ -300,6 +301,11 @@ async function toggleEnabled(server: McpServer) {
 }
 
 async function deleteServer(server: McpServer) {
+  // Guard against a fast double-click: a second invocation while the
+  // first DELETE is in flight would either 404 (race-lost) or remove a
+  // freshly-recreated row of the same name. Mirrors the restart/toggle
+  // single-flight pattern above.
+  if (deletingId.value === server.id) return
   const ok = await confirm({
     title: `${server.display_name} löschen?`,
     description:
@@ -308,12 +314,15 @@ async function deleteServer(server: McpServer) {
     confirmLabel: 'Löschen',
   })
   if (!ok) return
+  deletingId.value = server.id
   try {
     await mcp.remove(server.id)
     toast.success('MCP-Server gelöscht.')
     props.onCatalogChanged?.()
   } catch (err: unknown) {
     toast.error(describeError(err))
+  } finally {
+    deletingId.value = null
   }
 }
 
@@ -802,10 +811,15 @@ function statusLabel(status: McpServerStatus): string {
             <Button
               size="sm"
               variant="outline"
+              :disabled="deletingId === server.id"
               :data-testid="`mcp-server-delete-${server.name}`"
               @click="deleteServer(server)"
             >
-              <Trash2 class="size-4" />
+              <Loader2
+                v-if="deletingId === server.id"
+                class="size-4 animate-spin"
+              />
+              <Trash2 v-else class="size-4" />
               <span class="ml-1 hidden sm:inline">Löschen</span>
             </Button>
           </div>
