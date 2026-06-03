@@ -1296,6 +1296,76 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/mcp/servers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Servers */
+        get: operations["list_servers_api_mcp_servers_get"];
+        put?: never;
+        /** Create Server */
+        post: operations["create_server_api_mcp_servers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mcp/servers/{server_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Server */
+        put: operations["update_server_api_mcp_servers__server_id__put"];
+        post?: never;
+        /** Delete Server */
+        delete: operations["delete_server_api_mcp_servers__server_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mcp/servers/{server_id}/restart": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restart Server */
+        post: operations["restart_server_api_mcp_servers__server_id__restart_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mcp/servers/{server_id}/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Server Health */
+        get: operations["server_health_api_mcp_servers__server_id__health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -1868,6 +1938,132 @@ export interface components {
             tool_count: number;
             /** Message */
             message: string;
+            /**
+             * Servers
+             * @default []
+             */
+            servers: components["schemas"]["McpServerSummary"][];
+        };
+        /** McpServerCreate */
+        McpServerCreate: {
+            /** Name */
+            name: string;
+            /** Display Name */
+            display_name: string;
+            /**
+             * Transport
+             * @enum {string}
+             */
+            transport: "http" | "stdio";
+            /** Url */
+            url?: string | null;
+            /** Command Argv */
+            command_argv?: string[] | null;
+            /** Env */
+            env?: {
+                [key: string]: string;
+            } | null;
+            /** Credentials */
+            credentials?: string | null;
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+        };
+        /** McpServerHealthResponse */
+        McpServerHealthResponse: {
+            /** Id */
+            id: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "starting" | "ready" | "crashed" | "disabled" | "unknown";
+            /** Last Error */
+            last_error: string | null;
+            /** Tool Count */
+            tool_count: number;
+            /** Last Checked At */
+            last_checked_at: number | null;
+        };
+        /** McpServerListResponse */
+        McpServerListResponse: {
+            /** Servers */
+            servers: components["schemas"]["McpServerResponse"][];
+            /** Total */
+            total: number;
+        };
+        /** McpServerResponse */
+        McpServerResponse: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Display Name */
+            display_name: string;
+            /**
+             * Transport
+             * @enum {string}
+             */
+            transport: "http" | "stdio";
+            /** Url */
+            url: string | null;
+            /** Command Argv */
+            command_argv: string[] | null;
+            /** Env Keys */
+            env_keys: string[];
+            /** Enabled */
+            enabled: boolean;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "starting" | "ready" | "crashed" | "disabled" | "unknown";
+            /** Last Error */
+            last_error: string | null;
+            /** Created At */
+            created_at: number;
+            /** Updated At */
+            updated_at: number;
+        };
+        /** McpServerSummary */
+        McpServerSummary: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "starting" | "ready" | "crashed" | "disabled" | "unknown";
+            /** Last Error */
+            last_error?: string | null;
+            /** Tool Count */
+            tool_count: number;
+        };
+        /**
+         * McpServerUpdate
+         * @description Partial update. Sentinel semantics (Plan 32 open-question note):
+         *     a field omitted from the body is left as-is; a field set to `null`
+         *     is cleared. The route reads the raw body to disambiguate.
+         */
+        McpServerUpdate: {
+            /** Display Name */
+            display_name?: string | null;
+            /** Url */
+            url?: string | null;
+            /** Command Argv */
+            command_argv?: string[] | null;
+            /** Env */
+            env?: {
+                [key: string]: string;
+            } | null;
+            /** Credentials */
+            credentials?: string | null;
+            /** Enabled */
+            enabled?: boolean | null;
         };
         /** MessageResponse */
         MessageResponse: {
@@ -5235,6 +5431,185 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["McpHealthResponse"];
+                };
+            };
+        };
+    };
+    list_servers_api_mcp_servers_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpServerListResponse"];
+                };
+            };
+        };
+    };
+    create_server_api_mcp_servers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["McpServerCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpServerResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_server_api_mcp_servers__server_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                server_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["McpServerUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpServerResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_server_api_mcp_servers__server_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                server_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restart_server_api_mcp_servers__server_id__restart_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                server_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpServerResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    server_health_api_mcp_servers__server_id__health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                server_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpServerHealthResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

@@ -87,6 +87,13 @@ function setupGet(
         ? Promise.reject(mcpResult)
         : Promise.resolve(mcpResult)
     }
+    // Plan 32: the page now also mounts <McpServersSection>, which
+    // fetches /api/mcp/servers on mount. The Plan 31 tests don't care
+    // about that surface; resolve with an empty list so the section's
+    // empty-state renders without affecting the assertions below.
+    if (path === '/api/mcp/servers') {
+      return Promise.resolve({ servers: [], total: 0 })
+    }
     return Promise.reject(new Error(`unexpected GET ${path}`))
   })
 }
@@ -161,13 +168,21 @@ describe('settings/skills.vue', () => {
     expect(healthCallsAfter).toBe(healthCallsBefore + 1)
   })
 
-  it('configure-MCP button is disabled with a Plan-32 tooltip', async () => {
+  it('configure-MCP button is enabled and jumps to the MCP-servers section', async () => {
     setupGet(tools([]), mcpHealth())
-    const wrapper = mount(SkillsPage)
+    const wrapper = mount(SkillsPage, { attachTo: document.body })
     await flushPromises()
     const btn = wrapper.get('[data-testid="mcp-configure"]')
-    expect(btn.attributes('disabled')).toBeDefined()
-    expect(btn.attributes('title')).toContain('Plan 32')
+    // Plan 32 activated this button — it now scrolls to the MCP-servers
+    // section anchor instead of being disabled.
+    expect(btn.attributes('disabled')).toBeUndefined()
+    // The MCP-servers section is mounted with the anchor id the button
+    // scrolls to, so the linkage is testable end-to-end.
+    expect(
+      wrapper.find('[data-testid="mcp-servers-section"]').exists(),
+    ).toBe(true)
+    expect(document.getElementById('mcp-section')).not.toBeNull()
+    wrapper.unmount()
   })
 
   it('renders the tool list in the order returned by the backend with source pill', async () => {
@@ -272,13 +287,27 @@ describe('settings/skills.vue', () => {
     ).toContain('keine Parameter')
   })
 
-  it('disables each per-tool Configure button with a Plan-32/33 tooltip', async () => {
+  it('disables each built-in Configure button (Plan 33 will activate it)', async () => {
     setupGet(tools([tool({ name: 'save_note' })]), mcpHealth())
     const wrapper = mount(SkillsPage)
     await flushPromises()
     const btn = wrapper.get('[data-testid="tool-configure-save_note"]')
     expect(btn.attributes('disabled')).toBeDefined()
-    expect(btn.attributes('title')).toContain('Plan 32')
+    expect(btn.attributes('title')).toContain('Plan 33')
+  })
+
+  it('enables Configure for mcp-sourced tools and jumps to the server card', async () => {
+    setupGet(
+      tools([tool({ name: 'filesystem__read_file', source: 'mcp:filesystem' })]),
+      mcpHealth(),
+    )
+    const wrapper = mount(SkillsPage)
+    await flushPromises()
+    const btn = wrapper.get(
+      '[data-testid="tool-configure-filesystem__read_file"]',
+    )
+    // Plan 32 sprungpunkt: MCP-sourced tools' Configure button is active.
+    expect(btn.attributes('disabled')).toBeUndefined()
   })
 
   it('surfaces an /api/tools error without hiding the MCP card', async () => {
