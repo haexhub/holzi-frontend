@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-Status: **Implemented (on `feat/plan-32a-agent-self-inventory`, pending review/merge).**
+Status: **Merged** (2026-06-03; cross-repo [Holzi#67](https://github.com/haexhub/Holzi/pull/67) + [holzi-frontend#86](https://github.com/haexhub/holzi-frontend/pull/86)).
 
 Cross-repo. Backend bekommt Meta-Tools, die der Agent aufrufen kann, um seine eigene Tool- und MCP-Surface zu inspizieren und (mit User-Approval) zu erweitern. Frontend bekommt MCP-spezifische Approval-Card-Felder.
 
