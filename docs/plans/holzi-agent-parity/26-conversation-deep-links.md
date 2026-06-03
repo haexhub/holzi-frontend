@@ -2,7 +2,19 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-Status: **Planned.**
+Status: **Implemented, awaiting merge.**
+
+Verification (2026-06-04):
+
+- `pnpm test` → 38 files / 328 tests passed (up from 316 baseline; +12
+  new tests: 5 for `chat/[id].vue`, 4 for the `/` redirect logic, 3 for
+  `ConversationList`'s emit contract).
+- `pnpm typecheck` → green.
+- The hub body was extracted into `app/components/ChatHub.vue`;
+  `app/pages/index.vue` is now the redirect-or-empty shell and
+  `app/pages/chat/[id].vue` is the deep-link adapter. Both routes
+  render the same `ChatHub` surface. `holzi.lastConversationId` is the
+  persistence key for the `/` → `/chat/:id` restore on cold load.
 
 Frontend-only. No backend changes required (the `GET /api/conversations/{id}`
 endpoint is already there).
