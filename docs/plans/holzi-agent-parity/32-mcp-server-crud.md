@@ -2,11 +2,19 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-Status: **In review** — backend + frontend implemented on the branches
-`plan-32-mcp-server-crud` in both repos (Holzi + holzi-frontend),
-unit-tested end to end. Live verification against a real
-filesystem-MCP server (Suggested Implementation §9) is open until the
-PRs are merged and the staging environment picks up the change.
+Status: **Merged 2026-06-03** — cross-repo
+[Holzi#66](https://github.com/haexhub/Holzi/pull/66) +
+[holzi-frontend#85](https://github.com/haexhub/holzi-frontend/pull/85)
+merged after CI green and two `Explore` self-review passes (CR
+rate-limited again). Mypy blocker fixed pre-merge (`McpServerHandle`
+events use `field(default_factory=asyncio.Event)` so the per-handle
+events are non-`Optional` from construction); one NIT (`build_tool_catalog`
+import hoisted to module top in `routes/mcp_servers.py`) and one test
+gap (paired credentials=null clear test with omitted-credentials-keeps
+test) pulled in. Frontend gained a `deletingId` single-flight latch
+mirroring restart/toggle. Manual smoke against a real filesystem-MCP
+server (Suggested Implementation §9) remains open and is a good first
+verification step in the next session once the deploy box catches up.
 
 ### Verification
 
