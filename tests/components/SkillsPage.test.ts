@@ -94,6 +94,11 @@ function setupGet(
     if (path === '/api/mcp/servers') {
       return Promise.resolve({ servers: [], total: 0 })
     }
+    // Plan 33: <SkillsSection> fetches /api/skills on mount. Same
+    // treatment — resolve with an empty list.
+    if (path === '/api/skills') {
+      return Promise.resolve({ skills: [] })
+    }
     return Promise.reject(new Error(`unexpected GET ${path}`))
   })
 }
@@ -287,13 +292,13 @@ describe('settings/skills.vue', () => {
     ).toContain('keine Parameter')
   })
 
-  it('disables each built-in Configure button (Plan 33 will activate it)', async () => {
+  it('disables each built-in Configure button (no per-tool config surface today)', async () => {
     setupGet(tools([tool({ name: 'save_note' })]), mcpHealth())
     const wrapper = mount(SkillsPage)
     await flushPromises()
     const btn = wrapper.get('[data-testid="tool-configure-save_note"]')
     expect(btn.attributes('disabled')).toBeDefined()
-    expect(btn.attributes('title')).toContain('Plan 33')
+    expect(btn.attributes('title')).toContain('Built-in')
   })
 
   it('enables Configure for mcp-sourced tools and jumps to the server card', async () => {

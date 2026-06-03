@@ -11,19 +11,24 @@ import {
 } from 'lucide-vue-next'
 import Button from '@/components/ui/button/Button.vue'
 import McpServersSection from '@/components/settings/McpServersSection.vue'
+import SkillsSection from '@/components/settings/SkillsSection.vue'
 import { useMcpHealth } from '~/composables/useMcpHealth'
 import { useTools } from '~/composables/useTools'
 import { useToast } from '~/composables/useToast'
 import type { ToolInfo } from '~/types/api'
 
-// Plan 31 + 32: skills & tools page.
-//   0. MCP-Servers section (Plan 32) — registered external MCP servers.
+// Plan 31 + 32 + 33: skills & tools page.
+//   0. Skills section (Plan 33) — reusable prompt building blocks
+//      (Markdown bodies with frontmatter-style metadata). Two-pane
+//      browser mirroring /settings/memory's layout. Personas activate
+//      them on the Preferences page.
+//   1. MCP-Servers section (Plan 32) — registered external MCP servers.
 //      CRUD form + per-server lifecycle controls. Plan 31's
 //      "Konfigurieren"-button now scrolls here.
-//   1. MCP-Surface card — the inbound streamable-HTTP mount external
+//   2. MCP-Surface card — the inbound streamable-HTTP mount external
 //      clients (Cline, HaexChat) connect to. Refresh button re-polls
 //      `/api/mcp/health` (now also lists per-server statuses).
-//   2. Tool catalog — flat alphabetical list with `source` pill.
+//   3. Tool catalog — flat alphabetical list with `source` pill.
 //      `mcp:<server-name>`-sourced tools' "Konfigurieren"-Button jumps
 //      to the matching server card.
 
@@ -142,6 +147,9 @@ function onMcpCatalogChanged() {
       <Wrench class="size-5 text-muted-foreground" />
       <h2 class="text-base font-semibold">Skills &amp; Tools</h2>
     </header>
+
+    <!-- ── Skills (Plan 33) ────────────────────────────────────── -->
+    <SkillsSection />
 
     <!-- ── MCP-Servers (Plan 32) ───────────────────────────────── -->
     <McpServersSection
@@ -376,8 +384,10 @@ function onMcpCatalogChanged() {
           <div>
             <!--
               Plan 32 sprungpunkt: for MCP-sourced tools the Konfigurieren
-              button scrolls to the server's card. For built-ins it stays
-              disabled (Plan 33 will give them their own surface).
+              button scrolls to the server's card. Built-in tools have
+              no per-tool config surface (Plan 33 added Skills as the
+              other modular surface; per-built-in-tool config remains a
+              future plan if it's ever justified).
             -->
             <button
               v-if="mcpServerNameForTool(tool.source)"
@@ -393,7 +403,7 @@ function onMcpCatalogChanged() {
               type="button"
               class="inline-flex h-8 items-center justify-center rounded-md border border-input bg-background px-3 text-xs font-medium opacity-50"
               disabled
-              title="Tool-Konfiguration für built-in Tools kommt mit Plan 33"
+              title="Built-in Tools haben aktuell keine eigene Konfigurationsoberfläche."
               :data-testid="`tool-configure-${tool.name}`"
             >
               Konfigurieren

@@ -2,7 +2,29 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-Status: **Planned.**
+Status: **Implemented, awaiting merge.**
+
+Verification (2026-06-03):
+
+- Backend (`/home/haex/Projekte/Holzi`, branch `plan-33-skills-db`): new
+  `skills` + `persona_skills` tables, `skills_repo` (incl. atomic
+  `set_persona_skills`), `routes/skills.py`, persona-skills endpoints in
+  `routes/preferences.py`, resolver extension in `hermes/personas.py`
+  (composition: `persona + skills + capability_index + channel`). Full
+  `pytest` suite green: 910 passed (16 repo + 7 resolver + 22 API tests
+  added).
+- Frontend (this repo, branch `plan-33-skills-db`): `pnpm run gen:api`
+  picked up the new endpoints; `useSkills` composable, `SkillsSection`
+  (two-pane editor with security notice + soft-warning length counter)
+  at the top of `/settings/skills`, persona-card "Aktive Skills"
+  sub-block on `/settings/preferences` with toggle + up/down reorder +
+  remove + add-dropdown. `pnpm test` green: 35 files, 315 tests (14
+  new).
+- Live: created skill `strict-german`, activated on the default
+  persona, called `get_effective_system_prompt('web', engine)` — body
+  appears between persona and capability index for every channel.
+  Disabling the skill omits its body; deleting the skill clears the
+  persona-skills link via FK CASCADE.
 
 Cross-repo. Backend bekommt eine `skills`-Tabelle (Markdown-Body + Frontmatter) + Per-Persona-Aktivierung; Frontend bekommt einen Markdown-Editor auf `/settings/skills` und Persona-Card-Integration auf `/settings/preferences`.
 
