@@ -1211,6 +1211,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/personas/{persona_id}/skills": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Persona Skills */
+        get: operations["list_persona_skills_api_personas__persona_id__skills_get"];
+        /** Set Persona Skills */
+        put: operations["set_persona_skills_api_personas__persona_id__skills_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/channels": {
         parameters: {
             query?: never;
@@ -1257,6 +1275,42 @@ export interface paths {
         /** Reset Channel Prompt */
         post: operations["reset_channel_prompt_api_channels__channel__reset_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/skills": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Skills */
+        get: operations["list_skills_api_skills_get"];
+        put?: never;
+        /** Create Skill */
+        post: operations["create_skill_api_skills_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/skills/{skill_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Skill */
+        put: operations["update_skill_api_skills__skill_id__put"];
+        post?: never;
+        /** Delete Skill */
+        delete: operations["delete_skill_api_skills__skill_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2216,6 +2270,41 @@ export interface components {
             /** Updated At */
             updated_at: number;
         };
+        /**
+         * PersonaSkillItem
+         * @description One row in the persona's skill list as returned by GET — the full
+         *     skill payload is embedded so the UI can render the list without a
+         *     second round-trip to /api/skills.
+         */
+        PersonaSkillItem: {
+            skill: components["schemas"]["SkillResponse"];
+            /** Ordering */
+            ordering: number;
+            /** Enabled */
+            enabled: boolean;
+        };
+        /** PersonaSkillListResponse */
+        PersonaSkillListResponse: {
+            /** Skills */
+            skills: components["schemas"]["PersonaSkillItem"][];
+        };
+        /**
+         * PersonaSkillSetItem
+         * @description One row in the PUT body — refers to a skill by id, no inline data.
+         */
+        PersonaSkillSetItem: {
+            /** Skill Id */
+            skill_id: number;
+            /** Ordering */
+            ordering: number;
+            /** Enabled */
+            enabled: boolean;
+        };
+        /** PersonaSkillSetRequest */
+        PersonaSkillSetRequest: {
+            /** Items */
+            items: components["schemas"]["PersonaSkillSetItem"][];
+        };
         /** PersonaUpdate */
         PersonaUpdate: {
             /** Name */
@@ -2372,6 +2461,57 @@ export interface components {
         SignalLinkPollResponse: {
             /** Accounts */
             accounts: components["schemas"]["MessengerAccountResponse"][];
+        };
+        /** SkillCreate */
+        SkillCreate: {
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** When To Use */
+            when_to_use?: string | null;
+            /** Body Markdown */
+            body_markdown: string;
+        };
+        /** SkillListResponse */
+        SkillListResponse: {
+            /** Skills */
+            skills: components["schemas"]["SkillResponse"][];
+        };
+        /** SkillResponse */
+        SkillResponse: {
+            /** Id */
+            id: number;
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** When To Use */
+            when_to_use: string | null;
+            /** Body Markdown */
+            body_markdown: string;
+            /** Created At */
+            created_at: number;
+            /** Updated At */
+            updated_at: number;
+        };
+        /**
+         * SkillUpdate
+         * @description Patch — slug is immutable, omit any field to leave it alone.
+         */
+        SkillUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** When To Use */
+            when_to_use?: string | null;
+            /** Body Markdown */
+            body_markdown?: string | null;
         };
         /** StandingAlwaysEntry */
         StandingAlwaysEntry: {
@@ -5309,6 +5449,72 @@ export interface operations {
             };
         };
     };
+    list_persona_skills_api_personas__persona_id__skills_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                persona_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonaSkillListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_persona_skills_api_personas__persona_id__skills_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                persona_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonaSkillSetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonaSkillListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_channels_api_channels_get: {
         parameters: {
             query?: never;
@@ -5383,6 +5589,123 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ChannelPromptResponse"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_skills_api_skills_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SkillListResponse"];
+                };
+            };
+        };
+    };
+    create_skill_api_skills_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SkillCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SkillResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_skill_api_skills__skill_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                skill_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SkillUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SkillResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_skill_api_skills__skill_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                skill_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

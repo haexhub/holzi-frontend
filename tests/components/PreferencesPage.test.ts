@@ -77,9 +77,17 @@ function mockInitialLoad(
 ) {
   const personaResp: PersonaListResponse = { personas }
   const channelResp: ChannelPromptListResponse = { channels }
+  const personaSkillsRe = /^\/api\/personas\/(\d+)\/skills$/
   apiGet.mockImplementation((path: string) => {
     if (path === '/api/personas') return Promise.resolve(personaResp)
     if (path === '/api/channels') return Promise.resolve(channelResp)
+    // Plan 33: the page now loads /api/skills + per-persona skill
+    // lists so the persona cards can render the activation sub-block.
+    // Tests that don't care about skills get an empty surface.
+    if (path === '/api/skills') return Promise.resolve({ skills: [] })
+    if (personaSkillsRe.test(path)) {
+      return Promise.resolve({ skills: [] })
+    }
     return Promise.reject(new Error(`unexpected GET ${path}`))
   })
 }
@@ -401,6 +409,291 @@ describe('settings/preferences.vue', () => {
     expect(apiPost).toHaveBeenCalledWith(
       '/api/channels/signal/reset',
       undefined,
+    )
+  })
+
+  // ── Plan 33: Persona-Skill activation per persona card ─────────────
+
+  function mockSkills(
+    personas: Persona[],
+    catalog: Array<{ id: number; slug: string; name?: string }>,
+    perPersona: Record<
+      number,
+      Array<{
+        skillId: number
+        slug: string
+        name?: string
+        enabled?: boolean
+      }>
+    >,
+  ) {
+    const personaResp: PersonaListResponse = { personas }
+    const channelResp: ChannelPromptListResponse = { channels: fourChannels }
+    const personaSkillsRe = /^\/api\/personas\/(\d+)\/skills$/
+    apiGet.mockImplementation((path: string) => {
+      if (path === '/api/personas') return Promise.resolve(personaResp)
+      if (path === '/api/channels') return Promise.resolve(channelResp)
+      if (path === '/api/skills') {
+        return Promise.resolve({
+          skills: catalog.map((s) => ({
+            id: s.id,
+            slug: s.slug,
+            name: s.name ?? s.slug,
+            description: 'desc',
+            when_to_use: null,
+            body_markdown: 'body',
+            created_at: 1_700_000_000,
+            updated_at: 1_700_000_000,
+          })),
+        })
+      }
+      const m = personaSkillsRe.exec(path)
+      if (m) {
+        const personaId = Number(m[1])
+        const items = perPersona[personaId] ?? []
+        return Promise.resolve({
+          skills: items.map((it, idx) => ({
+            skill: {
+              id: it.skillId,
+              slug: it.slug,
+              name: it.name ?? it.slug,
+              description: 'desc',
+              when_to_use: null,
+              body_markdown: 'body',
+              created_at: 1_700_000_000,
+              updated_at: 1_700_000_000,
+            },
+            ordering: idx,
+            enabled: it.enabled ?? true,
+          })),
+        })
+      }
+      return Promise.reject(new Error(`unexpected GET ${path}`))
+    })
+  }
+
+  it('renders the persona-skills empty state when no skills are attached', async () => {
+    mockSkills(
+      [defaultPersona],
+      [{ id: 1, slug: 'a' }],
+      { [defaultPersona.id]: [] },
+    )
+    const wrapper = mount(PreferencesPage)
+    await vi.waitFor(() =>
+      expect(
+        wrapper
+          .find(`[data-testid="persona-skills-empty-${defaultPersona.id}"]`)
+          .exists(),
+      ).toBe(true),
+    )
+    expect(
+      wrapper
+        .find(`[data-testid="persona-skill-add-${defaultPersona.id}"]`)
+        .exists(),
+    ).toBe(true)
+  })
+
+  it('lists active skills with toggle, up/down, remove controls', async () => {
+    mockSkills(
+      [defaultPersona],
+      [
+        { id: 1, slug: 'a' },
+        { id: 2, slug: 'b' },
+      ],
+      {
+        [defaultPersona.id]: [
+          { skillId: 1, slug: 'a', enabled: true },
+          { skillId: 2, slug: 'b', enabled: false },
+        ],
+      },
+    )
+    const wrapper = mount(PreferencesPage)
+    await vi.waitFor(() =>
+      expect(
+        wrapper
+          .find(`[data-testid="persona-skill-${defaultPersona.id}-a"]`)
+          .exists(),
+      ).toBe(true),
+    )
+    expect(
+      wrapper
+        .find(`[data-testid="persona-skill-${defaultPersona.id}-b"]`)
+        .exists(),
+    ).toBe(true)
+  })
+
+  it('adds a skill via the dropdown and persists ordering', async () => {
+    mockSkills(
+      [defaultPersona],
+      [
+        { id: 1, slug: 'a' },
+        { id: 2, slug: 'b' },
+      ],
+      { [defaultPersona.id]: [] },
+    )
+    apiPut.mockResolvedValueOnce({
+      skills: [
+        {
+          skill: {
+            id: 1,
+            slug: 'a',
+            name: 'a',
+            description: 'd',
+            when_to_use: null,
+            body_markdown: 'b',
+            created_at: 1,
+            updated_at: 1,
+          },
+          ordering: 0,
+          enabled: true,
+        },
+      ],
+    })
+
+    const wrapper = mount(PreferencesPage)
+    await vi.waitFor(() =>
+      expect(
+        wrapper
+          .find(`[data-testid="persona-skill-add-${defaultPersona.id}"]`)
+          .exists(),
+      ).toBe(true),
+    )
+
+    const select = wrapper.get(
+      `[data-testid="persona-skill-add-${defaultPersona.id}"]`,
+    )
+    await select.setValue('1')
+    await flushPromises()
+
+    expect(apiPut).toHaveBeenCalledWith(
+      `/api/personas/${defaultPersona.id}/skills`,
+      {
+        items: [
+          { skill_id: 1, ordering: 0, enabled: true },
+        ],
+      },
+    )
+  })
+
+  it('toggles enabled state via the checkbox', async () => {
+    mockSkills(
+      [defaultPersona],
+      [{ id: 1, slug: 'a' }],
+      {
+        [defaultPersona.id]: [
+          { skillId: 1, slug: 'a', enabled: true },
+        ],
+      },
+    )
+    apiPut.mockResolvedValueOnce({
+      skills: [
+        {
+          skill: {
+            id: 1,
+            slug: 'a',
+            name: 'a',
+            description: 'd',
+            when_to_use: null,
+            body_markdown: 'b',
+            created_at: 1,
+            updated_at: 1,
+          },
+          ordering: 0,
+          enabled: false,
+        },
+      ],
+    })
+
+    const wrapper = mount(PreferencesPage)
+    await vi.waitFor(() =>
+      expect(
+        wrapper
+          .find(`[data-testid="persona-skill-toggle-${defaultPersona.id}-a"]`)
+          .exists(),
+      ).toBe(true),
+    )
+
+    await wrapper
+      .get(`[data-testid="persona-skill-toggle-${defaultPersona.id}-a"]`)
+      .trigger('change')
+    await flushPromises()
+
+    expect(apiPut).toHaveBeenCalledWith(
+      `/api/personas/${defaultPersona.id}/skills`,
+      {
+        items: [{ skill_id: 1, ordering: 0, enabled: false }],
+      },
+    )
+  })
+
+  it('reorders a skill via the up/down buttons', async () => {
+    mockSkills(
+      [defaultPersona],
+      [
+        { id: 1, slug: 'a' },
+        { id: 2, slug: 'b' },
+      ],
+      {
+        [defaultPersona.id]: [
+          { skillId: 1, slug: 'a' },
+          { skillId: 2, slug: 'b' },
+        ],
+      },
+    )
+    apiPut.mockResolvedValueOnce({ skills: [] })
+
+    const wrapper = mount(PreferencesPage)
+    await vi.waitFor(() =>
+      expect(
+        wrapper
+          .find(`[data-testid="persona-skill-down-${defaultPersona.id}-a"]`)
+          .exists(),
+      ).toBe(true),
+    )
+
+    await wrapper
+      .get(`[data-testid="persona-skill-down-${defaultPersona.id}-a"]`)
+      .trigger('click')
+    await flushPromises()
+
+    expect(apiPut).toHaveBeenCalledWith(
+      `/api/personas/${defaultPersona.id}/skills`,
+      {
+        items: [
+          { skill_id: 2, ordering: 0, enabled: true },
+          { skill_id: 1, ordering: 1, enabled: true },
+        ],
+      },
+    )
+  })
+
+  it('removes a skill from the persona', async () => {
+    mockSkills(
+      [defaultPersona],
+      [{ id: 1, slug: 'a' }],
+      {
+        [defaultPersona.id]: [{ skillId: 1, slug: 'a' }],
+      },
+    )
+    apiPut.mockResolvedValueOnce({ skills: [] })
+
+    const wrapper = mount(PreferencesPage)
+    await vi.waitFor(() =>
+      expect(
+        wrapper
+          .find(`[data-testid="persona-skill-remove-${defaultPersona.id}-a"]`)
+          .exists(),
+      ).toBe(true),
+    )
+
+    await wrapper
+      .get(`[data-testid="persona-skill-remove-${defaultPersona.id}-a"]`)
+      .trigger('click')
+    await flushPromises()
+
+    expect(apiPut).toHaveBeenCalledWith(
+      `/api/personas/${defaultPersona.id}/skills`,
+      { items: [] },
     )
   })
 })

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import {
+  ArrowDown,
+  ArrowUp,
   BadgeCheck,
   Check,
   Pencil,
@@ -15,7 +17,14 @@ import Textarea from '@/components/ui/textarea/Textarea.vue'
 import { useChannels } from '~/composables/useChannels'
 import { useConfirm } from '~/composables/useConfirm'
 import { usePersonas } from '~/composables/usePersonas'
-import type { ChannelPrompt, Persona } from '~/types/api'
+import { useSkills } from '~/composables/useSkills'
+import type {
+  ChannelPrompt,
+  Persona,
+  PersonaSkillItem,
+  Skill,
+  SkillListResponse,
+} from '~/types/api'
 
 // Plan 29-A /settings/preferences. Two stacked sections:
 //   1. Personas — CRUD over `personas`. The single-default invariant
@@ -31,23 +40,46 @@ import type { ChannelPrompt, Persona } from '~/types/api'
 
 const personasApi = usePersonas()
 const channelsApi = useChannels()
+const skillsApi = useSkills()
 const { confirm } = useConfirm()
 
 const personas = ref<Persona[]>([])
 const channels = ref<ChannelPrompt[]>([])
+const allSkills = ref<Skill[]>([])
+// Per-persona activation list, keyed by persona.id. Loaded after the
+// personas list so the cards can populate immediately on the first
+// render of the page.
+const personaSkills = ref<Record<number, PersonaSkillItem[]>>({})
 const loading = ref(false)
 const error = ref<string | null>(null)
+
+async function loadPersonaSkillLists(rows: Persona[]): Promise<void> {
+  const lists = await Promise.all(
+    rows.map(async (p) => {
+      const resp = await skillsApi.listForPersona(p.id)
+      return [p.id, resp.skills] as const
+    }),
+  )
+  const next: Record<number, PersonaSkillItem[]> = {}
+  for (const [id, items] of lists) next[id] = items
+  personaSkills.value = next
+}
 
 async function load() {
   loading.value = true
   error.value = null
   try {
-    const [pers, chans] = await Promise.all([
+    const [pers, chans, sk] = await Promise.all([
       personasApi.list(),
       channelsApi.list(),
+      skillsApi.list().then(
+        () => skillsApi.data.value ?? { skills: [] } satisfies SkillListResponse,
+      ),
     ])
     personas.value = pers.personas
     channels.value = chans.channels
+    allSkills.value = sk.skills
+    await loadPersonaSkillLists(pers.personas)
   } catch (err: unknown) {
     error.value = err instanceof Error ? err.message : 'Fehler beim Laden.'
   } finally {
@@ -297,6 +329,102 @@ async function saveChannel(channel: ChannelPrompt) {
   }
 }
 
+// ────────────────────────────────────────────────────────────────────
+// Persona-skill activation (Plan 33)
+// ────────────────────────────────────────────────────────────────────
+
+// Per-persona pending mutation guard so the UI can disable buttons
+// while the PUT is in flight. Keyed by persona.id.
+const personaSkillsMutating = ref<Record<number, boolean>>({})
+
+function skillsForPersona(personaId: number): PersonaSkillItem[] {
+  return personaSkills.value[personaId] ?? []
+}
+
+function availableSkillsFor(personaId: number): Skill[] {
+  const activeIds = new Set(
+    skillsForPersona(personaId).map((it) => it.skill.id),
+  )
+  return allSkills.value.filter((s) => !activeIds.has(s.id))
+}
+
+function itemsToSetPayload(
+  items: PersonaSkillItem[],
+): { skill_id: number; ordering: number; enabled: boolean }[] {
+  return items.map((it, idx) => ({
+    skill_id: it.skill.id,
+    ordering: idx,
+    enabled: it.enabled,
+  }))
+}
+
+async function persistPersonaSkills(
+  personaId: number,
+  items: PersonaSkillItem[],
+): Promise<void> {
+  if (personaSkillsMutating.value[personaId]) return
+  personaSkillsMutating.value[personaId] = true
+  try {
+    const resp = await skillsApi.setForPersona(
+      personaId,
+      itemsToSetPayload(items),
+    )
+    personaSkills.value[personaId] = resp.skills
+  } catch (err: unknown) {
+    error.value =
+      err instanceof Error
+        ? err.message
+        : 'Fehler beim Aktualisieren der Skills.'
+  } finally {
+    personaSkillsMutating.value[personaId] = false
+  }
+}
+
+async function addSkillToPersona(personaId: number, skillIdRaw: string) {
+  if (!skillIdRaw) return
+  const skillId = Number(skillIdRaw)
+  const skill = allSkills.value.find((s) => s.id === skillId)
+  if (!skill) return
+  const current = skillsForPersona(personaId)
+  const next: PersonaSkillItem[] = [
+    ...current,
+    { skill, ordering: current.length, enabled: true },
+  ]
+  await persistPersonaSkills(personaId, next)
+}
+
+async function removeSkillFromPersona(personaId: number, skillId: number) {
+  const next = skillsForPersona(personaId).filter(
+    (it) => it.skill.id !== skillId,
+  )
+  await persistPersonaSkills(personaId, next)
+}
+
+async function togglePersonaSkill(personaId: number, skillId: number) {
+  const next = skillsForPersona(personaId).map((it) =>
+    it.skill.id === skillId ? { ...it, enabled: !it.enabled } : it,
+  )
+  await persistPersonaSkills(personaId, next)
+}
+
+async function moveSkill(
+  personaId: number,
+  skillId: number,
+  direction: -1 | 1,
+) {
+  const current = skillsForPersona(personaId)
+  const idx = current.findIndex((it) => it.skill.id === skillId)
+  if (idx === -1) return
+  const target = idx + direction
+  if (target < 0 || target >= current.length) return
+  const next = current.slice()
+  ;[next[idx], next[target]] = [next[target], next[idx]] as [
+    PersonaSkillItem,
+    PersonaSkillItem,
+  ]
+  await persistPersonaSkills(personaId, next)
+}
+
 async function resetChannelPrompt(channel: ChannelPrompt) {
   const ok = await confirm({
     title: 'Prompt zurücksetzen?',
@@ -518,6 +646,134 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
             <pre
               class="line-clamp-3 whitespace-pre-wrap font-mono text-xs text-muted-foreground"
               >{{ persona.prompt }}</pre>
+
+            <!-- ── Persona-Skill activation (Plan 33) ─────────── -->
+            <div
+              class="mt-3 border-t pt-3"
+              :data-testid="`persona-skills-block-${persona.id}`"
+            >
+              <div class="mb-2 flex items-center justify-between gap-2">
+                <h5 class="text-xs font-semibold text-muted-foreground">
+                  Aktive Skills
+                </h5>
+                <span
+                  v-if="skillsForPersona(persona.id).length === 0"
+                  class="text-xs text-muted-foreground"
+                  :data-testid="`persona-skills-empty-${persona.id}`"
+                >
+                  keine Skills aktiv
+                </span>
+              </div>
+              <ul
+                v-if="skillsForPersona(persona.id).length > 0"
+                class="mb-2 flex flex-col gap-1"
+              >
+                <li
+                  v-for="(item, idx) in skillsForPersona(persona.id)"
+                  :key="item.skill.id"
+                  class="flex items-center gap-2 rounded-md border bg-muted/30 px-2 py-1.5 text-xs"
+                  :data-testid="`persona-skill-${persona.id}-${item.skill.slug}`"
+                >
+                  <label
+                    class="flex items-center gap-1.5"
+                    :title="
+                      item.enabled
+                        ? 'Aktiv — fließt in den System-Prompt'
+                        : 'Deaktiviert — bleibt verknüpft, ohne in den Prompt zu fließen'
+                    "
+                  >
+                    <input
+                      type="checkbox"
+                      :checked="item.enabled"
+                      :disabled="personaSkillsMutating[persona.id]"
+                      :data-testid="`persona-skill-toggle-${persona.id}-${item.skill.slug}`"
+                      @change="togglePersonaSkill(persona.id, item.skill.id)"
+                    />
+                  </label>
+                  <span class="flex-1 truncate">
+                    <span class="font-mono">{{ item.skill.slug }}</span>
+                    <span class="text-muted-foreground"> — {{ item.skill.name }}</span>
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    class="h-7 w-7 p-0"
+                    aria-label="Nach oben verschieben"
+                    :disabled="idx === 0 || personaSkillsMutating[persona.id]"
+                    :data-testid="`persona-skill-up-${persona.id}-${item.skill.slug}`"
+                    @click="moveSkill(persona.id, item.skill.id, -1)"
+                  >
+                    <ArrowUp class="size-3.5" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    class="h-7 w-7 p-0"
+                    aria-label="Nach unten verschieben"
+                    :disabled="
+                      idx === skillsForPersona(persona.id).length - 1
+                        || personaSkillsMutating[persona.id]
+                    "
+                    :data-testid="`persona-skill-down-${persona.id}-${item.skill.slug}`"
+                    @click="moveSkill(persona.id, item.skill.id, 1)"
+                  >
+                    <ArrowDown class="size-3.5" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    class="h-7 w-7 p-0"
+                    aria-label="Skill entfernen"
+                    :disabled="personaSkillsMutating[persona.id]"
+                    :data-testid="`persona-skill-remove-${persona.id}-${item.skill.slug}`"
+                    @click="removeSkillFromPersona(persona.id, item.skill.id)"
+                  >
+                    <X class="size-3.5" />
+                  </Button>
+                </li>
+              </ul>
+              <div
+                v-if="availableSkillsFor(persona.id).length > 0"
+                class="flex items-center gap-2"
+              >
+                <select
+                  class="h-8 flex-1 rounded-md border bg-background px-2 text-xs"
+                  :disabled="personaSkillsMutating[persona.id]"
+                  :data-testid="`persona-skill-add-${persona.id}`"
+                  @change="
+                    addSkillToPersona(
+                      persona.id,
+                      ($event.target as HTMLSelectElement).value,
+                    );
+                    ($event.target as HTMLSelectElement).value = ''
+                  "
+                >
+                  <option value="">+ Skill hinzufügen…</option>
+                  <option
+                    v-for="skill in availableSkillsFor(persona.id)"
+                    :key="skill.id"
+                    :value="String(skill.id)"
+                  >
+                    {{ skill.name }} ({{ skill.slug }})
+                  </option>
+                </select>
+              </div>
+              <p
+                v-else-if="allSkills.length > 0"
+                class="text-xs text-muted-foreground"
+              >
+                Alle vorhandenen Skills sind bereits hinzugefügt.
+              </p>
+              <p
+                v-else
+                class="text-xs text-muted-foreground"
+              >
+                Noch keine Skills angelegt —
+                <NuxtLink to="/settings/skills" class="underline"
+                  >Skill anlegen</NuxtLink
+                >.
+              </p>
+            </div>
           </div>
         </li>
       </ul>
