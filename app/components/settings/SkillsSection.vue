@@ -226,6 +226,19 @@ onMounted(() => {
         Skills auf der
         <NuxtLink to="/settings/preferences" class="underline">Preferences-Seite</NuxtLink>.
       </p>
+      <p
+        class="mt-2 flex items-start gap-1.5 rounded-md border border-amber-500/40 bg-amber-500/5 p-2 text-xs text-amber-700 dark:text-amber-300"
+        data-testid="skill-security-notice"
+      >
+        <AlertTriangle class="mt-0.5 size-3.5 shrink-0" />
+        <span>
+          Skill-Inhalte fließen in jeden System-Prompt der
+          aktivierenden Personas und sind damit in
+          <code class="font-mono">/settings/logs</code> sowie
+          <code class="font-mono">/settings/insights</code>
+          sichtbar — keine API-Keys oder Geheimnisse hier einfügen.
+        </span>
+      </p>
     </header>
 
     <div class="flex min-h-[28rem] gap-0">
@@ -507,19 +520,6 @@ onMounted(() => {
               data-testid="skill-form-error"
             >
               {{ formError }}
-            </p>
-            <p
-              class="flex items-start gap-1.5 rounded-md border border-amber-500/40 bg-amber-500/5 p-2 text-xs text-amber-700 dark:text-amber-300"
-              data-testid="skill-security-notice"
-            >
-              <AlertTriangle class="mt-0.5 size-3.5 shrink-0" />
-              <span>
-                Skill-Inhalte fließen in jeden System-Prompt der
-                aktivierenden Personas und sind damit in
-                <code class="font-mono">/settings/logs</code> sowie
-                <code class="font-mono">/settings/insights</code>
-                sichtbar — keine API-Keys oder Geheimnisse hier einfügen.
-              </span>
             </p>
           </form>
         </div>

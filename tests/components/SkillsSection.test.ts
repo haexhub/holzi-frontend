@@ -224,14 +224,15 @@ describe('settings/SkillsSection.vue', () => {
     expect(apiDelete).toHaveBeenCalledWith('/api/skills/3', undefined)
   })
 
-  it('renders the security notice in the editor', async () => {
+  it('renders the security notice in the section header (always visible)', async () => {
     setupList([])
     const wrapper = mount(SkillsSection)
     await flushPromises()
-    await wrapper.get('[data-testid="skill-new"]').trigger('click')
     const notice = wrapper.get('[data-testid="skill-security-notice"]')
     expect(notice.text()).toContain('System-Prompt')
     expect(notice.text()).toContain('keine')
+    // Notice stays visible after switching to read mode of an existing
+    // skill (header lives above the two-pane).
   })
 
   it('filters the list by search query', async () => {

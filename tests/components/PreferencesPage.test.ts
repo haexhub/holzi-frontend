@@ -667,6 +667,51 @@ describe('settings/preferences.vue', () => {
     )
   })
 
+  it('keeps the persona-skill list untouched after a failed PUT', async () => {
+    // Pessimistic update contract: a 422 from the backend must NOT
+    // leave the UI showing the would-be new list. We verify by toggling
+    // an active skill and asserting it's still rendered as enabled after
+    // the failure.
+    mockSkills(
+      [defaultPersona],
+      [{ id: 1, slug: 'a' }],
+      {
+        [defaultPersona.id]: [
+          { skillId: 1, slug: 'a', enabled: true },
+        ],
+      },
+    )
+    apiPut.mockRejectedValueOnce({
+      statusCode: 422,
+      data: { detail: 'simulated failure' },
+    })
+
+    const wrapper = mount(PreferencesPage)
+    await vi.waitFor(() =>
+      expect(
+        wrapper
+          .find(`[data-testid="persona-skill-toggle-${defaultPersona.id}-a"]`)
+          .exists(),
+      ).toBe(true),
+    )
+
+    const checkbox = wrapper.get(
+      `[data-testid="persona-skill-toggle-${defaultPersona.id}-a"]`,
+    )
+    expect((checkbox.element as HTMLInputElement).checked).toBe(true)
+
+    await checkbox.trigger('change')
+    await flushPromises()
+
+    // After the failed PUT the checkbox must still reflect the prior
+    // server state (enabled=true), because we did not optimistically
+    // mutate before the await resolved.
+    const afterCheckbox = wrapper.get(
+      `[data-testid="persona-skill-toggle-${defaultPersona.id}-a"]`,
+    )
+    expect((afterCheckbox.element as HTMLInputElement).checked).toBe(true)
+  })
+
   it('removes a skill from the persona', async () => {
     mockSkills(
       [defaultPersona],

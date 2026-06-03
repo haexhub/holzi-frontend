@@ -364,6 +364,10 @@ async function persistPersonaSkills(
 ): Promise<void> {
   if (personaSkillsMutating.value[personaId]) return
   personaSkillsMutating.value[personaId] = true
+  // Pessimistic update: we send `items` to the server and only swap
+  // local state to the server response on success. A failed PUT leaves
+  // `personaSkills.value[personaId]` untouched, so the UI snaps back to
+  // the pre-mutation list — no manual revert needed.
   try {
     const resp = await skillsApi.setForPersona(
       personaId,
