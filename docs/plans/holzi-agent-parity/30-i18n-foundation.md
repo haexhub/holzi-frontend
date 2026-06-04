@@ -3,11 +3,11 @@
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans
 > to implement this plan task-by-task.
 
-Status: **In progress.** Task 1 (foundation + picker + `llm.vue`), Task 4a
-(Settings shell + nav + preferences personas/channels) and Task 4b (all
+Status: **Task 4 done.** Task 1 (foundation + picker + `llm.vue`), Task 4a
+(Settings shell + nav + preferences personas/channels), Task 4b (all
 remaining `/settings/*` pages + ThemeToggle + WorkspacePanel/WorkspaceGitTab
-+ SkillsSection/McpServersSection) are on `main`. Remaining: Task 4c
-(chat-family: `/`, ChatHub, ChatComposer, MessageList, EmptyChatState),
++ SkillsSection/McpServersSection) and Task 4c (chat-family: 4c1 chat/*
+components + chat pages, 4c2 `ChatHub.vue`) are on `main`. Remaining:
 Task 2 (backend `ErrorCode` enum), Task 3 (FE error-render helper +
 composable migration), Task 5 (`no-raw-text` ESLint rule).
 
@@ -299,15 +299,24 @@ TDD-Philosophie: erst Test schreiben, dann Impl, dann commit.
   `panels/{WorkspacePanel,WorkspaceGitTab}.vue` +
   `settings/{SkillsSection,McpServersSection}.vue`. 327 vitest grün,
   typecheck clean.
-- **4c** (TODO, nächste Session): Chat-Family — `app/pages/index.vue`
-  (chat root), `ChatHub.vue`, `ChatComposer.vue`, `MessageList.vue`,
-  `EmptyChatState.vue`, `chat/SandboxCrashCard.vue` (via ChatHub) +
-  alle weiteren `chat/`-Components mit deutschen Strings. Größter
-  verbleibender Frontend-Brocken, Single-Repo.
+- **4c1** (Commit `ef49c25`, done): Chat-Family-Components — alle
+  `app/components/chat/*.vue` (ApprovalCard, AttachmentChip,
+  ChatComposer, ChatMessage, ConversationList, EmptyChatState,
+  McpInstallApprovalDetails, ReasoningCard, SandboxCrashCard,
+  SubagentCard, ToolCallCard) + `app/pages/index.vue` +
+  `app/pages/chat/[id].vue` + zugehörige Tests.
+- **4c2** (done): `app/components/ChatHub.vue` (1107 Zeilen,
+  Orchestrator) — Header, Sidebar-Aria-Labels, Queue-Statusmeldungen,
+  Reasoning-Toggle-Titel, Notes/Workspace-Tabs, Upload-/Sandbox-/
+  Bookmark-/Load-/Rename-/Delete-Error-Fallbacks, `localePath()` für
+  alle `navigateTo()`/`router.replace()`/`<NuxtLink :to>`-Aufrufe.
+  ChatHub ist in `tests/pages/{index,chat-id}.test.ts` gestubt, daher
+  keine Test-Anpassungen nötig. **Damit ist die komplette Happy-Path-
+  UI bilingual.**
 
 **Schritt-Größe:** Pro logischer Gruppe ein Commit.
 
-**Reihenfolge der verbleibenden Tasks (Empfehlung):** 4c → Task 2 + 3
+**Reihenfolge der verbleibenden Tasks (Empfehlung):** Task 2 + 3
 (Backend-ErrorCodes + FE-Error-Render, Cross-Repo-Paar) → Task 5
 (`no-raw-text`-Lint als Abschluss-Sweep, fischt Übersehenes raus).
 Task 3 hängt zwingend an Task 2; die deutschen Error-Fallbacks in
