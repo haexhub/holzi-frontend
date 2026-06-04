@@ -114,6 +114,11 @@ export type Persona = components['schemas']['PersonaResponse']
 export type PersonaListResponse = components['schemas']['PersonaListResponse']
 export type PersonaCreate = components['schemas']['PersonaCreate']
 export type PersonaUpdate = components['schemas']['PersonaUpdate']
+// Persona-fragment history (Plan 36 / Wave A1): every persona edit appends
+// a snapshot row so the UI can list past states and restore them.
+export type PersonaHistoryItem = components['schemas']['PersonaHistoryItem']
+export type PersonaHistoryListResponse =
+  components['schemas']['PersonaHistoryListResponse']
 export type ChannelPrompt = components['schemas']['ChannelPromptResponse']
 export type ChannelPromptListResponse =
   components['schemas']['ChannelPromptListResponse']

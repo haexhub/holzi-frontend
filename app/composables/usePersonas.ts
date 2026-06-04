@@ -1,6 +1,7 @@
 import type {
   Persona,
   PersonaCreate,
+  PersonaHistoryListResponse,
   PersonaListResponse,
   PersonaUpdate,
 } from '~/types/api'
@@ -9,6 +10,10 @@ import type {
  * Thin REST wrapper around `/api/personas`. Backed by the Plan 29-A
  * personas + channel_prompts tables; the page combines this with
  * `useChannels` to render `/settings/preferences`.
+ *
+ * `history` + `restoreHistory` (Plan 36 / Wave A1) expose the per-persona
+ * snapshot list and the one-click restore endpoint that re-applies a past
+ * snapshot to the live row.
  */
 export function usePersonas() {
   const api = useApi()
@@ -24,5 +29,13 @@ export function usePersonas() {
 
     delete: (id: number) =>
       api.delete<void>(`/api/personas/${id}`),
+
+    history: (id: number) =>
+      api.get<PersonaHistoryListResponse>(`/api/personas/${id}/history`),
+
+    restoreHistory: (personaId: number, snapshotId: number) =>
+      api.post<Persona>(
+        `/api/personas/${personaId}/history/${snapshotId}/restore`,
+      ),
   }
 }
