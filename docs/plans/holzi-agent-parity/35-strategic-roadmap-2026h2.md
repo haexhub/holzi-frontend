@@ -7,8 +7,10 @@
 > wave.
 
 Status: **Planned. Strategy / sequencing only.** No code touched by this
-plan. The first executable plan after this is **Plan 30 (Wave 0:
-i18n foundation)** — already in the roadmap, re-aligned as Wave 0.
+plan. **Wave 0 (Plan 30, i18n) shipped 2026-06-04** — next executable
+slice is **Wave A1 (Persona-Fragments + `persona_history`)**, to be
+written as `36-personas-fragments.md` per the per-wave numbering scheme
+in "How this plan relates to others" below.
 
 ## Genesis
 
@@ -104,7 +106,16 @@ Where Holzi lags (this roadmap addresses, in order):
 
 ## The Six Waves
 
-### Wave 0 — i18n Foundation
+### Wave 0 — i18n Foundation **(done 2026-06-04)**
+
+**Status**: Plan 30 fully on `main` — Tasks 1 + 2 + 3 + 4 + 5 done.
+Final commits: backend `893991d`, frontend `5f9f042` (helper + composables),
+frontend `dc76475` (Task 5 sweep). 448 vitest, 860 pytest, ruff + mypy
+clean, `pnpm typecheck` exit 0. **Note**: backend went with
+`ErrorCode`-enum + `{code, params}`-detail rather than
+`Accept-Language` parsing — backend stays locale-agnostic and the FE
+owns translation. Every plan from Wave A on inherits both the bilingual
+UI convention and the `ErrorCode`/`translateError` contract.
 
 **Goal**: Every plan after this ships bilingual (DE/EN) from the first
 commit. New users from non-DACH markets see Holzi in their language
@@ -117,10 +128,10 @@ every plan we wrote in between.
 
 **Content**: Existing Plan 30 (i18n-Foundation), re-aligned as Wave 0.
 `@nuxtjs/i18n` set up, all current UI strings extracted into locale
-files, backend `Accept-Language` parsing + locale-aware error
-messages, language picker in `/settings/preferences`.
+files, backend `ErrorCode`-enum + `translateError(err, t)`-helper,
+language picker in `/settings/preferences`.
 
-**Est. effort**: 2–3 sessions cross-repo.
+**Effort spent**: 5 sessions cross-repo (foundation + 4 sub-tasks).
 
 ### Wave A — Onboarding Foundation
 
@@ -440,7 +451,7 @@ transcript.
 ## Dependency Graph
 
 ```
-Wave 0: i18n   (foundational; gates all later UI work for bilingual)
+Wave 0: i18n   (foundational; gates all later UI work for bilingual) ✓ done 2026-06-04
 Wave A: A1 → A2 → A3
         A1 → B1 (per-persona model needs structured persona — but B can
                  also run independent of A2/A3)
@@ -549,3 +560,9 @@ These need answering at wave-plan time, not now:
 - 2026-06-04: D2 import URL-only.
 - 2026-06-04: B fallback-chain dropped — Failure Policy section.
 - 2026-06-04: i18n moved up to Wave 0.
+- 2026-06-04: Wave 0 / Plan 30 shipped — backend went with
+  `ErrorCode`-enum + `{code, params}`-detail-shape instead of
+  `Accept-Language` parsing, so the backend stays locale-agnostic
+  and the FE owns translation. `tests/i18n/error-codes.test.ts` pins
+  FE↔BE coverage so a new enum member without locale entries breaks
+  CI immediately.

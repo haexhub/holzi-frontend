@@ -48,7 +48,11 @@ Depends on:
 - [14](./14-control-center-shell.md) — Control Center shell + Nav-Slot
   „Skills & Tools" existiert als Placeholder.
 - [20](./20-onboarding-diagnostics-docs.md) — Pattern für status-getriebene
-  Cards (`DiagnosticsCheck` mit `id/label/status/message`).
+  Cards (`DiagnosticsCheck` mit `id/label/status/message`). **Post-Plan-30
+  (2026-06-04)** ist der Diagnostics-Shape `{id, status, code, params}`
+  — `label` + `message` raus, FE rendert via i18n. Der MCP-Health-Block
+  in Plan 31 hat aber seine eigene Status-Card-Logik (`McpStatus`-Type),
+  ist also vom Diag-Shape-Change unabhängig.
 
 Folgt:
 

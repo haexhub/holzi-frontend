@@ -7,6 +7,14 @@ Direct follow-up to [Plan 25](./25-multi-workspace-crud.md), closing
 the two env-driven remnants that the parent plan deliberately
 deferred.
 
+**Post-merge note (2026-06-04, Plan 30 Wave 0):** the diagnostics
+contract referenced below is the pre-Plan-30 shape. Since Plan 30
+the `DiagnosticsCheck` model drops `label` + `message` and emits
+`{id, status, code, params}` instead — the FE renders the localized
+text from `errors.<code>` against the i18n template. The check-IDs
+in this plan (`database`/`llm`/`scheduler`/`workspace`/`sandbox`)
+are unchanged. See [Plan 30 §Architecture/Backend](./30-i18n-foundation.md).
+
 Backend (`src/hermes/routes/diagnostics.py`): `_check_workspace` is
 now async, takes the engine, reads `workspaces_repo.list_active(db)`.
 Empty table → warning with `add one in /settings/workspaces` copy
