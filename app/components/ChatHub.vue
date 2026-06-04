@@ -464,7 +464,7 @@ async function runStream(
     }
   } catch (err: unknown) {
     outcome = 'failed'
-    error.value = friendlyChatError(err)
+    error.value = friendlyChatError(err, t)
   } finally {
     streamingText.value = ''
     streamingToolCalls.value = []
@@ -645,7 +645,7 @@ async function stopStreaming() {
   } catch (err: unknown) {
     // Background failure — the stream is still on-screen, so a toast keeps
     // the inline error slot clear for in-flight stream errors.
-    toast.error(friendlyChatError(err))
+    toast.error(friendlyChatError(err, t))
   }
 }
 
@@ -673,7 +673,7 @@ async function decideApproval(
     setApprovalStatus(approvalId, decision === 'deny' ? 'denied' : 'allowed')
   } catch (err: unknown) {
     // Let the user try again — the run is still waiting on this decision.
-    error.value = friendlyChatError(err)
+    error.value = friendlyChatError(err, t)
     setApprovalStatus(approvalId, 'pending')
   }
 }

@@ -513,41 +513,54 @@ describe('cancelChatRun', () => {
 })
 
 describe('friendlyChatError', () => {
-  it('falls back to neutral copy for unknown ChatStreamError codes', () => {
+  // Pass-through `$t` — the helper hands us back the i18n key + params,
+  // which is all this test needs to verify (the locale files own the
+  // actual copy; tests/i18n/keys.test.ts pins their completeness).
+  const t = (key: string, params?: Record<string, unknown>) => {
+    if (params && Object.keys(params).length > 0) {
+      return `${key}|${JSON.stringify(params)}`
+    }
+    return key
+  }
+
+  it('falls back to errors.chat.unknown for unknown ChatStreamError codes', () => {
     const err = new ChatStreamError('internal backend detail', { code: 'future_new_code' })
-    expect(friendlyChatError(err)).toBe('Chat-Fehler.')
+    expect(friendlyChatError(err, t)).toBe('errors.chat.unknown')
   })
 
-  it('maps upstream_timeout to a retry-friendly message', () => {
+  it('maps upstream_timeout to its i18n key', () => {
     const err = new ChatStreamError('upstream timed out', { code: 'upstream_timeout' })
-    expect(friendlyChatError(err)).toMatch(/zu lange/i)
+    expect(friendlyChatError(err, t)).toContain('errors.chat.upstream_timeout')
   })
 
-  it('maps upstream_unreachable and points to settings', () => {
+  it('maps upstream_unreachable to its i18n key', () => {
     const err = new ChatStreamError('boom', { code: 'upstream_unreachable' })
-    expect(friendlyChatError(err)).toMatch(/nicht erreichbar/i)
-    expect(friendlyChatError(err)).toMatch(/settings/i)
+    expect(friendlyChatError(err, t)).toContain('errors.chat.upstream_unreachable')
   })
 
-  it('surfaces the upstream status code for upstream_http_error', () => {
+  it('surfaces the upstream status code in the params for upstream_http_error', () => {
     const err = new ChatStreamError('upstream returned 500', {
       code: 'upstream_http_error',
       statusCode: 500,
     })
-    expect(friendlyChatError(err)).toContain('500')
+    const rendered = friendlyChatError(err, t)
+    expect(rendered).toContain('errors.chat.upstream_http_error')
+    expect(rendered).toContain('500')
   })
 
-  it('includes the raw message for agent_error', () => {
+  it('passes the raw message through params for agent_error', () => {
     const err = new ChatStreamError('tool catalog blew up', { code: 'agent_error' })
-    expect(friendlyChatError(err)).toContain('tool catalog blew up')
+    const rendered = friendlyChatError(err, t)
+    expect(rendered).toContain('errors.chat.agent_error')
+    expect(rendered).toContain('tool catalog blew up')
   })
 
-  it('falls back to the message for plain Errors', () => {
-    expect(friendlyChatError(new Error('nope'))).toBe('nope')
+  it('falls back to errors.chat.unknown for plain Errors', () => {
+    expect(friendlyChatError(new Error('nope'), t)).toBe('errors.chat.unknown')
   })
 
-  it('falls back to a neutral copy for non-Error values', () => {
-    expect(friendlyChatError('weird')).toBe('Chat-Fehler.')
+  it('falls back to errors.chat.unknown for non-Error values', () => {
+    expect(friendlyChatError('weird', t)).toBe('errors.chat.unknown')
   })
 })
 

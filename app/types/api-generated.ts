@@ -1569,15 +1569,20 @@ export interface components {
         DiagnosticsCheck: {
             /** Id */
             id: string;
-            /** Label */
-            label: string;
             /**
              * Status
              * @enum {string}
              */
             status: "ok" | "warning" | "error";
-            /** Message */
-            message: string;
+            /** Code */
+            code: string;
+            /**
+             * Params
+             * @default {}
+             */
+            params: {
+                [key: string]: string | number | string[];
+            };
         };
         /** DiagnosticsResponse */
         DiagnosticsResponse: {

@@ -332,8 +332,10 @@ describe('settings/skills.vue', () => {
     setupGet(new Error('tools boom'), mcpHealth())
     const wrapper = mount(SkillsPage)
     await flushPromises()
+    // Plan 30: composables route fetch failures through translateError(),
+    // which falls back to `errors.GENERIC` for a plain Error.
     expect(wrapper.get('[data-testid="tools-error"]').text()).toContain(
-      'tools boom',
+      'errors.GENERIC',
     )
     // MCP card still renders normally.
     expect(wrapper.get('[data-testid="mcp-status"]').text()).toContain('pages.skills.mcpEndpoint.active')
@@ -344,7 +346,7 @@ describe('settings/skills.vue', () => {
     const wrapper = mount(SkillsPage)
     await flushPromises()
     expect(wrapper.get('[data-testid="mcp-error"]').text()).toContain(
-      'mcp boom',
+      'errors.GENERIC',
     )
     expect(wrapper.get('[data-testid="tool-save_note"]').exists()).toBe(true)
   })

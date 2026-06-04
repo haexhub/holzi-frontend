@@ -1,5 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
+
+// Plan 30: useDiagnostics() now pulls in useI18n() for the translateError
+// helper, so the i18n plugin must be present or stubbed before the
+// composable runs. Pass-through `$t` is enough — these tests don't assert
+// on translated copy directly.
+vi.mock('vue-i18n', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('vue-i18n')>()
+  return {
+    ...orig,
+    useI18n: () => ({ t: (key: string) => key }),
+  }
+})
+
 import EmptyChatState from '~/components/chat/EmptyChatState.vue'
 import type { DiagnosticsResponse } from '~/types/api'
 
@@ -42,32 +55,28 @@ function diagnostics(
   overall: DiagnosticsResponse['overall'],
   nonOkCount = 0,
 ): DiagnosticsResponse {
+  // Plan 30 shape: id / status / code / params — `label` and `message`
+  // are owned by the locale files, not the API.
   const checks: DiagnosticsResponse['checks'] = [
-    { id: 'database', label: 'Database', status: 'ok', message: 'reachable' },
-    { id: 'llm', label: 'LLM', status: 'ok', message: 'configured' },
-    {
-      id: 'messenger',
-      label: 'Messenger',
-      status: 'ok',
-      message: 'configured',
-    },
+    { id: 'database', status: 'ok', code: 'DIAG_DB_REACHABLE', params: {} },
+    { id: 'llm', status: 'ok', code: 'DIAG_LLM_ACTIVE', params: {} },
     {
       id: 'scheduler',
-      label: 'Scheduler',
       status: 'ok',
-      message: 'running',
+      code: 'DIAG_SCHEDULER_RUNNING',
+      params: {},
     },
     {
       id: 'workspace',
-      label: 'Workspaces',
       status: 'ok',
-      message: 'configured',
+      code: 'DIAG_WORKSPACE_CONFIGURED',
+      params: {},
     },
     {
       id: 'sandbox',
-      label: 'Sandbox runtime',
       status: 'ok',
-      message: 'configured',
+      code: 'DIAG_SANDBOX_CONFIGURED',
+      params: {},
     },
   ]
   for (let i = 0; i < nonOkCount && i < checks.length; i++) {

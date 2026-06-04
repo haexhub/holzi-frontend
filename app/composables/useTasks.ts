@@ -1,3 +1,4 @@
+import { translateError } from '~/lib/errorMessages'
 import type {
   AgentTask,
   AgentTaskCreate,
@@ -13,6 +14,7 @@ import type {
  */
 export function useTasks() {
   const api = useApi()
+  const { t } = useI18n()
   const tasks = ref<AgentTask[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
@@ -23,7 +25,7 @@ export function useTasks() {
     try {
       tasks.value = await api.get<AgentTask[]>('/api/tasks')
     } catch (err: unknown) {
-      error.value = err instanceof Error ? err.message : 'Fehler beim Laden.'
+      error.value = translateError(err, t)
     } finally {
       loading.value = false
     }

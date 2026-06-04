@@ -1,3 +1,4 @@
+import { translateError } from '~/lib/errorMessages'
 import type { InsightsPeriod, InsightsResponse } from '~/types/api'
 
 /**
@@ -6,6 +7,7 @@ import type { InsightsPeriod, InsightsResponse } from '~/types/api'
  */
 export function useInsights() {
   const api = useApi()
+  const { t } = useI18n()
 
   const insights = ref<InsightsResponse | null>(null)
   const loading = ref(false)
@@ -20,7 +22,7 @@ export function useInsights() {
         period: period.value,
       })
     } catch (err: unknown) {
-      error.value = err instanceof Error ? err.message : 'Fehler beim Laden.'
+      error.value = translateError(err, t)
     } finally {
       loading.value = false
     }
