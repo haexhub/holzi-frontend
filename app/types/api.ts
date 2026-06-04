@@ -223,11 +223,3 @@ export interface OAuthStatusResponse {
   id: number
   status: 'pending' | 'authorized' | 'expired' | string
 }
-
-
-export interface TelegramAccountCreate {
-  bot_token: string
-  // Optional allowlist; omit (or empty) to let the bot respond in any
-  // chat it's added to.
-  allowed_chat_ids?: number[]
-}
