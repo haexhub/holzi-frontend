@@ -39,14 +39,17 @@ import type {
   SandboxCrashedData,
 } from '~/types/api'
 
-// Plan 26: the active conversation id is now driven by the URL. `/`
-// passes null; `/chat/:id` parses and passes the numeric id (or null
-// when the route param doesn't parse). The hub watches it and loads the
+// Plan 26: the active conversation id is now driven by the URL.
+// `/chat/:id` parses and passes the numeric id; `/` omits the prop so
+// it defaults to null (empty hub). The hub watches it and loads the
 // conversation accordingly. The hub also navigates on selection / new
 // chat so URL stays the source of truth.
-const props = defineProps<{
-  conversationId: number | null
-}>()
+const props = withDefaults(
+  defineProps<{
+    conversationId?: number | null
+  }>(),
+  { conversationId: null },
+)
 
 const auth = useAuthStore()
 const api = useApi()

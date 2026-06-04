@@ -33,5 +33,5 @@ onMounted(async () => {
 </script>
 
 <template>
-  <ChatHub v-if="ready" :conversation-id="null" />
+  <ChatHub v-if="ready" />
 </template>

@@ -29,7 +29,7 @@ vi.mock('#app/composables/router', async (importOriginal) => {
 vi.mock('~/components/ChatHub.vue', () => ({
   default: {
     name: 'ChatHubStub',
-    props: ['conversationId'],
+    props: { conversationId: { type: Number, default: null } },
     template: '<div data-testid="chathub-stub" :data-id="conversationId === null ? \'null\' : conversationId" />',
   },
 }))
