@@ -17,9 +17,8 @@ const props = defineProps<{
 
 // Plan 20-C: pull /api/diagnostics so the empty state can surface a banner
 // when the user has credentials but some subsystem is non-ok (Docker-host
-// default = workspace/sandbox warning; messenger is an optional bridge and
-// reports `ok` when absent). The Credentials-CTA stays the priority —
-// banner only renders when hasCredentials === true.
+// default = workspace/sandbox warning). The Credentials-CTA stays the
+// priority — banner only renders when hasCredentials === true.
 const { diagnostics, loadDiagnostics } = useDiagnostics()
 
 // One-shot: the `diagnostics.value === null` guard means we never re-fetch

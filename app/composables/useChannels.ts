@@ -9,7 +9,7 @@ import type {
  * Thin REST wrapper around `/api/channels`. The backend seeds one row
  * per channel key from `hermes.personas.CHANNEL_REGISTRY` on boot, so
  * `list()` always returns the same N rows in the same canonical order
- * (today: `web`, `task`, `signal`, `telegram`).
+ * (today: `web`, `task`).
  */
 export function useChannels() {
   const api = useApi()

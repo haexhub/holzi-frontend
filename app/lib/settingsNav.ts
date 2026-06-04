@@ -6,7 +6,6 @@ import {
   FileText,
   FolderTree,
   ListChecks,
-  MessageSquare,
   SlidersHorizontal,
   Wrench,
 } from 'lucide-vue-next'
@@ -21,7 +20,6 @@ export interface SettingsNavItem {
 
 export const settingsNav: readonly SettingsNavItem[] = [
   { to: '/settings/llm', label: 'LLM', icon: Cpu },
-  { to: '/settings/messenger', label: 'Messenger', icon: MessageSquare },
   { to: '/settings/preferences', label: 'Preferences', icon: SlidersHorizontal },
   { to: '/settings/memory', label: 'Memory', icon: Database },
   { to: '/settings/tasks', label: 'Tasks', icon: ListChecks },
