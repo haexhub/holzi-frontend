@@ -9,9 +9,6 @@ import {
   RefreshCw,
   Trash2,
 } from 'lucide-vue-next'
-import Button from '@/components/ui/button/Button.vue'
-import RenderedMarkdown from '~/components/chat/RenderedMarkdown.vue'
-import WorkspaceGitTab from '~/components/panels/WorkspaceGitTab.vue'
 import { useApi } from '~/composables/useApi'
 import { useConfirm } from '~/composables/useConfirm'
 import { usePromptDialog } from '~/composables/usePromptDialog'
@@ -561,7 +558,7 @@ onMounted(loadRoots)
     <div class="flex items-center justify-between border-b p-3">
       <h3 class="text-sm font-semibold">Workspace</h3>
       <div class="flex items-center gap-1">
-        <Button
+        <UiButton
           v-if="roots.length > 0 && canWrite"
           size="sm"
           variant="ghost"
@@ -570,8 +567,8 @@ onMounted(loadRoots)
           @click="startCreating"
         >
           <Plus class="size-3.5" />
-        </Button>
-        <Button
+        </UiButton>
+        <UiButton
           v-if="roots.length > 0"
           size="sm"
           variant="ghost"
@@ -583,7 +580,7 @@ onMounted(loadRoots)
             class="size-3.5"
             :class="treeLoading || fileLoading ? 'animate-spin' : ''"
           />
-        </Button>
+        </UiButton>
       </div>
     </div>
 
@@ -702,17 +699,17 @@ onMounted(loadRoots)
           </label>
           <p v-if="createError" class="mt-1 text-destructive">{{ createError }}</p>
           <div class="mt-2 flex justify-end gap-2">
-            <Button
+            <UiButton
               size="sm"
               variant="ghost"
               :disabled="createSaving"
               @click="cancelCreating"
             >
               Abbrechen
-            </Button>
-            <Button size="sm" :disabled="createSaving" @click="submitCreate">
+            </UiButton>
+            <UiButton size="sm" :disabled="createSaving" @click="submitCreate">
               Anlegen
-            </Button>
+            </UiButton>
           </div>
         </div>
         <p
@@ -771,7 +768,7 @@ onMounted(loadRoots)
             <span class="truncate font-mono">{{ filePreview.name }}</span>
             <div class="flex shrink-0 items-center gap-1">
               <span>{{ humanSize(filePreview.size) }}</span>
-              <Button
+              <UiButton
                 v-if="canEditCurrent && !editing"
                 size="sm"
                 variant="ghost"
@@ -779,8 +776,8 @@ onMounted(loadRoots)
                 @click="startEditing"
               >
                 <Pencil class="size-3.5" />
-              </Button>
-              <Button
+              </UiButton>
+              <UiButton
                 v-if="canWrite && !editing"
                 size="sm"
                 variant="ghost"
@@ -788,8 +785,8 @@ onMounted(loadRoots)
                 @click="renameCurrent"
               >
                 <File class="size-3.5" />
-              </Button>
-              <Button
+              </UiButton>
+              <UiButton
                 v-if="canWrite && !editing"
                 size="sm"
                 variant="ghost"
@@ -798,7 +795,7 @@ onMounted(loadRoots)
                 @click="deleteCurrent"
               >
                 <Trash2 class="size-3.5" />
-              </Button>
+              </UiButton>
             </div>
           </div>
           <div
@@ -827,17 +824,17 @@ onMounted(loadRoots)
               spellcheck="false"
             />
             <div class="flex justify-end gap-2 border-t p-2">
-              <Button
+              <UiButton
                 size="sm"
                 variant="ghost"
                 :disabled="saving"
                 @click="cancelEditing"
               >
                 Abbrechen
-              </Button>
-              <Button size="sm" :disabled="saving" @click="saveEdit">
+              </UiButton>
+              <UiButton size="sm" :disabled="saving" @click="saveEdit">
                 {{ saving ? 'Speichert…' : 'Speichern' }}
-              </Button>
+              </UiButton>
             </div>
           </div>
           <div v-else class="flex-1 overflow-auto">
@@ -846,7 +843,7 @@ onMounted(loadRoots)
               class="whitespace-pre p-3 font-mono text-xs"
             >{{ filePreview.content }}</pre>
             <div v-else-if="filePreview.kind === 'markdown'" class="p-3">
-              <RenderedMarkdown :content="filePreview.content ?? ''" />
+              <ChatRenderedMarkdown :content="filePreview.content ?? ''" />
             </div>
             <div
               v-else-if="filePreview.kind === 'image' && filePreview.data_url"
@@ -870,7 +867,7 @@ onMounted(loadRoots)
       </template>
 
       <template v-else-if="activeTab === 'git'">
-        <WorkspaceGitTab
+        <PanelsWorkspaceGitTab
           :root="selectedRoot"
           :conversation-id="conversationId"
           @changed="onGitChanged"

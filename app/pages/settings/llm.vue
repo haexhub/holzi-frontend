@@ -1,16 +1,11 @@
 <script setup lang="ts">
 import { BadgeCheck, ExternalLink, Trash2 } from 'lucide-vue-next'
-import ModelSelect from '~/components/settings/ModelSelect.vue'
 import { useLlmCredentials } from '~/composables/useLlmCredentials'
 import type {
   LlmCredential,
   LlmCredentialCreate,
   LlmProvider,
 } from '~/types/api'
-import Button from '@/components/ui/button/Button.vue'
-import Input from '@/components/ui/input/Input.vue'
-import Label from '@/components/ui/label/Label.vue'
-import Separator from '@/components/ui/separator/Separator.vue'
 
 const llm = useLlmCredentials()
 const { t } = useI18n()
@@ -284,7 +279,7 @@ onBeforeUnmount(stopPolling)
             {{ $t('pages.llm.list.oauthNotReady') }}
           </p>
           <div class="mt-2 w-full max-w-md">
-            <ModelSelect
+            <SettingsModelSelect
               :model-value="c.model"
               :credential-id="c.id"
               :disabled="isOAuthUnready(c)"
@@ -292,15 +287,15 @@ onBeforeUnmount(stopPolling)
             />
           </div>
         </div>
-        <Button
+        <UiButton
           v-if="!c.is_active && !isOAuthUnready(c)"
           size="sm"
           variant="secondary"
           @click="activate(c.id)"
         >
           {{ $t('pages.llm.list.activate') }}
-        </Button>
-        <Button
+        </UiButton>
+        <UiButton
           size="sm"
           variant="ghost"
           :aria-label="$t('pages.llm.list.deleteAria', { name: c.display_name })"
@@ -308,11 +303,11 @@ onBeforeUnmount(stopPolling)
           @click="remove(c)"
         >
           <Trash2 class="size-3.5" />
-        </Button>
+        </UiButton>
       </div>
     </section>
 
-    <Separator />
+    <UiSeparator />
 
     <!-- ── API-Key hinzufügen ───────────────────────────────────────── -->
     <section class="space-y-3">
@@ -322,7 +317,7 @@ onBeforeUnmount(stopPolling)
       <form class="space-y-3" @submit.prevent="addApiKey">
         <div class="grid grid-cols-2 gap-3">
           <div class="space-y-1">
-            <Label for="provider">{{ $t('pages.llm.addKey.provider') }}</Label>
+            <UiLabel for="provider">{{ $t('pages.llm.addKey.provider') }}</UiLabel>
             <select
               id="provider"
               v-model="newProvider"
@@ -336,8 +331,8 @@ onBeforeUnmount(stopPolling)
             </select>
           </div>
           <div class="space-y-1">
-            <Label for="display">{{ $t('pages.llm.addKey.displayName') }}</Label>
-            <Input
+            <UiLabel for="display">{{ $t('pages.llm.addKey.displayName') }}</UiLabel>
+            <UiInput
               id="display"
               v-model="newDisplayName"
               :placeholder="$t('pages.llm.addKey.displayNamePlaceholder')"
@@ -345,8 +340,8 @@ onBeforeUnmount(stopPolling)
           </div>
         </div>
         <div class="space-y-1">
-          <Label for="apikey">{{ $t('pages.llm.addKey.apiKey') }}</Label>
-          <Input
+          <UiLabel for="apikey">{{ $t('pages.llm.addKey.apiKey') }}</UiLabel>
+          <UiInput
             id="apikey"
             v-model="newApiKey"
             type="password"
@@ -355,25 +350,25 @@ onBeforeUnmount(stopPolling)
           />
         </div>
         <div class="space-y-1">
-          <Label for="baseurl">
+          <UiLabel for="baseurl">
             {{ $t('pages.llm.addKey.baseUrl') }}
             <span class="text-xs text-muted-foreground">
               ({{ baseUrlRequired ? $t('pages.llm.addKey.baseUrlRequired') : $t('pages.llm.addKey.baseUrlOptional') }})
             </span>
-          </Label>
-          <Input
+          </UiLabel>
+          <UiInput
             id="baseurl"
             v-model="newBaseUrl"
             :placeholder="$t('pages.llm.addKey.baseUrlPlaceholder')"
           />
         </div>
-        <Button type="submit" :disabled="submittingApiKey" size="sm">
+        <UiButton type="submit" :disabled="submittingApiKey" size="sm">
           {{ submittingApiKey ? $t('pages.llm.addKey.submitting') : $t('pages.llm.addKey.submit') }}
-        </Button>
+        </UiButton>
       </form>
     </section>
 
-    <Separator />
+    <UiSeparator />
 
     <!-- ── Claude OAuth ─────────────────────────────────────────────── -->
     <section class="space-y-3">
@@ -385,9 +380,9 @@ onBeforeUnmount(stopPolling)
         <p class="text-sm text-muted-foreground">
           {{ $t('pages.llm.oauth.intro', { command: 'claude auth login --claudeai' }) }}
         </p>
-        <Button class="mt-2" size="sm" :disabled="oauthStarting" @click="startOAuth">
+        <UiButton class="mt-2" size="sm" :disabled="oauthStarting" @click="startOAuth">
           {{ oauthStarting ? $t('pages.llm.oauth.starting') : $t('pages.llm.oauth.start') }}
-        </Button>
+        </UiButton>
       </div>
 
       <div v-else-if="oauthPhase === 'awaiting_code'" class="space-y-2">
@@ -405,18 +400,18 @@ onBeforeUnmount(stopPolling)
           {{ $t('pages.llm.oauth.reopenTab') }}
         </a>
         <form class="flex gap-2" @submit.prevent="submitCode">
-          <Input
+          <UiInput
             v-model="oauthCode"
             :placeholder="$t('pages.llm.oauth.codePlaceholder')"
             autocomplete="off"
             class="flex-1"
           />
-          <Button type="submit" size="sm" :disabled="!oauthCode.trim()">
+          <UiButton type="submit" size="sm" :disabled="!oauthCode.trim()">
             {{ $t('pages.llm.oauth.submit') }}
-          </Button>
-          <Button type="button" variant="ghost" size="sm" @click="cancelOAuth">
+          </UiButton>
+          <UiButton type="button" variant="ghost" size="sm" @click="cancelOAuth">
             {{ $t('common.cancel') }}
-          </Button>
+          </UiButton>
         </form>
       </div>
 

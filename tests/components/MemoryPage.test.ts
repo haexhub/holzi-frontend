@@ -27,7 +27,7 @@ vi.mock('~/composables/useConfirm', () => ({
 // tests that only care about the layout. Stub it to a plain div so we
 // can still assert on rendered content.
 const stubs = {
-  RenderedMarkdown: {
+  ChatRenderedMarkdown: {
     name: 'RenderedMarkdown',
     props: ['content'],
     template: '<div data-testid="memory-detail-body">{{ content }}</div>',

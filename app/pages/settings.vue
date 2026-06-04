@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { ArrowLeft } from 'lucide-vue-next'
-import Button from '@/components/ui/button/Button.vue'
-import ThemeToggle from '~/components/ThemeToggle.vue'
 import { settingsNav } from '~/lib/settingsNav'
 
 // Parent layout for /settings/* — owns the page chrome (header, back
@@ -29,10 +27,10 @@ import { settingsNav } from '~/lib/settingsNav'
       <div class="flex items-center gap-1">
         <ThemeToggle />
         <NuxtLink to="/">
-          <Button variant="ghost" size="sm">
+          <UiButton variant="ghost" size="sm">
             <ArrowLeft class="mr-1 size-4" />
             Zurück
-          </Button>
+          </UiButton>
         </NuxtLink>
       </div>
     </header>

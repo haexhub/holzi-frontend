@@ -6,7 +6,6 @@ import {
   MessageCircle,
 } from 'lucide-vue-next'
 import { useDiagnostics } from '~/composables/useDiagnostics'
-import Button from '@/components/ui/button/Button.vue'
 
 // `null` = credentials list still loading. We don't want to flash the
 // "Start by adding credentials" CTA before the request resolves, so
@@ -68,12 +67,12 @@ const showBanner = computed(
       <!-- Use as-child so the link is the interactive root — otherwise
            we end up with <a><button>, which is invalid HTML and breaks
            keyboard/screen-reader semantics. -->
-      <Button as-child size="sm">
+      <UiButton as-child size="sm">
         <NuxtLink to="/settings/llm">
           Credentials einrichten
           <ArrowRight class="ml-1 size-4" />
         </NuxtLink>
-      </Button>
+      </UiButton>
     </template>
 
     <template v-else>

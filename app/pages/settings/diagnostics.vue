@@ -15,7 +15,6 @@ import type {
   SandboxCrash,
   SandboxCrashState,
 } from '~/types/api'
-import Button from '@/components/ui/button/Button.vue'
 
 // Plan 20: read-only status snapshot for the Control Center.
 // Two sections — a flat subsystem-check list (one row per check returned
@@ -122,7 +121,7 @@ onMounted(loadAll)
           {{ statusLabel(overall) }}
         </span>
       </div>
-      <Button
+      <UiButton
         size="sm"
         variant="outline"
         :disabled="diagnosticsLoading || failuresLoading || crashesLoading"
@@ -132,7 +131,7 @@ onMounted(loadAll)
       >
         <RefreshCcw class="mr-1 size-4" />
         Neu laden
-      </Button>
+      </UiButton>
     </header>
 
     <!-- ── Subsystem checks ─────────────────────────────────────── -->

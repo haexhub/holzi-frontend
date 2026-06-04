@@ -11,8 +11,6 @@ import {
 } from 'lucide-vue-next'
 import { useConfirm } from '~/composables/useConfirm'
 import type { Conversation } from '~/types/api'
-import Button from '@/components/ui/button/Button.vue'
-import Input from '@/components/ui/input/Input.vue'
 
 const { confirm } = useConfirm()
 
@@ -125,17 +123,17 @@ async function confirmDelete(event: MouseEvent, c: Conversation) {
   <div class="flex h-full flex-col">
     <div class="flex items-center justify-between border-b p-3">
       <h2 class="text-sm font-semibold">Konversationen</h2>
-      <Button size="sm" variant="ghost" @click="emit('new-chat')">
+      <UiButton size="sm" variant="ghost" @click="emit('new-chat')">
         <MessageSquarePlus class="mr-1 size-4" />
         Neu
-      </Button>
+      </UiButton>
     </div>
     <div class="border-b p-2">
       <div class="relative">
         <Search
           class="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
         />
-        <Input
+        <UiInput
           v-model="searchQuery"
           type="search"
           placeholder="Suchen…"
@@ -175,14 +173,14 @@ async function confirmDelete(event: MouseEvent, c: Conversation) {
           class="flex items-center gap-1 p-2"
           @submit.prevent="submitRename(c)"
         >
-          <Input
+          <UiInput
             v-model="editingTitle"
             class="h-8 flex-1"
             aria-label="Konversationstitel"
             autofocus
             @keydown.esc.prevent="cancelRename"
           />
-          <Button
+          <UiButton
             type="submit"
             size="icon"
             variant="ghost"
@@ -190,8 +188,8 @@ async function confirmDelete(event: MouseEvent, c: Conversation) {
             aria-label="Titel speichern"
           >
             <Check class="size-3.5" />
-          </Button>
-          <Button
+          </UiButton>
+          <UiButton
             type="button"
             size="icon"
             variant="ghost"
@@ -200,7 +198,7 @@ async function confirmDelete(event: MouseEvent, c: Conversation) {
             @click="cancelRename"
           >
             <X class="size-3.5" />
-          </Button>
+          </UiButton>
         </form>
         <div
           v-else

@@ -15,8 +15,6 @@ import {
   Trash2,
   X,
 } from 'lucide-vue-next'
-import Button from '@/components/ui/button/Button.vue'
-import Input from '@/components/ui/input/Input.vue'
 import { useConfirm } from '~/composables/useConfirm'
 import { useMcpServers } from '~/composables/useMcpServers'
 import { useToast } from '~/composables/useToast'
@@ -376,7 +374,7 @@ function statusLabel(status: McpServerStatus): string {
             Holzi-Rechten — nur vertrauenswürdige Quellen installieren.
           </p>
         </div>
-        <Button
+        <UiButton
           size="sm"
           variant="outline"
           data-testid="mcp-server-new"
@@ -385,7 +383,7 @@ function statusLabel(status: McpServerStatus): string {
         >
           <Plus class="mr-1 size-4" />
           Neuer Server
-        </Button>
+        </UiButton>
       </div>
     </header>
 
@@ -399,7 +397,7 @@ function statusLabel(status: McpServerStatus): string {
         <h4 class="text-sm font-semibold">
           {{ editingId === null ? 'Neuer MCP-Server' : 'MCP-Server bearbeiten' }}
         </h4>
-        <Button
+        <UiButton
           size="sm"
           variant="ghost"
           aria-label="Formular schließen"
@@ -407,13 +405,13 @@ function statusLabel(status: McpServerStatus): string {
           @click="closeForm"
         >
           <X class="size-4" />
-        </Button>
+        </UiButton>
       </div>
 
       <div class="grid gap-3 sm:grid-cols-2">
         <div class="space-y-1">
           <label class="text-xs font-medium" for="mcp-name">Slug</label>
-          <Input
+          <UiInput
             id="mcp-name"
             v-model="draft.name"
             :disabled="editingId !== null"
@@ -438,7 +436,7 @@ function statusLabel(status: McpServerStatus): string {
           <label class="text-xs font-medium" for="mcp-display-name">
             Anzeigename
           </label>
-          <Input
+          <UiInput
             id="mcp-display-name"
             v-model="draft.display_name"
             placeholder="Filesystem MCP"
@@ -492,7 +490,7 @@ function statusLabel(status: McpServerStatus): string {
       <template v-if="draft.transport === 'http'">
         <div class="space-y-1">
           <label class="text-xs font-medium" for="mcp-url">URL</label>
-          <Input
+          <UiInput
             id="mcp-url"
             v-model="draft.url"
             type="url"
@@ -507,7 +505,7 @@ function statusLabel(status: McpServerStatus): string {
             <span class="font-normal text-muted-foreground">(optional)</span>
           </label>
           <div class="flex items-center gap-2">
-            <Input
+            <UiInput
               id="mcp-credentials"
               v-model="draft.credentials"
               :type="revealCredentials ? 'text' : 'password'"
@@ -519,7 +517,7 @@ function statusLabel(status: McpServerStatus): string {
               data-testid="mcp-server-credentials"
               @input="draft.credentialsTouched = true"
             />
-            <Button
+            <UiButton
               size="sm"
               variant="outline"
               type="button"
@@ -529,7 +527,7 @@ function statusLabel(status: McpServerStatus): string {
             >
               <EyeOff v-if="revealCredentials" class="size-4" />
               <Eye v-else class="size-4" />
-            </Button>
+            </UiButton>
           </div>
           <button
             v-if="editingId !== null"
@@ -547,7 +545,7 @@ function statusLabel(status: McpServerStatus): string {
       <template v-else>
         <div class="space-y-1">
           <label class="text-xs font-medium" for="mcp-command">Command</label>
-          <Input
+          <UiInput
             id="mcp-command"
             v-model="draft.command"
             placeholder="npx"
@@ -562,21 +560,21 @@ function statusLabel(status: McpServerStatus): string {
             :key="`arg-${idx}`"
             class="flex items-center gap-2"
           >
-            <Input
+            <UiInput
               v-model="draft.args[idx]"
               :data-testid="`mcp-server-arg-${idx}`"
               placeholder="-y"
             />
-            <Button
+            <UiButton
               size="sm"
               variant="ghost"
               aria-label="Argument entfernen"
               @click="removeArg(idx)"
             >
               <X class="size-4" />
-            </Button>
+            </UiButton>
           </div>
-          <Button
+          <UiButton
             size="sm"
             variant="outline"
             type="button"
@@ -585,7 +583,7 @@ function statusLabel(status: McpServerStatus): string {
           >
             <Plus class="mr-1 size-4" />
             Argument
-          </Button>
+          </UiButton>
         </div>
 
         <div class="space-y-1">
@@ -595,28 +593,28 @@ function statusLabel(status: McpServerStatus): string {
             :key="`env-${idx}`"
             class="flex items-center gap-2"
           >
-            <Input
+            <UiInput
               v-model="pair.key"
               :data-testid="`mcp-server-env-key-${idx}`"
               placeholder="GITHUB_TOKEN"
               class="max-w-45"
             />
-            <Input
+            <UiInput
               v-model="pair.value"
               :data-testid="`mcp-server-env-value-${idx}`"
               type="password"
               placeholder="value"
             />
-            <Button
+            <UiButton
               size="sm"
               variant="ghost"
               aria-label="Variable entfernen"
               @click="removeEnv(idx)"
             >
               <X class="size-4" />
-            </Button>
+            </UiButton>
           </div>
-          <Button
+          <UiButton
             size="sm"
             variant="outline"
             type="button"
@@ -625,7 +623,7 @@ function statusLabel(status: McpServerStatus): string {
           >
             <Plus class="mr-1 size-4" />
             Variable
-          </Button>
+          </UiButton>
           <p
             v-if="editingId !== null && draft.env.length > 0"
             class="text-[11px] text-muted-foreground"
@@ -645,7 +643,7 @@ function statusLabel(status: McpServerStatus): string {
       </p>
 
       <div class="flex justify-end gap-2 pt-2">
-        <Button
+        <UiButton
           size="sm"
           variant="ghost"
           type="button"
@@ -653,8 +651,8 @@ function statusLabel(status: McpServerStatus): string {
           @click="closeForm"
         >
           Abbrechen
-        </Button>
-        <Button
+        </UiButton>
+        <UiButton
           size="sm"
           type="button"
           :disabled="submitting"
@@ -663,7 +661,7 @@ function statusLabel(status: McpServerStatus): string {
         >
           <Loader2 v-if="submitting" class="mr-1 size-4 animate-spin" />
           {{ editingId === null ? 'Anlegen' : 'Speichern' }}
-        </Button>
+        </UiButton>
       </div>
     </div>
 
@@ -776,7 +774,7 @@ function statusLabel(status: McpServerStatus): string {
             </p>
           </div>
           <div class="flex flex-wrap items-center gap-1">
-            <Button
+            <UiButton
               size="sm"
               variant="outline"
               :disabled="restartingId === server.id"
@@ -789,8 +787,8 @@ function statusLabel(status: McpServerStatus): string {
               />
               <RefreshCcw v-else class="size-4" />
               <span class="ml-1 hidden sm:inline">Neustart</span>
-            </Button>
-            <Button
+            </UiButton>
+            <UiButton
               size="sm"
               variant="outline"
               :disabled="togglingId === server.id"
@@ -798,8 +796,8 @@ function statusLabel(status: McpServerStatus): string {
               @click="toggleEnabled(server)"
             >
               {{ server.enabled ? 'Deaktivieren' : 'Aktivieren' }}
-            </Button>
-            <Button
+            </UiButton>
+            <UiButton
               size="sm"
               variant="outline"
               :data-testid="`mcp-server-edit-${server.name}`"
@@ -807,8 +805,8 @@ function statusLabel(status: McpServerStatus): string {
             >
               <Pencil class="size-4" />
               <span class="ml-1 hidden sm:inline">Bearbeiten</span>
-            </Button>
-            <Button
+            </UiButton>
+            <UiButton
               size="sm"
               variant="outline"
               :disabled="deletingId === server.id"
@@ -821,7 +819,7 @@ function statusLabel(status: McpServerStatus): string {
               />
               <Trash2 v-else class="size-4" />
               <span class="ml-1 hidden sm:inline">Löschen</span>
-            </Button>
+            </UiButton>
           </div>
         </div>
 

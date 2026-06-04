@@ -10,23 +10,8 @@ import {
   X,
 } from 'lucide-vue-next'
 import { Brain } from 'lucide-vue-next'
-import AttachmentChip from '~/components/chat/AttachmentChip.vue'
-import ChatComposer from '~/components/chat/ChatComposer.vue'
-import ChatMessage from '~/components/chat/ChatMessage.vue'
-import ToolCallCard from '~/components/chat/ToolCallCard.vue'
-import ApprovalCard from '~/components/chat/ApprovalCard.vue'
-import ReasoningCard from '~/components/chat/ReasoningCard.vue'
-import SandboxCrashCard from '~/components/chat/SandboxCrashCard.vue'
-import SubagentCard from '~/components/chat/SubagentCard.vue'
-import ConversationList from '~/components/chat/ConversationList.vue'
-import EmptyChatState from '~/components/chat/EmptyChatState.vue'
-import NotesPanel from '~/components/panels/NotesPanel.vue'
-import WorkspacePanel from '~/components/panels/WorkspacePanel.vue'
+import type ResizablePanel from '~/components/ui/resizable/ResizablePanel.vue'
 import { useMediaQuery } from '@vueuse/core'
-import ThemeToggle from '~/components/ThemeToggle.vue'
-import ResizableHandle from '~/components/ui/resizable/ResizableHandle.vue'
-import ResizablePanel from '~/components/ui/resizable/ResizablePanel.vue'
-import ResizablePanelGroup from '~/components/ui/resizable/ResizablePanelGroup.vue'
 import { useApi } from '~/composables/useApi'
 import { useChatQueue } from '~/composables/useChatQueue'
 import { useToast } from '~/composables/useToast'
@@ -53,8 +38,6 @@ import type {
   Message,
   SandboxCrashedData,
 } from '~/types/api'
-import Button from '@/components/ui/button/Button.vue'
-import Separator from '@/components/ui/separator/Separator.vue'
 
 // Plan 26: the active conversation id is now driven by the URL. `/`
 // passes null; `/chat/:id` parses and passes the numeric id (or null
@@ -815,14 +798,14 @@ onMounted(() => {
 </script>
 
 <template>
-  <ResizablePanelGroup
+  <UiResizablePanelGroup
     direction="horizontal"
     auto-save-id="holzi-chat-layout"
     class="h-screen"
   >
     <!-- Left sidebar: conversations. Collapsible + resizable via reka-ui
          Splitter; sizes persist in localStorage via `auto-save-id`. -->
-    <ResizablePanel
+    <UiResizablePanel
       id="left-sidebar-panel"
       ref="leftPanelRef"
       :default-size="20"
@@ -839,7 +822,7 @@ onMounted(() => {
         class="h-screen overflow-hidden border-r bg-background"
         aria-label="Conversations"
       >
-        <ConversationList
+        <ChatConversationList
           :conversations="conversations"
           :active-id="activeId"
           @select="onSelect"
@@ -850,12 +833,12 @@ onMounted(() => {
           @search="onSearch"
         />
       </aside>
-    </ResizablePanel>
+    </UiResizablePanel>
 
-    <ResizableHandle @dragging="isDragging = $event" />
+    <UiResizableHandle @dragging="isDragging = $event" />
 
     <!-- Center: chat -->
-    <ResizablePanel
+    <UiResizablePanel
       id="main-panel"
       :default-size="56"
       :min-size="30"
@@ -864,7 +847,7 @@ onMounted(() => {
       <main class="flex h-screen flex-col">
       <header class="flex items-center justify-between border-b px-4 py-2">
         <div class="flex items-center gap-2">
-          <Button
+          <UiButton
             size="icon"
             variant="ghost"
             :aria-label="leftCollapsed ? 'Conversations einblenden' : 'Conversations ausblenden'"
@@ -873,7 +856,7 @@ onMounted(() => {
             @click="toggleLeftSidebar"
           >
             <Menu class="size-4" />
-          </Button>
+          </UiButton>
           <h1 class="text-sm font-semibold">
             {{ activeId === null ? 'Neuer Chat' : `Conversation #${activeId}` }}
           </h1>
@@ -891,16 +874,16 @@ onMounted(() => {
           </button>
           <ThemeToggle />
           <NuxtLink to="/settings/llm">
-            <Button size="sm" variant="ghost">
+            <UiButton size="sm" variant="ghost">
               <Settings class="mr-1 size-4" />
               Settings
-            </Button>
+            </UiButton>
           </NuxtLink>
-          <Button size="sm" variant="ghost" @click="logout">
+          <UiButton size="sm" variant="ghost" @click="logout">
             <LogOut class="mr-1 size-4" />
             Logout
-          </Button>
-          <Button
+          </UiButton>
+          <UiButton
             size="icon"
             variant="ghost"
             :aria-label="rightCollapsed ? 'Notes &amp; Workspace einblenden' : 'Notes &amp; Workspace ausblenden'"
@@ -909,7 +892,7 @@ onMounted(() => {
             @click="toggleRightSidebar"
           >
             <PanelRight class="size-4" />
-          </Button>
+          </UiButton>
         </div>
       </header>
 
@@ -926,14 +909,14 @@ onMounted(() => {
           aria-live="polite"
           class="flex w-full flex-col items-start"
         >
-          <SandboxCrashCard
+          <ChatSandboxCrashCard
             :crash="entry.crash"
             :restarting="entry.restarting"
             @restart="restartSandbox(entry.crash.sandbox_id)"
             @dismiss="dismissSandboxCrash(entry.crash.sandbox_id)"
           />
         </div>
-        <EmptyChatState
+        <ChatEmptyChatState
           v-if="messages.length === 0 && !isStreaming && !loadingConversation"
           :has-credentials="hasCredentials"
         />
@@ -954,7 +937,7 @@ onMounted(() => {
           v-if="isStreaming && streamingReasoning"
           class="flex w-full flex-col items-start"
         >
-          <ReasoningCard :content="streamingReasoning" streaming />
+          <ChatReasoningCard :content="streamingReasoning" streaming />
         </div>
         <!-- Live subagent activity for the turn in flight, grouped per agent. -->
         <div
@@ -962,7 +945,7 @@ onMounted(() => {
           :key="`subagent-${s.subagent_id}`"
           class="flex w-full flex-col items-start"
         >
-          <SubagentCard :subagent="s" />
+          <ChatSubagentCard :subagent="s" />
         </div>
         <!-- Approval cards for risky tool calls paused in the turn in flight.
              A pending card blocks the run until the user decides. -->
@@ -971,7 +954,7 @@ onMounted(() => {
           :key="`approval-${a.approval_id}`"
           class="flex w-full flex-col items-start"
         >
-          <ApprovalCard
+          <ChatApprovalCard
             :approval="a"
             :status="a.status"
             @decide="(payload) => decideApproval(a.approval_id, payload.decision, payload.reason)"
@@ -984,7 +967,7 @@ onMounted(() => {
           :key="`live-${tc.call_id}`"
           class="flex w-full flex-col items-start"
         >
-          <ToolCallCard :tool-call="tc" />
+          <ChatToolCallCard :tool-call="tc" />
         </div>
         <ChatMessage
           v-if="isStreaming && streamingText"
@@ -1026,7 +1009,7 @@ onMounted(() => {
             v-if="q.files.length"
             class="mt-1 flex max-w-[80%] flex-wrap justify-end gap-1.5"
           >
-            <AttachmentChip
+            <ChatAttachmentChip
               v-for="(f, i) in q.files"
               :key="`${q.id}-${i}`"
               :filename="f.name"
@@ -1045,9 +1028,9 @@ onMounted(() => {
           v-if="queueStalled"
           class="flex justify-start"
         >
-          <Button size="sm" variant="outline" @click="flushQueue">
+          <UiButton size="sm" variant="outline" @click="flushQueue">
             Warteschlange jetzt senden
-          </Button>
+          </UiButton>
         </div>
         <div
           v-if="
@@ -1084,12 +1067,12 @@ onMounted(() => {
         @stop="stopStreaming"
       />
       </main>
-    </ResizablePanel>
+    </UiResizablePanel>
 
-    <ResizableHandle @dragging="isDragging = $event" />
+    <UiResizableHandle @dragging="isDragging = $event" />
 
     <!-- Right panel: notes + workspace. Collapsible + resizable. -->
-    <ResizablePanel
+    <UiResizablePanel
       id="right-sidebar-panel"
       ref="rightPanelRef"
       :default-size="24"
@@ -1124,15 +1107,15 @@ onMounted(() => {
             <FolderTree class="size-3.5" /> Workspace
           </button>
         </nav>
-        <Separator />
+        <UiSeparator />
         <div class="flex-1 overflow-hidden">
-          <NotesPanel v-if="activePanel === 'notes'" />
-          <WorkspacePanel
+          <PanelsNotesPanel v-if="activePanel === 'notes'" />
+          <PanelsWorkspacePanel
             v-else-if="activePanel === 'workspace'"
             :conversation-id="activeId"
           />
         </div>
       </aside>
-    </ResizablePanel>
-  </ResizablePanelGroup>
+    </UiResizablePanel>
+  </UiResizablePanelGroup>
 </template>

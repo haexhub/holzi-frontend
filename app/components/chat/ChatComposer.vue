@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { Paperclip, Send, Square } from 'lucide-vue-next'
 import { useDropZone } from '@vueuse/core'
-import Button from '@/components/ui/button/Button.vue'
-import Textarea from '@/components/ui/textarea/Textarea.vue'
-import AttachmentChip from '~/components/chat/AttachmentChip.vue'
+import type Textarea from '~/components/ui/textarea/index.vue'
 
 const emit = defineEmits<{
   send: [payload: { text: string; files: File[] }]
@@ -121,7 +119,7 @@ const isDragOver = computed(() => !props.streaming && isOverDropZone.value)
     </div>
     <!-- Selected-but-not-yet-sent attachments. Removable until send. -->
     <div v-if="files.length" class="flex flex-wrap gap-1.5">
-      <AttachmentChip
+      <ChatAttachmentChip
         v-for="(f, i) in files"
         :key="`${f.name}-${i}`"
         :filename="f.name"
@@ -141,7 +139,7 @@ const isDragOver = computed(() => !props.streaming && isOverDropZone.value)
         class="hidden"
         @change="onPick"
       />
-      <Button
+      <UiButton
         type="button"
         size="icon"
         variant="ghost"
@@ -150,8 +148,8 @@ const isDragOver = computed(() => !props.streaming && isOverDropZone.value)
         @click="fileInput?.click()"
       >
         <Paperclip class="size-4" />
-      </Button>
-      <Textarea
+      </UiButton>
+      <UiTextarea
         ref="textareaRef"
         v-model="draft"
         :rows="1"
@@ -163,7 +161,7 @@ const isDragOver = computed(() => !props.streaming && isOverDropZone.value)
       />
       <!-- Stop stays reachable for the running turn while the composer below
            it keeps queueing the next message. -->
-      <Button
+      <UiButton
         v-if="streaming"
         type="button"
         size="icon"
@@ -174,15 +172,15 @@ const isDragOver = computed(() => !props.streaming && isOverDropZone.value)
         @click="emit('stop')"
       >
         <Square class="size-4 fill-current" />
-      </Button>
-      <Button
+      </UiButton>
+      <UiButton
         type="submit"
         size="icon"
         :disabled="!draft.trim()"
         :title="streaming ? 'In Warteschlange einreihen' : 'Senden'"
       >
         <Send class="size-4" />
-      </Button>
+      </UiButton>
     </div>
   </form>
 </template>

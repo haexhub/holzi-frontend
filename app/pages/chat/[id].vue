@@ -4,7 +4,6 @@
 // id to <ChatHub>. The hub handles all chat state — this page is just
 // the URL adapter. `useHead({ title })` updates the browser tab so
 // multi-tab workflows don't all show "Neuer Chat".
-import ChatHub from '~/components/ChatHub.vue'
 import { useApi } from '~/composables/useApi'
 import { useLastConversationStore } from '~/stores/lastConversation'
 import { useToast } from '~/composables/useToast'

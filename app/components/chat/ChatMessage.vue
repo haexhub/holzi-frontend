@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import { Pencil, RotateCcw } from 'lucide-vue-next'
 import type { Message } from '~/types/api'
-import RenderedMarkdown from '~/components/chat/RenderedMarkdown.vue'
-import ToolCallCard from '~/components/chat/ToolCallCard.vue'
-import ReasoningCard from '~/components/chat/ReasoningCard.vue'
-import AttachmentChip from '~/components/chat/AttachmentChip.vue'
 
 const props = defineProps<{
   // `ts` is optional: persisted messages carry it; the in-flight streaming
@@ -101,11 +97,11 @@ function confirmEdit() {
   >
     <!-- Reasoning card (assistant turns where the provider exposed thinking).
          Rendered before the answer so it reads as "thought, then replied". -->
-    <ReasoningCard v-if="hasReasoning" :content="reasoning!" class="mb-2" />
+    <ChatReasoningCard v-if="hasReasoning" :content="reasoning!" class="mb-2" />
 
     <!-- Tool turn: render a structured card instead of a text bubble. -->
     <template v-if="isTool && toolCall">
-      <ToolCallCard :tool-call="toolCall" />
+      <ChatToolCallCard :tool-call="toolCall" />
       <span
         v-if="timestamp"
         class="message-ts mt-1 px-1 text-[10px] text-muted-foreground"
@@ -158,7 +154,7 @@ function confirmEdit() {
         <span v-if="isTool" class="text-xs uppercase tracking-wider opacity-60 mr-2">
           tool
         </span>
-        <RenderedMarkdown v-if="renderMarkdown" :content="message.content" />
+        <ChatRenderedMarkdown v-if="renderMarkdown" :content="message.content" />
         <template v-else>{{ message.content }}</template>
       </div>
       <!-- Attachment chips on a user turn, under the bubble. -->
@@ -166,7 +162,7 @@ function confirmEdit() {
         v-if="isUser && attachments.length"
         class="mt-1 flex max-w-[80%] flex-wrap justify-end gap-1.5"
       >
-        <AttachmentChip
+        <ChatAttachmentChip
           v-for="a in attachments"
           :key="a.id"
           :filename="a.filename"

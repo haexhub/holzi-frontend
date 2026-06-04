@@ -8,10 +8,6 @@ import {
   Trash2,
   X,
 } from 'lucide-vue-next'
-import Button from '@/components/ui/button/Button.vue'
-import Input from '@/components/ui/input/Input.vue'
-import Textarea from '@/components/ui/textarea/Textarea.vue'
-import RenderedMarkdown from '~/components/chat/RenderedMarkdown.vue'
 import { useApi } from '~/composables/useApi'
 import { useConfirm } from '~/composables/useConfirm'
 import type { Note, NoteCreate, NoteUpdate } from '~/types/api'
@@ -232,21 +228,21 @@ onMounted(load)
           <Brain class="size-4 text-muted-foreground" />
           <h2 class="text-sm font-semibold">Personal memory</h2>
         </div>
-        <Button
+        <UiButton
           size="sm"
           variant="ghost"
           aria-label="Neue Notiz"
           @click="openCreate"
         >
           <Plus class="size-4" />
-        </Button>
+        </UiButton>
       </header>
 
       <div class="relative border-b p-2">
         <Search
           class="pointer-events-none absolute left-4 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
         />
-        <Input
+        <UiInput
           v-model="search"
           placeholder="Suchen…"
           class="h-8 pl-7 text-sm"
@@ -347,40 +343,40 @@ onMounted(load)
         </div>
         <div class="flex shrink-0 items-center gap-1">
           <template v-if="mode === 'read'">
-            <Button
+            <UiButton
               size="sm"
               variant="ghost"
               aria-label="Bearbeiten"
               @click="openEdit"
             >
               <Pencil class="size-4" />
-            </Button>
-            <Button
+            </UiButton>
+            <UiButton
               size="sm"
               variant="ghost"
               aria-label="Löschen"
               @click="remove"
             >
               <Trash2 class="size-4" />
-            </Button>
+            </UiButton>
           </template>
           <template v-else-if="mode === 'edit'">
-            <Button
+            <UiButton
               size="sm"
               variant="ghost"
               aria-label="Abbrechen"
               @click="cancelEdit"
             >
               <X class="size-4" />
-            </Button>
-            <Button
+            </UiButton>
+            <UiButton
               size="sm"
               aria-label="Speichern"
               :disabled="saving"
               @click="save"
             >
               <Check class="size-4" />
-            </Button>
+            </UiButton>
           </template>
         </div>
       </header>
@@ -401,7 +397,7 @@ onMounted(load)
 
         <!-- Read mode -->
         <div v-else-if="mode === 'read' && selectedNote" class="flex flex-col gap-4">
-          <RenderedMarkdown
+          <ChatRenderedMarkdown
             :content="selectedNote.content"
             data-testid="memory-detail-body"
           />
@@ -430,7 +426,7 @@ onMounted(load)
             <label for="memoryKey" class="text-xs font-medium text-muted-foreground">
               Key
             </label>
-            <Input
+            <UiInput
               id="memoryKey"
               v-model="formKey"
               :readonly="!isCreating"
@@ -443,7 +439,7 @@ onMounted(load)
             <label for="memoryContent" class="text-xs font-medium text-muted-foreground">
               Inhalt (Markdown)
             </label>
-            <Textarea
+            <UiTextarea
               id="memoryContent"
               v-model="formContent"
               class="min-h-80 font-mono text-sm"
@@ -454,7 +450,7 @@ onMounted(load)
             <label for="memoryTags" class="text-xs font-medium text-muted-foreground">
               Tags (kommagetrennt)
             </label>
-            <Input
+            <UiInput
               id="memoryTags"
               v-model="formTags"
               placeholder="z. B. hermes, status"

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Copy, FileText, RefreshCcw, WrapText } from 'lucide-vue-next'
-import Button from '@/components/ui/button/Button.vue'
 import { useLogs, type LogLevelFilter, type LogTailSize } from '~/composables/useLogs'
 import { useToast } from '~/composables/useToast'
 import type { LogRow } from '~/types/api'
@@ -136,7 +135,7 @@ async function copyAll(): Promise<void> {
         <h2 class="text-base font-semibold">Logs</h2>
       </div>
       <div class="flex items-center gap-2">
-        <Button
+        <UiButton
           size="sm"
           variant="outline"
           :disabled="loading || filtered.length === 0"
@@ -146,8 +145,8 @@ async function copyAll(): Promise<void> {
         >
           <Copy class="mr-1 size-4" />
           Kopieren
-        </Button>
-        <Button
+        </UiButton>
+        <UiButton
           size="sm"
           variant="outline"
           :aria-pressed="wrap"
@@ -157,8 +156,8 @@ async function copyAll(): Promise<void> {
         >
           <WrapText class="mr-1 size-4" />
           Wrap
-        </Button>
-        <Button
+        </UiButton>
+        <UiButton
           size="sm"
           variant="outline"
           :disabled="loading"
@@ -168,7 +167,7 @@ async function copyAll(): Promise<void> {
         >
           <RefreshCcw class="mr-1 size-4" />
           Neu laden
-        </Button>
+        </UiButton>
       </div>
     </header>
 

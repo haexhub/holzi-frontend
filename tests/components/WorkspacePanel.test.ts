@@ -46,7 +46,7 @@ const NOT_A_REPO: WorkspaceGitResponse = {
 }
 
 const stubs = {
-  RenderedMarkdown: {
+  ChatRenderedMarkdown: {
     name: 'RenderedMarkdown',
     props: ['content'],
     template: '<div class="rm-stub">{{ content }}</div>',

@@ -10,8 +10,6 @@ import {
   Trash2,
   X,
 } from 'lucide-vue-next'
-import Button from '@/components/ui/button/Button.vue'
-import Input from '@/components/ui/input/Input.vue'
 import { useApi } from '~/composables/useApi'
 import { useConfirm } from '~/composables/useConfirm'
 import { usePromptDialog } from '~/composables/usePromptDialog'
@@ -261,7 +259,7 @@ onMounted(load)
           <FolderTree class="size-4 text-muted-foreground" />
           <h2 class="text-sm font-semibold">Workspaces</h2>
         </div>
-        <Button
+        <UiButton
           size="sm"
           variant="ghost"
           aria-label="Workspace anlegen"
@@ -269,7 +267,7 @@ onMounted(load)
           @click="openCreate"
         >
           <Plus class="size-4" />
-        </Button>
+        </UiButton>
       </header>
 
       <div class="min-h-0 flex-1 overflow-y-auto">
@@ -363,7 +361,7 @@ onMounted(load)
         </div>
         <div class="flex shrink-0 items-center gap-1">
           <template v-if="mode === 'detail' && selected && !renaming">
-            <Button
+            <UiButton
               size="sm"
               variant="ghost"
               aria-label="Sandbox neu starten"
@@ -375,8 +373,8 @@ onMounted(load)
                 class="size-4"
                 :class="restartingId === selected.id ? 'animate-spin' : ''"
               />
-            </Button>
-            <Button
+            </UiButton>
+            <UiButton
               size="sm"
               variant="ghost"
               aria-label="Umbenennen"
@@ -384,8 +382,8 @@ onMounted(load)
               @click="openRename"
             >
               <Pencil class="size-4" />
-            </Button>
-            <Button
+            </UiButton>
+            <UiButton
               size="sm"
               variant="ghost"
               aria-label="Archivieren"
@@ -393,25 +391,25 @@ onMounted(load)
               @click="archive"
             >
               <Trash2 class="size-4" />
-            </Button>
+            </UiButton>
           </template>
           <template v-else-if="renaming">
-            <Button
+            <UiButton
               size="sm"
               variant="ghost"
               aria-label="Abbrechen"
               @click="cancelRename"
             >
               <X class="size-4" />
-            </Button>
-            <Button
+            </UiButton>
+            <UiButton
               size="sm"
               aria-label="Speichern"
               :disabled="renameSaving"
               @click="saveRename"
             >
               <Check class="size-4" />
-            </Button>
+            </UiButton>
           </template>
         </div>
       </header>
@@ -447,7 +445,7 @@ onMounted(load)
             >
               Anzeigename
             </label>
-            <Input
+            <UiInput
               id="workspaceDisplayName"
               v-model="renameDraft"
               :disabled="renameSaving"

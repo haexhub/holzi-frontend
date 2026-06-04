@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { AlertOctagon, Check, Loader2, ShieldAlert, X } from 'lucide-vue-next'
-import McpInstallApprovalDetails from '~/components/chat/McpInstallApprovalDetails.vue'
 import type { ApprovalDecision } from '~/composables/useChatStream'
 
 // A risky tool call paused for the user's go-ahead. `status` is owned by the
@@ -95,7 +94,7 @@ function decide(decision: ApprovalDecision) {
       </p>
       <div v-if="isMcpInstall">
         <p class="mb-1 font-medium text-muted-foreground">Details</p>
-        <McpInstallApprovalDetails :params="approval.arguments" />
+        <ChatMcpInstallApprovalDetails :params="approval.arguments" />
       </div>
       <div v-else-if="hasArguments">
         <p class="mb-1 font-medium text-muted-foreground">Argumente</p>

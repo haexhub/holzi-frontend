@@ -41,7 +41,7 @@ vi.mock('~/composables/useToast', () => ({
 }))
 
 const stubs = {
-  RenderedMarkdown: {
+  ChatRenderedMarkdown: {
     name: 'RenderedMarkdown',
     props: ['content'],
     template: '<div class="rm-stub">{{ content }}</div>',

@@ -11,9 +11,6 @@ import {
   Trash2,
   X,
 } from 'lucide-vue-next'
-import Button from '@/components/ui/button/Button.vue'
-import Input from '@/components/ui/input/Input.vue'
-import Textarea from '@/components/ui/textarea/Textarea.vue'
 import { useConfirm } from '~/composables/useConfirm'
 import { useTasks } from '~/composables/useTasks'
 import type {
@@ -338,14 +335,14 @@ onMounted(load)
           <ListChecks class="size-4 text-muted-foreground" />
           <h2 class="text-sm font-semibold">Agent tasks</h2>
         </div>
-        <Button
+        <UiButton
           size="sm"
           variant="ghost"
           aria-label="Neuer Task"
           @click="openCreate"
         >
           <Plus class="size-4" />
-        </Button>
+        </UiButton>
       </header>
 
       <div class="min-h-0 flex-1 overflow-y-auto">
@@ -436,7 +433,7 @@ onMounted(load)
         </div>
         <div class="flex shrink-0 items-center gap-1">
           <template v-if="mode === 'read' && selected">
-            <Button
+            <UiButton
               size="sm"
               variant="outline"
               :disabled="running"
@@ -445,8 +442,8 @@ onMounted(load)
               @click="onRunNow"
             >
               <Play class="size-4" />
-            </Button>
-            <Button
+            </UiButton>
+            <UiButton
               size="sm"
               variant="ghost"
               :aria-label="selected.enabled ? 'Pausieren' : 'Aktivieren'"
@@ -455,16 +452,16 @@ onMounted(load)
             >
               <Pause v-if="selected.enabled" class="size-4" />
               <Play v-else class="size-4" />
-            </Button>
-            <Button
+            </UiButton>
+            <UiButton
               size="sm"
               variant="ghost"
               aria-label="Bearbeiten"
               @click="openEdit"
             >
               <Pencil class="size-4" />
-            </Button>
-            <Button
+            </UiButton>
+            <UiButton
               size="sm"
               variant="ghost"
               aria-label="Löschen"
@@ -472,18 +469,18 @@ onMounted(load)
               @click="onRemove"
             >
               <Trash2 class="size-4" />
-            </Button>
+            </UiButton>
           </template>
           <template v-else-if="mode === 'edit'">
-            <Button
+            <UiButton
               size="sm"
               variant="ghost"
               aria-label="Abbrechen"
               @click="cancelEdit"
             >
               <X class="size-4" />
-            </Button>
-            <Button
+            </UiButton>
+            <UiButton
               size="sm"
               aria-label="Speichern"
               data-testid="task-save"
@@ -491,7 +488,7 @@ onMounted(load)
               @click="save"
             >
               <Check class="size-4" />
-            </Button>
+            </UiButton>
           </template>
         </div>
       </header>
@@ -538,7 +535,7 @@ onMounted(load)
             <label for="taskTitle" class="text-xs font-medium text-muted-foreground">
               Titel
             </label>
-            <Input
+            <UiInput
               id="taskTitle"
               v-model="formTitle"
               placeholder="z. B. Daily summary"
@@ -548,7 +545,7 @@ onMounted(load)
             <label for="taskPrompt" class="text-xs font-medium text-muted-foreground">
               Prompt
             </label>
-            <Textarea
+            <UiTextarea
               id="taskPrompt"
               v-model="formPrompt"
               class="min-h-32 font-mono text-sm"
@@ -589,7 +586,7 @@ onMounted(load)
             <label for="taskDueAt" class="text-xs font-medium text-muted-foreground">
               Zeitpunkt (lokale Zeit)
             </label>
-            <Input
+            <UiInput
               id="taskDueAt"
               v-model="formDueAtLocal"
               type="datetime-local"
@@ -600,7 +597,7 @@ onMounted(load)
               <label for="taskCron" class="text-xs font-medium text-muted-foreground">
                 Cron-Ausdruck (5 Felder)
               </label>
-              <Input
+              <UiInput
                 id="taskCron"
                 v-model="formSchedule"
                 placeholder="0 8 * * *"
@@ -614,7 +611,7 @@ onMounted(load)
               <label for="taskTz" class="text-xs font-medium text-muted-foreground">
                 Zeitzone (IANA)
               </label>
-              <Input
+              <UiInput
                 id="taskTz"
                 v-model="formTimezone"
                 placeholder="UTC"

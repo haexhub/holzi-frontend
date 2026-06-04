@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { useBreakpoints, breakpointsTailwind } from '@vueuse/core'
-import Sonner from '@/components/ui/sonner/Sonner.vue'
-import AppConfirmHost from '@/components/AppConfirmHost.vue'
 
 const colorMode = useColorMode()
 const sonnerTheme = computed<'light' | 'dark'>(() =>
@@ -20,6 +18,6 @@ const sonnerPosition = computed<'top-right' | 'bottom-center'>(() =>
   <NuxtLayout>
     <NuxtPage />
     <AppConfirmHost />
-    <Sonner :theme="sonnerTheme" :position="sonnerPosition" />
+    <UiSonner :theme="sonnerTheme" :position="sonnerPosition" />
   </NuxtLayout>
 </template>

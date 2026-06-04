@@ -9,8 +9,6 @@ import {
   Trash2,
   X,
 } from 'lucide-vue-next'
-import Button from '@/components/ui/button/Button.vue'
-import RenderedMarkdown from '~/components/chat/RenderedMarkdown.vue'
 import { useApi } from '~/composables/useApi'
 import { usePromptDialog } from '~/composables/usePromptDialog'
 import { useToast } from '~/composables/useToast'
@@ -475,7 +473,7 @@ defineExpose({ refreshAll })
         </option>
         <option value="__create__">+ Neuen Branch erstellen…</option>
       </select>
-      <Button
+      <UiButton
         size="sm"
         variant="ghost"
         :disabled="statusLoading || branchesLoading"
@@ -486,7 +484,7 @@ defineExpose({ refreshAll })
           class="size-3.5"
           :class="statusLoading || branchesLoading ? 'animate-spin' : ''"
         />
-      </Button>
+      </UiButton>
     </div>
 
     <!-- Status sections -->
@@ -532,7 +530,7 @@ defineExpose({ refreshAll })
               >
                 {{ entry.path }}
               </button>
-              <Button
+              <UiButton
                 size="sm"
                 variant="ghost"
                 aria-label="Stage"
@@ -540,8 +538,8 @@ defineExpose({ refreshAll })
                 @click="stageOne(entry.path)"
               >
                 <Plus class="size-3" />
-              </Button>
-              <Button
+              </UiButton>
+              <UiButton
                 size="sm"
                 variant="ghost"
                 aria-label="Verwerfen"
@@ -550,7 +548,7 @@ defineExpose({ refreshAll })
                 @click="discardOne(entry.path)"
               >
                 <Trash2 class="size-3" />
-              </Button>
+              </UiButton>
             </li>
           </ul>
         </section>
@@ -579,7 +577,7 @@ defineExpose({ refreshAll })
               >
                 {{ entry.path }}
               </button>
-              <Button
+              <UiButton
                 size="sm"
                 variant="ghost"
                 aria-label="Unstage"
@@ -587,7 +585,7 @@ defineExpose({ refreshAll })
                 @click="unstageOne(entry.path)"
               >
                 <Minus class="size-3" />
-              </Button>
+              </UiButton>
             </li>
           </ul>
         </section>
@@ -633,7 +631,7 @@ defineExpose({ refreshAll })
             Patch gekürzt — Diff ist größer als 256 KiB.
           </p>
           <div class="p-3 text-xs">
-            <RenderedMarkdown :content="diffMarkdown" />
+            <ChatRenderedMarkdown :content="diffMarkdown" />
           </div>
         </template>
       </div>
@@ -649,13 +647,13 @@ defineExpose({ refreshAll })
         spellcheck="false"
       />
       <div class="flex flex-wrap items-center gap-2">
-        <Button
+        <UiButton
           size="sm"
           :disabled="commitBusy || !canWrite || !commitMessage.trim() || stagedEntries.length === 0"
           @click="commit"
         >
           {{ commitBusy ? 'Commit…' : 'Commit (staged)' }}
-        </Button>
+        </UiButton>
         <p
           v-if="!canWrite"
           class="text-xs text-muted-foreground"
@@ -674,38 +672,38 @@ defineExpose({ refreshAll })
     <!-- Remote ops + last-message banner -->
     <div class="space-y-2 border-t p-3">
       <div class="flex flex-wrap items-center gap-2">
-        <Button
+        <UiButton
           size="sm"
           variant="outline"
           :disabled="remoteBusy"
           @click="fetchRemote"
         >
           Fetch
-        </Button>
-        <Button
+        </UiButton>
+        <UiButton
           size="sm"
           variant="outline"
           :disabled="remoteBusy"
           @click="pullRemote"
         >
           <ArrowDown class="mr-1 size-3" /> Pull
-        </Button>
-        <Button
+        </UiButton>
+        <UiButton
           size="sm"
           variant="outline"
           :disabled="remoteBusy"
           @click="pushRemote(false)"
         >
           <ArrowUp class="mr-1 size-3" /> Push
-        </Button>
-        <Button
+        </UiButton>
+        <UiButton
           size="sm"
           variant="ghost"
           :disabled="remoteBusy"
           @click="pushRemote(true)"
         >
           Push --set-upstream
-        </Button>
+        </UiButton>
       </div>
       <pre
         v-if="remoteMessage"

@@ -9,9 +9,7 @@ import {
   ShieldAlert,
   Wrench,
 } from 'lucide-vue-next'
-import Button from '@/components/ui/button/Button.vue'
-import McpServersSection from '@/components/settings/McpServersSection.vue'
-import SkillsSection from '@/components/settings/SkillsSection.vue'
+import type McpServersSection from '~/components/settings/McpServersSection.vue'
 import { useMcpHealth } from '~/composables/useMcpHealth'
 import { useTools } from '~/composables/useTools'
 import { useToast } from '~/composables/useToast'
@@ -149,10 +147,10 @@ function onMcpCatalogChanged() {
     </header>
 
     <!-- ── Skills (Plan 33) ────────────────────────────────────── -->
-    <SkillsSection />
+    <SettingsSkillsSection />
 
     <!-- ── MCP-Servers (Plan 32) ───────────────────────────────── -->
-    <McpServersSection
+    <SettingsMcpServersSection
       ref="mcpSectionRef"
       :on-catalog-changed="onMcpCatalogChanged"
     />
@@ -167,7 +165,7 @@ function onMcpCatalogChanged() {
             Agents über MCP ansprechen.
           </p>
         </div>
-        <Button
+        <UiButton
           size="sm"
           variant="outline"
           :disabled="mcpApi.loading.value"
@@ -177,7 +175,7 @@ function onMcpCatalogChanged() {
         >
           <RefreshCcw class="mr-1 size-4" />
           Neu laden
-        </Button>
+        </UiButton>
       </header>
 
       <div class="space-y-3 p-3">
@@ -232,7 +230,7 @@ function onMcpCatalogChanged() {
               class="rounded bg-muted px-1.5 py-0.5 font-mono"
               data-testid="mcp-url"
             >{{ mcpApi.data.value.url }}</code>
-            <Button
+            <UiButton
               size="sm"
               variant="ghost"
               aria-label="MCP-URL kopieren"
@@ -241,7 +239,7 @@ function onMcpCatalogChanged() {
             >
               <Copy class="mr-1 size-3.5" />
               Kopieren
-            </Button>
+            </UiButton>
           </div>
 
           <p

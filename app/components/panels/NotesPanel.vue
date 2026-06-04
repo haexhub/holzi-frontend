@@ -2,9 +2,6 @@
 import { Trash2 } from 'lucide-vue-next'
 import { useApi } from '~/composables/useApi'
 import type { Note, NoteCreate } from '~/types/api'
-import Button from '@/components/ui/button/Button.vue'
-import Input from '@/components/ui/input/Input.vue'
-import Textarea from '@/components/ui/textarea/Textarea.vue'
 
 const api = useApi()
 const notes = ref<Note[]>([])
@@ -71,17 +68,17 @@ onMounted(load)
       >
         <div class="flex items-start justify-between gap-2">
           <code class="font-mono text-xs text-muted-foreground">{{ n.key }}</code>
-          <Button size="sm" variant="ghost" @click="remove(n.key)">
+          <UiButton size="sm" variant="ghost" @click="remove(n.key)">
             <Trash2 class="size-3.5" />
-          </Button>
+          </UiButton>
         </div>
         <p class="mt-1 whitespace-pre-wrap break-words">{{ n.content }}</p>
       </div>
     </div>
     <form class="space-y-2 border-t p-3" @submit.prevent="add">
-      <Input v-model="newKey" placeholder="key (z.B. project.holzi.status)" />
-      <Textarea v-model="newContent" placeholder="content" class="min-h-[60px]" />
-      <Button type="submit" size="sm" class="w-full">Speichern</Button>
+      <UiInput v-model="newKey" placeholder="key (z.B. project.holzi.status)" />
+      <UiTextarea v-model="newContent" placeholder="content" class="min-h-[60px]" />
+      <UiButton type="submit" size="sm" class="w-full">Speichern</UiButton>
     </form>
   </div>
 </template>

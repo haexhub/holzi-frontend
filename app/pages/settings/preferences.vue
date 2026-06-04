@@ -12,9 +12,6 @@ import {
   Trash2,
   X,
 } from 'lucide-vue-next'
-import Button from '@/components/ui/button/Button.vue'
-import Input from '@/components/ui/input/Input.vue'
-import Textarea from '@/components/ui/textarea/Textarea.vue'
 import { useChannels } from '~/composables/useChannels'
 import { useConfirm } from '~/composables/useConfirm'
 import { usePersonas } from '~/composables/usePersonas'
@@ -539,7 +536,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
             Wer der Agent ist — Identität und Stil.
           </p>
         </div>
-        <Button
+        <UiButton
           v-if="editing !== 'new'"
           size="sm"
           variant="outline"
@@ -547,7 +544,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
           @click="openCreate"
         >
           <Plus class="mr-1 size-3.5" /> Neue Persona
-        </Button>
+        </UiButton>
       </div>
 
       <!-- Create form (inline) -->
@@ -561,7 +558,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
           <label class="text-xs font-medium text-muted-foreground"
             >Name</label
           >
-          <Input
+          <UiInput
             v-model="formName"
             placeholder="z. B. Hermes der Direkte"
             data-testid="personas-form-name"
@@ -571,7 +568,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
           <label class="text-xs font-medium text-muted-foreground"
             >Prompt (Identität + Stil)</label
           >
-          <Textarea
+          <UiTextarea
             v-model="formPrompt"
             class="min-h-32 font-mono text-sm"
             spellcheck="false"
@@ -594,17 +591,17 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
           {{ formError }}
         </p>
         <div class="flex gap-2">
-          <Button size="sm" type="submit" :disabled="saving">
+          <UiButton size="sm" type="submit" :disabled="saving">
             <Check class="mr-1 size-3.5" /> Speichern
-          </Button>
-          <Button
+          </UiButton>
+          <UiButton
             size="sm"
             variant="ghost"
             type="button"
             @click="cancelEdit"
           >
             <X class="mr-1 size-3.5" /> Abbrechen
-          </Button>
+          </UiButton>
         </div>
       </form>
 
@@ -627,13 +624,13 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
               <label class="text-xs font-medium text-muted-foreground"
                 >Name</label
               >
-              <Input v-model="formName" />
+              <UiInput v-model="formName" />
             </div>
             <div class="flex flex-col gap-1">
               <label class="text-xs font-medium text-muted-foreground"
                 >Prompt</label
               >
-              <Textarea
+              <UiTextarea
                 v-model="formPrompt"
                 class="min-h-32 font-mono text-sm"
                 spellcheck="false"
@@ -647,17 +644,17 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
               {{ formError }}
             </p>
             <div class="flex gap-2">
-              <Button size="sm" type="submit" :disabled="saving">
+              <UiButton size="sm" type="submit" :disabled="saving">
                 <Check class="mr-1 size-3.5" /> Speichern
-              </Button>
-              <Button
+              </UiButton>
+              <UiButton
                 size="sm"
                 variant="ghost"
                 type="button"
                 @click="cancelEdit"
               >
                 <X class="mr-1 size-3.5" /> Abbrechen
-              </Button>
+              </UiButton>
             </div>
           </form>
 
@@ -675,7 +672,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                 </span>
               </div>
               <div class="flex shrink-0 items-center gap-1">
-                <Button
+                <UiButton
                   size="sm"
                   variant="ghost"
                   aria-label="Bearbeiten"
@@ -683,8 +680,8 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                   @click="openEdit(persona)"
                 >
                   <Pencil class="size-4" />
-                </Button>
-                <Button
+                </UiButton>
+                <UiButton
                   v-if="!persona.is_default"
                   size="sm"
                   variant="outline"
@@ -693,8 +690,8 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                   @click="setDefaultPersona(persona)"
                 >
                   Als Default setzen
-                </Button>
-                <Button
+                </UiButton>
+                <UiButton
                   size="sm"
                   variant="ghost"
                   aria-label="Löschen"
@@ -703,7 +700,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                   @click="deletePersona(persona)"
                 >
                   <Trash2 class="size-4" />
-                </Button>
+                </UiButton>
               </div>
             </div>
             <pre
@@ -757,7 +754,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                     <span class="font-mono">{{ item.skill.slug }}</span>
                     <span class="text-muted-foreground"> — {{ item.skill.name }}</span>
                   </span>
-                  <Button
+                  <UiButton
                     size="sm"
                     variant="ghost"
                     class="h-7 w-7 p-0"
@@ -767,8 +764,8 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                     @click="moveSkill(persona.id, item.skill.id, -1)"
                   >
                     <ArrowUp class="size-3.5" />
-                  </Button>
-                  <Button
+                  </UiButton>
+                  <UiButton
                     size="sm"
                     variant="ghost"
                     class="h-7 w-7 p-0"
@@ -781,8 +778,8 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                     @click="moveSkill(persona.id, item.skill.id, 1)"
                   >
                     <ArrowDown class="size-3.5" />
-                  </Button>
-                  <Button
+                  </UiButton>
+                  <UiButton
                     size="sm"
                     variant="ghost"
                     class="h-7 w-7 p-0"
@@ -792,7 +789,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                     @click="removeSkillFromPersona(persona.id, item.skill.id)"
                   >
                     <X class="size-3.5" />
-                  </Button>
+                  </UiButton>
                 </li>
               </ul>
               <div
@@ -913,7 +910,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                 :for="`prompt-${channel.channel}`"
                 >Channel-Prompt</label
               >
-              <Textarea
+              <UiTextarea
                 :id="`prompt-${channel.channel}`"
                 v-model="draftFor(channel).prompt"
                 class="min-h-32 font-mono text-sm"
@@ -931,7 +928,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
             </p>
 
             <div class="flex flex-wrap items-center gap-2">
-              <Button
+              <UiButton
                 size="sm"
                 :disabled="
                   !channelDirty(channel) || draftFor(channel).saving
@@ -940,8 +937,8 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                 @click="saveChannel(channel)"
               >
                 <Check class="mr-1 size-3.5" /> Speichern
-              </Button>
-              <Button
+              </UiButton>
+              <UiButton
                 v-if="!channel.is_default_prompt"
                 size="sm"
                 variant="ghost"
@@ -949,7 +946,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                 @click="resetChannelPrompt(channel)"
               >
                 <RotateCcw class="mr-1 size-3.5" /> Prompt zurücksetzen
-              </Button>
+              </UiButton>
             </div>
           </div>
         </li>

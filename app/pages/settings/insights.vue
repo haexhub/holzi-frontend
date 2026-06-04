@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { BarChart3, RefreshCcw } from 'lucide-vue-next'
-import Button from '@/components/ui/button/Button.vue'
 import { useInsights } from '~/composables/useInsights'
 import { estimateTotalCostUsd } from '~/lib/pricing'
 import type { InsightsPeriod } from '~/types/api'
@@ -128,7 +127,7 @@ const sortedByModel = computed(() => {
             {{ opt.label }}
           </button>
         </div>
-        <Button
+        <UiButton
           size="sm"
           variant="outline"
           :disabled="loading"
@@ -138,7 +137,7 @@ const sortedByModel = computed(() => {
         >
           <RefreshCcw class="mr-1 size-4" />
           Neu laden
-        </Button>
+        </UiButton>
       </div>
     </header>
 

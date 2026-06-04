@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Moon, Sun } from 'lucide-vue-next'
-import Button from '@/components/ui/button/Button.vue'
 
 // The preference (`colorMode.value`) can be 'auto' | 'light' | 'dark';
 // `state` resolves 'auto' against the OS preference, so the icon
@@ -14,7 +13,7 @@ function toggle() {
 </script>
 
 <template>
-  <Button
+  <UiButton
     size="sm"
     variant="ghost"
     :aria-label="isDark ? 'Light-Mode' : 'Dark-Mode'"
@@ -23,5 +22,5 @@ function toggle() {
   >
     <Sun v-if="isDark" class="size-4" />
     <Moon v-else class="size-4" />
-  </Button>
+  </UiButton>
 </template>

@@ -5,17 +5,17 @@ import ChatMessage from '~/components/chat/ChatMessage.vue'
 // Stub the (async, shiki-backed) Markdown renderer so these tests stay fast
 // and focused on ChatMessage's routing.
 const stubs = {
-  RenderedMarkdown: {
+  ChatRenderedMarkdown: {
     name: 'RenderedMarkdown',
     props: ['content'],
     template: '<div class="rm-stub">{{ content }}</div>',
   },
-  ToolCallCard: {
+  ChatToolCallCard: {
     name: 'ToolCallCard',
     props: ['toolCall'],
     template: '<div class="tcc-stub">{{ toolCall.name }}</div>',
   },
-  ReasoningCard: {
+  ChatReasoningCard: {
     name: 'ReasoningCard',
     props: ['content', 'streaming'],
     template: '<div class="rc-stub">{{ content }}</div>',

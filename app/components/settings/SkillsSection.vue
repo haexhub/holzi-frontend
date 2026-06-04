@@ -9,10 +9,6 @@ import {
   Trash2,
   X,
 } from 'lucide-vue-next'
-import Button from '@/components/ui/button/Button.vue'
-import Input from '@/components/ui/input/Input.vue'
-import Textarea from '@/components/ui/textarea/Textarea.vue'
-import RenderedMarkdown from '~/components/chat/RenderedMarkdown.vue'
 import { useConfirm } from '~/composables/useConfirm'
 import { useSkills } from '~/composables/useSkills'
 import { useToast } from '~/composables/useToast'
@@ -249,7 +245,7 @@ onMounted(() => {
             <Search
               class="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
             />
-            <Input
+            <UiInput
               v-model="search"
               placeholder="Suchen…"
               class="h-8 pl-7 text-sm"
@@ -257,7 +253,7 @@ onMounted(() => {
               data-testid="skill-search"
             />
           </div>
-          <Button
+          <UiButton
             size="sm"
             variant="ghost"
             aria-label="Neuer Skill"
@@ -265,7 +261,7 @@ onMounted(() => {
             @click="openCreate"
           >
             <Plus class="size-4" />
-          </Button>
+          </UiButton>
         </div>
 
         <div class="min-h-0 flex-1 overflow-y-auto">
@@ -342,7 +338,7 @@ onMounted(() => {
           </div>
           <div class="flex shrink-0 items-center gap-1">
             <template v-if="mode === 'read'">
-              <Button
+              <UiButton
                 size="sm"
                 variant="ghost"
                 aria-label="Bearbeiten"
@@ -350,8 +346,8 @@ onMounted(() => {
                 @click="openEdit"
               >
                 <Pencil class="size-4" />
-              </Button>
-              <Button
+              </UiButton>
+              <UiButton
                 size="sm"
                 variant="ghost"
                 aria-label="Löschen"
@@ -359,10 +355,10 @@ onMounted(() => {
                 @click="remove"
               >
                 <Trash2 class="size-4" />
-              </Button>
+              </UiButton>
             </template>
             <template v-else-if="mode === 'edit'">
-              <Button
+              <UiButton
                 size="sm"
                 variant="ghost"
                 aria-label="Abbrechen"
@@ -370,8 +366,8 @@ onMounted(() => {
                 @click="cancelEdit"
               >
                 <X class="size-4" />
-              </Button>
-              <Button
+              </UiButton>
+              <UiButton
                 size="sm"
                 aria-label="Speichern"
                 :disabled="saving"
@@ -379,7 +375,7 @@ onMounted(() => {
                 @click="save"
               >
                 <Check class="size-4" />
-              </Button>
+              </UiButton>
             </template>
           </div>
         </header>
@@ -412,7 +408,7 @@ onMounted(() => {
               </template>
             </dl>
             <div class="rounded-md border bg-muted/30 p-3">
-              <RenderedMarkdown
+              <ChatRenderedMarkdown
                 :content="selectedSkill.body_markdown"
                 data-testid="skill-detail-body"
               />
@@ -433,7 +429,7 @@ onMounted(() => {
               >
                 Slug
               </label>
-              <Input
+              <UiInput
                 id="skillSlug"
                 v-model="formSlug"
                 :readonly="!isCreating"
@@ -450,7 +446,7 @@ onMounted(() => {
               >
                 Name
               </label>
-              <Input
+              <UiInput
                 id="skillName"
                 v-model="formName"
                 placeholder="z. B. Code Style TypeScript"
@@ -464,7 +460,7 @@ onMounted(() => {
               >
                 Beschreibung (kurz)
               </label>
-              <Input
+              <UiInput
                 id="skillDescription"
                 v-model="formDescription"
                 placeholder="z. B. Style-Guidelines für TypeScript-Reviews"
@@ -478,7 +474,7 @@ onMounted(() => {
               >
                 Wann einsetzen? (optional)
               </label>
-              <Input
+              <UiInput
                 id="skillWhenToUse"
                 v-model="formWhenToUse"
                 placeholder="z. B. Bei TypeScript-Code-Reviews"
@@ -492,7 +488,7 @@ onMounted(() => {
               >
                 Body (Markdown)
               </label>
-              <Textarea
+              <UiTextarea
                 id="skillBody"
                 v-model="formBody"
                 class="min-h-72 font-mono text-sm"
