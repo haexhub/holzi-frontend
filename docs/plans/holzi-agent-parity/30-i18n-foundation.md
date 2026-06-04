@@ -59,7 +59,7 @@ gewählten Sprache.
   Prefix; manuelle User-Wahl 2026-06-04, überstimmt den initialen
   `no_prefix`-Vorschlag). Locale lebt zusätzlich im i18n-Cookie +
   `Accept-Language`-Fallback bei Erstbesuch.
-- Lazy-Loading aus `app/i18n/locales/{de,en}.json`.
+- Lazy-Loading aus `i18n/locales/{de,en}.json`.
 - Key-Hierarchie:
   - `common.*` — wiederverwendete Buttons, Labels („Speichern",
     „Abbrechen", „Löschen", „Bearbeiten", „Schließen", …).
@@ -163,7 +163,7 @@ TDD-Philosophie: erst Test schreiben, dann Impl, dann commit.
 ### Task 1: Foundation + Common-Keys + Sprach-Picker
 
 **Files:**
-- Create: `app/i18n/locales/de.json`, `app/i18n/locales/en.json`
+- Create: `i18n/locales/de.json`, `i18n/locales/en.json`
 - Modify: `nuxt.config.ts` (i18n-Modul + Config)
 - Modify: `app/pages/settings/preferences.vue` (Sprach-Picker als
   dritte Section)
@@ -232,35 +232,63 @@ TDD-Philosophie: erst Test schreiben, dann Impl, dann commit.
 
 **Files:**
 - Create: `app/lib/errorMessages.ts`
-- Modify: alle `app/composables/use*.ts` die heute deutsche
-  Fallback-Strings haben
-- Modify: `app/i18n/locales/{de,en}.json` (alle `errors.*`-Keys aus
-  Task 2 ergänzen)
+- Modify: alle `app/composables/use*.ts` mit deutschen Fallback-
+  Strings (Stand 2026-06-04, via `rg "'Fehler|\"Fehler|fehlgeschlagen"
+  app/composables/`):
+  - `useInsights.ts`, `useTasks.ts`, `useTools.ts`,
+    `useMcpServers.ts`, `useMcpHealth.ts`, `useLogs.ts`,
+    `useDiagnostics.ts`, `useSkills.ts`
+- Modify: `app/composables/useChatStream.ts` — die
+  `friendlyChatError()`-Switch-Case mit `ChatStreamError.code`
+  ist heute deutsche String-Map (NICHT Backend-ErrorCode, sondern
+  client-side stream-error code). Mit umstellen: `errors.chat.<code>`
+  oder analog. Tests in `tests/composables/useChatStream.test.ts`
+  anpassen.
+- Modify: `app/components/ChatHub.vue` — die `runStream()` /
+  `restartSandbox()` / `decideApproval()` Calls von
+  `friendlyChatError(err)` bleiben unverändert (sie konsumieren den
+  i18n-Output direkt); aber die DE-Error-Fallbacks in den
+  `try/catch`-Branches sind 4c2 bereits über
+  `components.chatHub.errors.*` gelöst und brauchen Task 3 nicht.
+- Modify: `i18n/locales/{de,en}.json` (alle `errors.*`-Keys aus
+  Task 2 + Chat-Stream-Codes ergänzen)
 - Create: `tests/lib/errorMessages.test.ts`
-- Modify: `app/pages/api-generated.ts` (kommt aus `pnpm run gen:api`
-  nach Task 2)
+- Regenerate: `app/types/api-generated.ts` via `pnpm run gen:api`
+  nach Task 2 (env + port: siehe [[reference_gen_api_command]])
 
 **Steps:**
 
 1. Nach Task 2 mergen: `pnpm run gen:api` ausführen, generated types
-   updaten.
+   updaten. Verifizieren dass `ErrorCode`-Enum im Generated-File
+   erscheint.
 2. `app/lib/errorMessages.ts` schreiben mit `translateError(err, t)`-
-   Helper. Test schreiben für: bekannter Code, unbekannter Code,
-   null/undefined error, network error ohne Response.
+   Helper. Test schreiben für: bekannter Code, unbekannter Code (→
+   `errors.UNKNOWN`-Fallback), null/undefined error, network error
+   ohne Response.
 3. Test laufen, FAIL erwartet.
 4. Helper implementieren, Test PASS.
 5. Pro Composable mit Fallback-String: `'Fehler beim Laden.'` durch
    `translateError(err, t)` ersetzen. Composable-Tests anpassen.
-6. `de.json`/`en.json` um alle `errors.<CODE>`-Keys ergänzen, die
+   Heute getestete DE-Strings → auf i18n-Key umbauen (Passthrough-
+   `$t`-Stub).
+6. `useChatStream.friendlyChatError()`: Switch-Case auf
+   `t('errors.chat.<code>')`-Lookup umstellen. ChatStreamError-Code
+   ist eine separate Achse als Backend-ErrorCode — diese gehört
+   unter eine eigene Sub-Domain (z.B. `errors.chat.upstream_timeout`).
+7. `de.json`/`en.json` um alle `errors.<CODE>`-Keys ergänzen, die
    in Task 2 erzeugt wurden. Lookup auf Code-Enum aus
-   `api-generated.ts`.
-7. Neuer Test `tests/i18n/error-codes.test.ts`: iteriert über
-   `ErrorCode`-Enum (importiert aus `api-generated.ts`), assertet
-   dass jeder Wert sowohl in `de.json` als auch `en.json` als
-   `errors.<value>` existiert.
-8. Run: `pnpm vitest run` → alle PASS.
-9. Commit: `feat(i18n): error-code rendering helper +
-   composable migration`
+   `app/types/api-generated.ts`. Plus `errors.chat.<code>`-Keys
+   für die ChatStream-Codes.
+8. Neuer Test `tests/i18n/error-codes.test.ts`: iteriert über
+   `ErrorCode`-Enum (importiert aus `app/types/api-generated.ts`),
+   assertet dass jeder Wert sowohl in `de.json` als auch `en.json`
+   als `errors.<value>` existiert. **Wichtig:** Wenn der Enum-Import
+   aus Generated-File JSON-AST-Probleme im Test-Env macht (siehe
+   `keys.test.ts`-Workaround mit `fs.readFileSync`), analoger
+   Workaround.
+9. Run: `pnpm vitest run` → alle PASS.
+10. Commit: `feat(i18n): error-code rendering helper +
+    composable migration`
 
 ### Task 4: Page-by-Page-Extraktion
 
