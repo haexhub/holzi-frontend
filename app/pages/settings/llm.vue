@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { BadgeCheck, ExternalLink, Trash2 } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import ModelSelect from '~/components/settings/ModelSelect.vue'
 import { useLlmCredentials } from '~/composables/useLlmCredentials'
 import type {
@@ -13,6 +14,7 @@ import Label from '@/components/ui/label/Label.vue'
 import Separator from '@/components/ui/separator/Separator.vue'
 
 const llm = useLlmCredentials()
+const { t } = useI18n()
 
 const credentials = ref<LlmCredential[]>([])
 const loading = ref(false)
@@ -42,7 +44,7 @@ async function load() {
   try {
     credentials.value = await llm.list()
   } catch (err: unknown) {
-    error.value = err instanceof Error ? err.message : 'Fehler beim Laden.'
+    error.value = err instanceof Error ? err.message : t('pages.llm.errors.load')
   } finally {
     loading.value = false
   }
@@ -54,7 +56,7 @@ async function addApiKey() {
   const baseUrl = newBaseUrl.value.trim()
   if (!display || !key) return
   if (baseUrlRequired.value && !baseUrl) {
-    error.value = '"Custom" provider requires a base URL.'
+    error.value = t('pages.llm.addKey.errorBaseUrlRequired')
     return
   }
   const body: LlmCredentialCreate = {
@@ -72,7 +74,7 @@ async function addApiKey() {
     newBaseUrl.value = ''
     await load()
   } catch (err: unknown) {
-    error.value = err instanceof Error ? err.message : 'Fehler beim Speichern.'
+    error.value = err instanceof Error ? err.message : t('pages.llm.errors.save')
   } finally {
     submittingApiKey.value = false
   }
@@ -83,7 +85,7 @@ async function activate(id: number) {
     await llm.activate(id)
     await load()
   } catch (err: unknown) {
-    error.value = err instanceof Error ? err.message : 'Fehler beim Aktivieren.'
+    error.value = err instanceof Error ? err.message : t('pages.llm.errors.activate')
   }
 }
 
@@ -95,17 +97,17 @@ async function setModel(cred: LlmCredential, model: string | null) {
     await llm.setModel(cred.id, model)
   } catch (err: unknown) {
     cred.model = previous
-    error.value = err instanceof Error ? err.message : 'Fehler beim Speichern.'
+    error.value = err instanceof Error ? err.message : t('pages.llm.errors.save')
   }
 }
 
 async function remove(cred: LlmCredential) {
-  if (!confirm(`"${cred.display_name}" wirklich löschen?`)) return
+  if (!confirm(t('pages.llm.list.deleteConfirm', { name: cred.display_name }))) return
   try {
     await llm.delete(cred.id)
     await load()
   } catch (err: unknown) {
-    error.value = err instanceof Error ? err.message : 'Fehler beim Löschen.'
+    error.value = err instanceof Error ? err.message : t('pages.llm.errors.delete')
   }
 }
 
@@ -122,7 +124,7 @@ async function startOAuth() {
       window.open(res.url, '_blank', 'noopener')
     }
   } catch (err: unknown) {
-    error.value = err instanceof Error ? err.message : 'OAuth-Start fehlgeschlagen.'
+    error.value = err instanceof Error ? err.message : t('pages.llm.oauth.startFailed')
     cancelOAuth()
   } finally {
     oauthStarting.value = false
@@ -142,7 +144,7 @@ async function submitCode() {
     // pollOAuthStatus surfaces that instead of falsely celebrating.
     pollOAuthStatus()
   } catch (err: unknown) {
-    error.value = err instanceof Error ? err.message : 'Code abgelehnt.'
+    error.value = err instanceof Error ? err.message : t('pages.llm.oauth.codeRejected')
     oauthPhase.value = 'awaiting_code'
   }
 }
@@ -163,14 +165,14 @@ function pollOAuthStatus() {
         resetOAuth()
       } else if (res.status === 'expired') {
         stopPolling()
-        error.value = 'OAuth-Flow ist expired. Starte neu.'
+        error.value = t('pages.llm.oauth.expired')
         oauthPhase.value = 'idle'
         await load()
       }
     } catch (err: unknown) {
       // 404 once the row got deleted by /cancel — stop polling silently.
       stopPolling()
-      error.value = err instanceof Error ? err.message : 'Status-Poll fehlgeschlagen.'
+      error.value = err instanceof Error ? err.message : t('pages.llm.oauth.statusPollFailed')
     }
   }, 1000)
 }
@@ -210,9 +212,11 @@ function formatTimestamp(ts: number | null | undefined): string {
 
 function modeBadge(c: LlmCredential): string {
   if (c.mode === 'oauth_claude') {
-    return c.oauth_status === 'authorized' ? 'OAuth · Claude' : `OAuth · ${c.oauth_status ?? '?'}`
+    return c.oauth_status === 'authorized'
+      ? t('pages.llm.modeBadge.oauthClaude')
+      : t('pages.llm.modeBadge.oauthClaudeStatus', { status: c.oauth_status ?? '?' })
   }
-  return 'API Key'
+  return t('pages.llm.modeBadge.apiKey')
 }
 
 /**
@@ -232,10 +236,9 @@ onBeforeUnmount(stopPolling)
 <template>
   <div class="flex flex-col gap-6">
     <div>
-      <h2 class="text-base font-semibold">LLM-Credentials</h2>
+      <h2 class="text-base font-semibold">{{ $t('pages.llm.title') }}</h2>
       <p class="text-sm text-muted-foreground">
-        Wähle aus, welcher Provider den Hermes-Agent treibt. Nur eine
-        Credential ist aktiv.
+        {{ $t('pages.llm.description') }}
       </p>
     </div>
 
@@ -245,10 +248,12 @@ onBeforeUnmount(stopPolling)
 
     <!-- ── Liste ─────────────────────────────────────────────────────── -->
     <section class="space-y-2">
-      <h2 class="text-sm font-semibold uppercase text-muted-foreground">Vorhanden</h2>
-      <p v-if="loading" class="text-sm text-muted-foreground">Lädt…</p>
+      <h2 class="text-sm font-semibold uppercase text-muted-foreground">
+        {{ $t('pages.llm.list.heading') }}
+      </h2>
+      <p v-if="loading" class="text-sm text-muted-foreground">{{ $t('common.loading') }}</p>
       <p v-else-if="credentials.length === 0" class="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-        Noch keine Credentials. Füge unten einen API-Key hinzu oder starte den Claude-OAuth-Flow.
+        {{ $t('pages.llm.list.empty') }}
       </p>
       <div
         v-for="c in credentials"
@@ -266,17 +271,18 @@ onBeforeUnmount(stopPolling)
             <span class="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
               {{ modeBadge(c) }}
             </span>
-            <span v-if="c.is_active" class="text-xs font-medium text-emerald-600">Aktiv</span>
+            <span v-if="c.is_active" class="text-xs font-medium text-emerald-600">
+              {{ $t('pages.llm.list.active') }}
+            </span>
           </div>
           <p class="mt-0.5 text-xs text-muted-foreground">
-            Erstellt {{ formatTimestamp(c.created_at) }}
+            {{ $t('pages.llm.list.createdAt', { timestamp: formatTimestamp(c.created_at) }) }}
             <template v-if="c.oauth_authorized_at">
-              · Authorisiert {{ formatTimestamp(c.oauth_authorized_at) }}
+              · {{ $t('pages.llm.list.authorizedAt', { timestamp: formatTimestamp(c.oauth_authorized_at) }) }}
             </template>
           </p>
           <p v-if="isOAuthUnready(c)" class="mt-1 text-xs text-amber-600">
-            OAuth-Flow ist noch nicht abgeschlossen — klicke unten auf
-            „OAuth starten“, um den Code-Submit-Schritt erneut zu durchlaufen.
+            {{ $t('pages.llm.list.oauthNotReady') }}
           </p>
           <div class="mt-2 w-full max-w-md">
             <ModelSelect
@@ -293,13 +299,13 @@ onBeforeUnmount(stopPolling)
           variant="secondary"
           @click="activate(c.id)"
         >
-          Aktivieren
+          {{ $t('pages.llm.list.activate') }}
         </Button>
         <Button
           size="sm"
           variant="ghost"
-          :aria-label="`Credential ${c.display_name} löschen`"
-          :title="`Credential ${c.display_name} löschen`"
+          :aria-label="$t('pages.llm.list.deleteAria', { name: c.display_name })"
+          :title="$t('pages.llm.list.deleteAria', { name: c.display_name })"
           @click="remove(c)"
         >
           <Trash2 class="size-3.5" />
@@ -311,11 +317,13 @@ onBeforeUnmount(stopPolling)
 
     <!-- ── API-Key hinzufügen ───────────────────────────────────────── -->
     <section class="space-y-3">
-      <h2 class="text-sm font-semibold uppercase text-muted-foreground">API-Key hinzufügen</h2>
+      <h2 class="text-sm font-semibold uppercase text-muted-foreground">
+        {{ $t('pages.llm.addKey.heading') }}
+      </h2>
       <form class="space-y-3" @submit.prevent="addApiKey">
         <div class="grid grid-cols-2 gap-3">
           <div class="space-y-1">
-            <Label for="provider">Provider</Label>
+            <Label for="provider">{{ $t('pages.llm.addKey.provider') }}</Label>
             <select
               id="provider"
               v-model="newProvider"
@@ -329,25 +337,39 @@ onBeforeUnmount(stopPolling)
             </select>
           </div>
           <div class="space-y-1">
-            <Label for="display">Display-Name</Label>
-            <Input id="display" v-model="newDisplayName" placeholder="z.B. Martin OpenAI" />
+            <Label for="display">{{ $t('pages.llm.addKey.displayName') }}</Label>
+            <Input
+              id="display"
+              v-model="newDisplayName"
+              :placeholder="$t('pages.llm.addKey.displayNamePlaceholder')"
+            />
           </div>
         </div>
         <div class="space-y-1">
-          <Label for="apikey">API-Key</Label>
-          <Input id="apikey" v-model="newApiKey" type="password" placeholder="sk-…" autocomplete="off" />
+          <Label for="apikey">{{ $t('pages.llm.addKey.apiKey') }}</Label>
+          <Input
+            id="apikey"
+            v-model="newApiKey"
+            type="password"
+            :placeholder="$t('pages.llm.addKey.apiKeyPlaceholder')"
+            autocomplete="off"
+          />
         </div>
         <div class="space-y-1">
           <Label for="baseurl">
-            Base-URL
+            {{ $t('pages.llm.addKey.baseUrl') }}
             <span class="text-xs text-muted-foreground">
-              ({{ baseUrlRequired ? 'erforderlich' : 'optional — überschreibt Provider-Default' }})
+              ({{ baseUrlRequired ? $t('pages.llm.addKey.baseUrlRequired') : $t('pages.llm.addKey.baseUrlOptional') }})
             </span>
           </Label>
-          <Input id="baseurl" v-model="newBaseUrl" placeholder="https://my-mirror.example.com/v1" />
+          <Input
+            id="baseurl"
+            v-model="newBaseUrl"
+            :placeholder="$t('pages.llm.addKey.baseUrlPlaceholder')"
+          />
         </div>
         <Button type="submit" :disabled="submittingApiKey" size="sm">
-          {{ submittingApiKey ? 'Speichere…' : 'Hinzufügen' }}
+          {{ submittingApiKey ? $t('pages.llm.addKey.submitting') : $t('pages.llm.addKey.submit') }}
         </Button>
       </form>
     </section>
@@ -356,23 +378,22 @@ onBeforeUnmount(stopPolling)
 
     <!-- ── Claude OAuth ─────────────────────────────────────────────── -->
     <section class="space-y-3">
-      <h2 class="text-sm font-semibold uppercase text-muted-foreground">Claude (OAuth)</h2>
+      <h2 class="text-sm font-semibold uppercase text-muted-foreground">
+        {{ $t('pages.llm.oauth.heading') }}
+      </h2>
 
       <div v-if="oauthPhase === 'idle'">
         <p class="text-sm text-muted-foreground">
-          Startet <code class="font-mono text-xs">claude auth login --claudeai</code>
-          im Backend, öffnet die Authorisierungsseite in einem neuen Tab
-          und nimmt den Verification-Code zurück.
+          {{ $t('pages.llm.oauth.intro', { command: 'claude auth login --claudeai' }) }}
         </p>
         <Button class="mt-2" size="sm" :disabled="oauthStarting" @click="startOAuth">
-          {{ oauthStarting ? 'Starte…' : 'OAuth starten' }}
+          {{ oauthStarting ? $t('pages.llm.oauth.starting') : $t('pages.llm.oauth.start') }}
         </Button>
       </div>
 
       <div v-else-if="oauthPhase === 'awaiting_code'" class="space-y-2">
         <p class="text-sm">
-          Tab geöffnet — autorisiere bei Anthropic, kopiere den
-          Verification-Code und füge ihn unten ein.
+          {{ $t('pages.llm.oauth.awaitingCode') }}
         </p>
         <a
           v-if="oauthUrl"
@@ -382,30 +403,30 @@ onBeforeUnmount(stopPolling)
           class="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline"
         >
           <ExternalLink class="size-3" />
-          Tab nochmal öffnen
+          {{ $t('pages.llm.oauth.reopenTab') }}
         </a>
         <form class="flex gap-2" @submit.prevent="submitCode">
           <Input
             v-model="oauthCode"
-            placeholder="Verification-Code"
+            :placeholder="$t('pages.llm.oauth.codePlaceholder')"
             autocomplete="off"
             class="flex-1"
           />
           <Button type="submit" size="sm" :disabled="!oauthCode.trim()">
-            Senden
+            {{ $t('pages.llm.oauth.submit') }}
           </Button>
           <Button type="button" variant="ghost" size="sm" @click="cancelOAuth">
-            Abbrechen
+            {{ $t('common.cancel') }}
           </Button>
         </form>
       </div>
 
       <div v-else-if="oauthPhase === 'submitting'" class="text-sm text-muted-foreground">
-        Verifiziere Code…
+        {{ $t('pages.llm.oauth.submitting') }}
       </div>
 
       <div v-else-if="oauthPhase === 'done'" class="text-sm text-emerald-600">
-        Authorisiert. Die Credential erscheint in der Liste oben.
+        {{ $t('pages.llm.oauth.done') }}
       </div>
     </section>
   </div>

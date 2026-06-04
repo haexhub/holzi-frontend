@@ -8,9 +8,26 @@ export default defineNuxtConfig({
   // SPA — no SSR. The hermes-server serves the built dist/ statically.
   ssr: false,
 
-  modules: ['@pinia/nuxt', '@vueuse/nuxt'],
+  modules: ['@pinia/nuxt', '@vueuse/nuxt', '@nuxtjs/i18n'],
 
   css: ['~/assets/css/tailwind.css', 'katex/dist/katex.min.css'],
+
+  // Plan 30 Wave 0 — bilingual UI. Cookie + browser-locale detection;
+  // manual pick in /settings/preferences overrides. EN-completeness is
+  // enforced by tests/i18n/keys.test.ts; no fallback-on-missing.
+  i18n: {
+    strategy: 'no_prefix',
+    defaultLocale: 'de',
+    locales: [
+      { code: 'de', name: 'Deutsch', file: 'de.json' },
+      { code: 'en', name: 'English', file: 'en.json' },
+    ],
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: 'i18n_locale',
+      redirectOn: 'root',
+    },
+  },
 
   vite: {
     plugins: [tailwindcss()],

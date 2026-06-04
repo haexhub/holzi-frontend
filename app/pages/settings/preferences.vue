@@ -4,6 +4,7 @@ import {
   ArrowUp,
   BadgeCheck,
   Check,
+  Languages,
   Pencil,
   Plus,
   RotateCcw,
@@ -11,6 +12,7 @@ import {
   Trash2,
   X,
 } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import Button from '@/components/ui/button/Button.vue'
 import Input from '@/components/ui/input/Input.vue'
 import Textarea from '@/components/ui/textarea/Textarea.vue'
@@ -42,6 +44,20 @@ const personasApi = usePersonas()
 const channelsApi = useChannels()
 const skillsApi = useSkills()
 const { confirm } = useConfirm()
+const { locale, setLocale } = useI18n()
+
+// Plan 30 Wave 0 — Sprach-Picker section. Locale is persisted via the
+// i18n-cookie (configured in nuxt.config); when Wave C (multi-user)
+// lands this moves into per-user preferences.
+type SupportedLocale = 'de' | 'en'
+const SUPPORTED_LOCALES: { code: SupportedLocale; key: string }[] = [
+  { code: 'de', key: 'pages.preferences.language.options.de' },
+  { code: 'en', key: 'pages.preferences.language.options.en' },
+]
+async function onLocaleChange(event: Event) {
+  const value = (event.target as HTMLSelectElement).value as SupportedLocale
+  await setLocale(value)
+}
 
 const personas = ref<Persona[]>([])
 const channels = ref<ChannelPrompt[]>([])
@@ -895,6 +911,48 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
           </div>
         </li>
       </ul>
+    </section>
+
+    <!-- ── Section 3: Sprache / Language (Plan 30) ─────────────────── -->
+    <section
+      v-if="!loading"
+      class="flex flex-col gap-4"
+      data-testid="language-section"
+    >
+      <div class="flex items-center gap-2">
+        <Languages class="size-4 text-muted-foreground" />
+        <div>
+          <h3 class="text-sm font-semibold">
+            {{ $t('pages.preferences.language.title') }}
+          </h3>
+          <p class="text-xs text-muted-foreground">
+            {{ $t('pages.preferences.language.description') }}
+          </p>
+        </div>
+      </div>
+      <div class="flex max-w-xs flex-col gap-1">
+        <label
+          for="language-select"
+          class="text-xs font-medium text-muted-foreground"
+        >
+          {{ $t('pages.preferences.language.label') }}
+        </label>
+        <select
+          id="language-select"
+          class="h-9 rounded-md border bg-background px-2 text-sm"
+          :value="locale"
+          data-testid="language-select"
+          @change="onLocaleChange"
+        >
+          <option
+            v-for="opt in SUPPORTED_LOCALES"
+            :key="opt.code"
+            :value="opt.code"
+          >
+            {{ $t(opt.key) }}
+          </option>
+        </select>
+      </div>
     </section>
   </div>
 </template>

@@ -29,6 +29,27 @@ vi.mock('~/composables/useConfirm', () => ({
   useConfirm: () => ({ confirm: (opts: unknown) => confirmFn(opts) }),
 }))
 
+// Plan 30 Wave 0: language picker uses vue-i18n's setLocale().
+const setLocaleMock = vi.fn()
+const localeRef = { value: 'de' }
+vi.mock('vue-i18n', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('vue-i18n')>()
+  return {
+    ...orig,
+    useI18n: () => ({
+      t: (key: string) => key,
+      locale: localeRef,
+      locales: {
+        value: [
+          { code: 'de', name: 'Deutsch' },
+          { code: 'en', name: 'English' },
+        ],
+      },
+      setLocale: setLocaleMock,
+    }),
+  }
+})
+
 function persona(over: Partial<Persona> & { id: number; name: string }): Persona {
   return {
     id: over.id,
@@ -100,6 +121,8 @@ describe('settings/preferences.vue', () => {
     apiDelete.mockReset()
     confirmFn.mockReset()
     confirmFn.mockResolvedValue(true)
+    setLocaleMock.mockReset()
+    localeRef.value = 'de'
   })
 
   afterEach(() => {
@@ -740,5 +763,37 @@ describe('settings/preferences.vue', () => {
       `/api/personas/${defaultPersona.id}/skills`,
       { items: [] },
     )
+  })
+
+  // ── Plan 30 Wave 0: Sprach-Picker section ─────────────────────────
+
+  it('renders the language picker section with DE selected by default', async () => {
+    mockInitialLoad()
+    const wrapper = mount(PreferencesPage)
+    await vi.waitFor(() =>
+      expect(
+        wrapper.find('[data-testid="persona-card-1"]').exists(),
+      ).toBe(true),
+    )
+
+    const select = wrapper.get(
+      '[data-testid="language-select"]',
+    ) as ReturnType<typeof wrapper.get>
+    expect((select.element as HTMLSelectElement).value).toBe('de')
+  })
+
+  it('calls setLocale when the language picker changes', async () => {
+    mockInitialLoad()
+    const wrapper = mount(PreferencesPage)
+    await vi.waitFor(() =>
+      expect(
+        wrapper.find('[data-testid="persona-card-1"]').exists(),
+      ).toBe(true),
+    )
+
+    await wrapper.get('[data-testid="language-select"]').setValue('en')
+    await flushPromises()
+
+    expect(setLocaleMock).toHaveBeenCalledWith('en')
   })
 })

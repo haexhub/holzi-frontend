@@ -1,0 +1,99 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "loading": "Loading…",
+    "error": "Error",
+    "retry": "Retry",
+    "confirm": "Confirm"
+  },
+  "nav": {
+    "preferences": { "label": "Preferences" },
+    "llm": { "label": "LLM" },
+    "memory": { "label": "Memory" },
+    "tasks": { "label": "Tasks" },
+    "workspaces": { "label": "Workspaces" },
+    "skills": { "label": "Skills" },
+    "diagnostics": { "label": "Diagnostics" },
+    "insights": { "label": "Insights" },
+    "logs": { "label": "Logs" }
+  },
+  "errors": {
+    "GENERIC": "Something went wrong.",
+    "NETWORK": "Connection failed.",
+    "UNKNOWN": "Unknown error."
+  },
+  "pages": {
+    "preferences": {
+      "language": {
+        "title": "Language",
+        "description": "Choose the language for the interface.",
+        "label": "Language",
+        "options": {
+          "de": "German",
+          "en": "English"
+        }
+      }
+    },
+    "llm": {
+      "title": "LLM credentials",
+      "description": "Pick which provider drives the Hermes agent. Only one credential is active at a time.",
+      "list": {
+        "heading": "Available",
+        "empty": "No credentials yet. Add an API key below or start the Claude OAuth flow.",
+        "createdAt": "Created {timestamp}",
+        "authorizedAt": "Authorized {timestamp}",
+        "active": "Active",
+        "activate": "Activate",
+        "deleteAria": "Delete credential {name}",
+        "deleteConfirm": "Really delete \"{name}\"?",
+        "oauthNotReady": "OAuth flow is not finished yet — click „Start OAuth“ below to retry the code submission step."
+      },
+      "modeBadge": {
+        "apiKey": "API Key",
+        "oauthClaude": "OAuth · Claude",
+        "oauthClaudeStatus": "OAuth · {status}"
+      },
+      "addKey": {
+        "heading": "Add API key",
+        "provider": "Provider",
+        "displayName": "Display name",
+        "displayNamePlaceholder": "e.g. Martin OpenAI",
+        "apiKey": "API key",
+        "apiKeyPlaceholder": "sk-…",
+        "baseUrl": "Base URL",
+        "baseUrlRequired": "required",
+        "baseUrlOptional": "optional — overrides provider default",
+        "baseUrlPlaceholder": "https://my-mirror.example.com/v1",
+        "submit": "Add",
+        "submitting": "Saving…",
+        "errorBaseUrlRequired": "\"Custom\" provider requires a base URL."
+      },
+      "oauth": {
+        "heading": "Claude (OAuth)",
+        "intro": "Runs {command} in the backend, opens the authorization page in a new tab and accepts the verification code.",
+        "start": "Start OAuth",
+        "starting": "Starting…",
+        "awaitingCode": "Tab opened — authorize at Anthropic, copy the verification code and paste it below.",
+        "reopenTab": "Reopen tab",
+        "codePlaceholder": "Verification code",
+        "submit": "Submit",
+        "submitting": "Verifying code…",
+        "done": "Authorized. The credential appears in the list above.",
+        "expired": "OAuth flow expired. Start again.",
+        "startFailed": "OAuth start failed.",
+        "codeRejected": "Code rejected.",
+        "statusPollFailed": "Status poll failed."
+      },
+      "errors": {
+        "load": "Failed to load.",
+        "save": "Failed to save.",
+        "activate": "Failed to activate.",
+        "delete": "Failed to delete."
+      }
+    }
+  }
+}

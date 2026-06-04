@@ -1,0 +1,99 @@
+{
+  "common": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "close": "Schließen",
+    "loading": "Lädt…",
+    "error": "Fehler",
+    "retry": "Erneut versuchen",
+    "confirm": "Bestätigen"
+  },
+  "nav": {
+    "preferences": { "label": "Preferences" },
+    "llm": { "label": "LLM" },
+    "memory": { "label": "Memory" },
+    "tasks": { "label": "Tasks" },
+    "workspaces": { "label": "Workspaces" },
+    "skills": { "label": "Skills" },
+    "diagnostics": { "label": "Diagnose" },
+    "insights": { "label": "Insights" },
+    "logs": { "label": "Logs" }
+  },
+  "errors": {
+    "GENERIC": "Etwas ist schiefgelaufen.",
+    "NETWORK": "Verbindung fehlgeschlagen.",
+    "UNKNOWN": "Unbekannter Fehler."
+  },
+  "pages": {
+    "preferences": {
+      "language": {
+        "title": "Sprache",
+        "description": "Wähle die Sprache für die Oberfläche.",
+        "label": "Sprache",
+        "options": {
+          "de": "Deutsch",
+          "en": "Englisch"
+        }
+      }
+    },
+    "llm": {
+      "title": "LLM-Credentials",
+      "description": "Wähle aus, welcher Provider den Hermes-Agent treibt. Nur eine Credential ist aktiv.",
+      "list": {
+        "heading": "Vorhanden",
+        "empty": "Noch keine Credentials. Füge unten einen API-Key hinzu oder starte den Claude-OAuth-Flow.",
+        "createdAt": "Erstellt {timestamp}",
+        "authorizedAt": "Authorisiert {timestamp}",
+        "active": "Aktiv",
+        "activate": "Aktivieren",
+        "deleteAria": "Credential {name} löschen",
+        "deleteConfirm": "\"{name}\" wirklich löschen?",
+        "oauthNotReady": "OAuth-Flow ist noch nicht abgeschlossen — klicke unten auf „OAuth starten“, um den Code-Submit-Schritt erneut zu durchlaufen."
+      },
+      "modeBadge": {
+        "apiKey": "API Key",
+        "oauthClaude": "OAuth · Claude",
+        "oauthClaudeStatus": "OAuth · {status}"
+      },
+      "addKey": {
+        "heading": "API-Key hinzufügen",
+        "provider": "Provider",
+        "displayName": "Display-Name",
+        "displayNamePlaceholder": "z.B. Martin OpenAI",
+        "apiKey": "API-Key",
+        "apiKeyPlaceholder": "sk-…",
+        "baseUrl": "Base-URL",
+        "baseUrlRequired": "erforderlich",
+        "baseUrlOptional": "optional — überschreibt Provider-Default",
+        "baseUrlPlaceholder": "https://my-mirror.example.com/v1",
+        "submit": "Hinzufügen",
+        "submitting": "Speichere…",
+        "errorBaseUrlRequired": "\"Custom\" provider requires a base URL."
+      },
+      "oauth": {
+        "heading": "Claude (OAuth)",
+        "intro": "Startet {command} im Backend, öffnet die Authorisierungsseite in einem neuen Tab und nimmt den Verification-Code zurück.",
+        "start": "OAuth starten",
+        "starting": "Starte…",
+        "awaitingCode": "Tab geöffnet — autorisiere bei Anthropic, kopiere den Verification-Code und füge ihn unten ein.",
+        "reopenTab": "Tab nochmal öffnen",
+        "codePlaceholder": "Verification-Code",
+        "submit": "Senden",
+        "submitting": "Verifiziere Code…",
+        "done": "Authorisiert. Die Credential erscheint in der Liste oben.",
+        "expired": "OAuth-Flow ist expired. Starte neu.",
+        "startFailed": "OAuth-Start fehlgeschlagen.",
+        "codeRejected": "Code abgelehnt.",
+        "statusPollFailed": "Status-Poll fehlgeschlagen."
+      },
+      "errors": {
+        "load": "Fehler beim Laden.",
+        "save": "Fehler beim Speichern.",
+        "activate": "Fehler beim Aktivieren.",
+        "delete": "Fehler beim Löschen."
+      }
+    }
+  }
+}
