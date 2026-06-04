@@ -604,127 +604,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/messenger/accounts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Accounts */
-        get: operations["list_accounts_api_messenger_accounts_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/messenger/accounts/signal/link/start": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Signal Link Start
-         * @description Trigger signal-cli's QR-link-as-secondary-device flow and stream
-         *     the generated PNG back to the browser. Subsequent polls of
-         *     /link/poll discover the freshly-linked phone number from
-         *     signal-cli's account list and materialise it as a row.
-         */
-        post: operations["signal_link_start_api_messenger_accounts_signal_link_start_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/messenger/accounts/signal/link/poll": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Signal Link Poll
-         * @description Snapshot signal-cli's registered numbers and ensure every one of
-         *     them has a row in messenger_accounts. New rows are created inactive
-         *     — the frontend asks the user to confirm + activate.
-         */
-        post: operations["signal_link_poll_api_messenger_accounts_signal_link_poll_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/messenger/accounts/telegram": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Telegram Account
-         * @description Validate the bot token against Telegram's `getMe`, then persist a
-         *     new inactive row. The user activates it explicitly via PATCH.
-         *
-         *     Validation here doubles as the user-feedback signal: a bad token
-         *     short-circuits with a clean 400 instead of leaving a broken row in
-         *     the DB.
-         */
-        post: operations["create_telegram_account_api_messenger_accounts_telegram_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/messenger/accounts/{account_id}/activate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Activate Account */
-        patch: operations["activate_account_api_messenger_accounts__account_id__activate_patch"];
-        trace?: never;
-    };
-    "/api/messenger/accounts/{account_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete Account */
-        delete: operations["delete_account_api_messenger_accounts__account_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/workspace/roots": {
         parameters: {
             query?: never;
@@ -1675,13 +1554,6 @@ export interface components {
             /** Title */
             title: string;
         };
-        /** CreateTelegramRequest */
-        CreateTelegramRequest: {
-            /** Bot Token */
-            bot_token: string;
-            /** Allowed Chat Ids */
-            allowed_chat_ids?: number[] | null;
-        };
         /** DailyBucket */
         DailyBucket: {
             /** Bucket */
@@ -2138,25 +2010,6 @@ export interface components {
             /** Attachments */
             attachments?: components["schemas"]["AttachmentResponse"][];
         };
-        /** MessengerAccountResponse */
-        MessengerAccountResponse: {
-            /** Id */
-            id: number;
-            /** Provider */
-            provider: string;
-            /** Is Active */
-            is_active: boolean;
-            /** Phone Number */
-            phone_number: string | null;
-            /** Bot Username */
-            bot_username: string | null;
-            /** Allowed Chat Ids */
-            allowed_chat_ids: string | null;
-            /** Created At */
-            created_at: number;
-            /** Updated At */
-            updated_at: number;
-        };
         /** ModelBreakdown */
         ModelBreakdown: {
             /** Model */
@@ -2456,11 +2309,6 @@ export interface components {
              */
             version: number;
             data: components["schemas"]["SessionData"];
-        };
-        /** SignalLinkPollResponse */
-        SignalLinkPollResponse: {
-            /** Accounts */
-            accounts: components["schemas"]["MessengerAccountResponse"][];
         };
         /** SkillCreate */
         SkillCreate: {
@@ -4287,169 +4135,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_accounts_api_messenger_accounts_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-        };
-    };
-    signal_link_start_api_messenger_accounts_signal_link_start_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    signal_link_poll_api_messenger_accounts_signal_link_poll_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SignalLinkPollResponse"];
-                };
-            };
-        };
-    };
-    create_telegram_account_api_messenger_accounts_telegram_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateTelegramRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    activate_account_api_messenger_accounts__account_id__activate_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                account_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_account_api_messenger_accounts__account_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                account_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
             };
             /** @description Validation Error */
             422: {

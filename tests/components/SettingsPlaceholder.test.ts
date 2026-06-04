@@ -34,7 +34,6 @@ describe('settingsNav model', () => {
     const tos = settingsNav.map((n) => n.to)
     expect(tos).toEqual([
       '/settings/llm',
-      '/settings/messenger',
       '/settings/preferences',
       '/settings/memory',
       '/settings/tasks',
@@ -50,7 +49,6 @@ describe('settingsNav model', () => {
     const shipped = settingsNav.filter((n) => !n.upcoming).map((n) => n.to)
     expect(shipped).toEqual([
       '/settings/llm',
-      '/settings/messenger',
       '/settings/preferences',
       '/settings/memory',
       '/settings/tasks',
