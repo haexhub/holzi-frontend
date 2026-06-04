@@ -3,7 +3,13 @@
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans
 > to implement this plan task-by-task.
 
-Status: **Planned.**
+Status: **In progress.** Task 1 (foundation + picker + `llm.vue`), Task 4a
+(Settings shell + nav + preferences personas/channels) and Task 4b (all
+remaining `/settings/*` pages + ThemeToggle + WorkspacePanel/WorkspaceGitTab
++ SkillsSection/McpServersSection) are on `main`. Remaining: Task 4c
+(chat-family: `/`, ChatHub, ChatComposer, MessageList, EmptyChatState),
+Task 2 (backend `ErrorCode` enum), Task 3 (FE error-render helper +
+composable migration), Task 5 (`no-raw-text` ESLint rule).
 
 Cross-repo. Frontend-i18n + Backend-Error-Code-Refactor.
 
