@@ -3,13 +3,36 @@
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans
 > to implement this plan task-by-task.
 
-Status: **Task 4 done.** Task 1 (foundation + picker + `llm.vue`), Task 4a
-(Settings shell + nav + preferences personas/channels), Task 4b (all
-remaining `/settings/*` pages + ThemeToggle + WorkspacePanel/WorkspaceGitTab
-+ SkillsSection/McpServersSection) and Task 4c (chat-family: 4c1 chat/*
-components + chat pages, 4c2 `ChatHub.vue`) are on `main`. Remaining:
-Task 2 (backend `ErrorCode` enum), Task 3 (FE error-render helper +
-composable migration), Task 5 (`no-raw-text` ESLint rule).
+Status: **Tasks 1 + 2 + 3 + 4 done.** Task 1 (foundation + picker +
+`llm.vue`), Task 4a (Settings shell + nav + preferences personas/
+channels), Task 4b (all remaining `/settings/*` pages + ThemeToggle +
+WorkspacePanel/WorkspaceGitTab + SkillsSection/McpServersSection),
+Task 4c (chat-family: 4c1 chat/* components + chat pages, 4c2
+`ChatHub.vue`), **Task 2 (backend `ErrorCode` enum, 113 codes, all routes
+migrated + diagnostics shape on `{code, params}`)** and **Task 3
+(FE `translateError` helper, eight composables migrated,
+`useChatStream.friendlyChatError(err, t)`, `/settings/diagnostics`
+rerendered against the new contract, `tests/i18n/error-codes.test.ts`
+pins FE↔BE coverage)** are on `main`. Remaining: Task 5
+(`no-raw-text` ESLint rule sweep).
+
+## Verification (Tasks 2 + 3, 2026-06-04)
+
+- Backend (`/home/haex/Projekte/Holzi`):
+  - `uv run pytest` — 860 passed, 3 deselected.
+  - `uv run ruff check src/ tests/` — All checks passed.
+  - `uv run mypy src/` — Success: no issues found in 67 source files.
+- Frontend (`/home/haex/Projekte/holzi-frontend`):
+  - `pnpm vitest run` — 448 tests pass (41 files), including
+    `tests/lib/errorMessages.test.ts` (7), `tests/i18n/keys.test.ts`
+    (2), `tests/i18n/error-codes.test.ts` (114 — covers all 113
+    `ErrorCode` values × 2 locales + structural guard).
+  - `pnpm typecheck` — exit 0.
+- Commits:
+  - Backend `feat(errors): introduce ErrorCode enum, migrate routes`
+    (`893991d`).
+  - Frontend `feat(i18n): error-code rendering helper + composable
+    migration` (`5f9f042`).
 
 Cross-repo. Frontend-i18n + Backend-Error-Code-Refactor.
 
@@ -191,7 +214,7 @@ TDD-Philosophie: erst Test schreiben, dann Impl, dann commit.
    anpassen.
 8. Commit: `feat(i18n): foundation + common keys + Sprachpicker`
 
-### Task 2: Backend Error-Code-Enum + Audit
+### Task 2: Backend Error-Code-Enum + Audit (done 2026-06-04, `893991d`)
 
 **Files:**
 - Create: `src/hermes/errors.py` (StrEnum)
@@ -228,7 +251,7 @@ TDD-Philosophie: erst Test schreiben, dann Impl, dann commit.
 8. Commit (Backend-Repo): `feat(errors): introduce ErrorCode enum,
    migrate routes from german strings`
 
-### Task 3: Frontend Error-Rendering-Helper + Composable-Migration
+### Task 3: Frontend Error-Rendering-Helper + Composable-Migration (done 2026-06-04, `5f9f042`)
 
 **Files:**
 - Create: `app/lib/errorMessages.ts`
@@ -344,11 +367,9 @@ TDD-Philosophie: erst Test schreiben, dann Impl, dann commit.
 
 **Schritt-Größe:** Pro logischer Gruppe ein Commit.
 
-**Reihenfolge der verbleibenden Tasks (Empfehlung):** Task 2 + 3
-(Backend-ErrorCodes + FE-Error-Render, Cross-Repo-Paar) → Task 5
+**Reihenfolge der verbleibenden Tasks (Empfehlung):** Task 5
 (`no-raw-text`-Lint als Abschluss-Sweep, fischt Übersehenes raus).
-Task 3 hängt zwingend an Task 2; die deutschen Error-Fallbacks in
-`app/composables/use*.ts` bleiben bis dahin bewusst stehen.
+Tasks 2 + 3 sind 2026-06-04 als Cross-Repo-Paar gelandet.
 
 ### Task 5: ESLint-Rule + Smoke-Verifikation
 
