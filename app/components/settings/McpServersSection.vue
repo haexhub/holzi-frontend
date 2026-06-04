@@ -44,6 +44,7 @@ const props = defineProps<{
 const mcp = useMcpServers()
 const toast = useToast()
 const { confirm } = useConfirm()
+const { t } = useI18n()
 
 const expandedErrorIds = ref<Set<number>>(new Set())
 
@@ -235,20 +236,19 @@ function buildUpdateBody(): McpServerUpdate {
 async function submitForm() {
   formError.value = null
   if (!draft.display_name.trim()) {
-    formError.value = 'Anzeigename fehlt.'
+    formError.value = t('components.mcpServersSection.errors.displayNameRequired')
     return
   }
   if (editingId.value === null && !nameValid()) {
-    formError.value =
-      'Slug ungültig — nur a-z, 0-9 und Bindestriche, 2–32 Zeichen, kein Bindestrich am Anfang oder Ende.'
+    formError.value = t('components.mcpServersSection.errors.slugInvalid')
     return
   }
   if (draft.transport === 'http' && !draft.url.trim()) {
-    formError.value = 'URL fehlt.'
+    formError.value = t('components.mcpServersSection.errors.urlRequired')
     return
   }
   if (draft.transport === 'stdio' && !draft.command.trim()) {
-    formError.value = 'Command fehlt.'
+    formError.value = t('components.mcpServersSection.errors.commandRequired')
     return
   }
 
@@ -256,10 +256,10 @@ async function submitForm() {
   try {
     if (editingId.value === null) {
       await mcp.create(buildCreateBody())
-      toast.success('MCP-Server erstellt.')
+      toast.success(t('components.mcpServersSection.toasts.created'))
     } else {
       await mcp.update(editingId.value, buildUpdateBody())
-      toast.success('MCP-Server aktualisiert.')
+      toast.success(t('components.mcpServersSection.toasts.updated'))
     }
     props.onCatalogChanged?.()
     closeForm()
@@ -274,10 +274,10 @@ async function restartServer(server: McpServer) {
   restartingId.value = server.id
   try {
     await mcp.restart(server.id)
-    toast.success(`${server.display_name} neu gestartet.`)
+    toast.success(t('components.mcpServersSection.toasts.restarted', { name: server.display_name }))
     props.onCatalogChanged?.()
   } catch (err: unknown) {
-    toast.error(`Neustart fehlgeschlagen: ${describeError(err)}`)
+    toast.error(t('components.mcpServersSection.toasts.restartFailed', { error: describeError(err) }))
   } finally {
     restartingId.value = null
   }
@@ -302,17 +302,16 @@ async function deleteServer(server: McpServer) {
   // single-flight pattern above.
   if (deletingId.value === server.id) return
   const ok = await confirm({
-    title: `${server.display_name} löschen?`,
-    description:
-      'Der Server wird entfernt. Tools verschwinden sofort aus dem Catalog.',
+    title: t('components.mcpServersSection.deleteConfirm.title', { name: server.display_name }),
+    description: t('components.mcpServersSection.deleteConfirm.description'),
     destructive: true,
-    confirmLabel: 'Löschen',
+    confirmLabel: t('components.mcpServersSection.deleteConfirm.confirm'),
   })
   if (!ok) return
   deletingId.value = server.id
   try {
     await mcp.remove(server.id)
-    toast.success('MCP-Server gelöscht.')
+    toast.success(t('components.mcpServersSection.toasts.deleted'))
     props.onCatalogChanged?.()
   } catch (err: unknown) {
     toast.error(describeError(err))
@@ -335,21 +334,13 @@ function describeError(err: unknown): string {
     const message = (err as { message?: string }).message
     if (message) return message
   }
-  return 'Unbekannter Fehler.'
+  return t('components.mcpServersSection.errors.unknown')
 }
 
 // ── Display helpers ────────────────────────────────────────────────────
 
 function statusLabel(status: McpServerStatus): string {
-  return (
-    {
-      starting: 'startet',
-      ready: 'bereit',
-      crashed: 'fehler',
-      disabled: 'deaktiviert',
-      unknown: 'unbekannt',
-    }[status] ?? status
-  )
+  return t(`components.mcpServersSection.status.${status}`)
 }
 </script>
 
@@ -364,11 +355,10 @@ function statusLabel(status: McpServerStatus): string {
         <div class="min-w-0 flex-1">
           <h3 class="flex items-center gap-2 text-sm font-semibold">
             <ServerCog class="size-4 text-muted-foreground" />
-            MCP-Server registrieren
+            {{ $t('components.mcpServersSection.title') }}
           </h3>
           <p class="mt-0.5 text-xs text-muted-foreground">
-            Externe MCP-Server bringen zusätzliche Tools mit. Sie laufen mit
-            Holzi-Rechten — nur vertrauenswürdige Quellen installieren.
+            {{ $t('components.mcpServersSection.subtitle') }}
           </p>
         </div>
         <UiButton
@@ -379,7 +369,7 @@ function statusLabel(status: McpServerStatus): string {
           @click="openCreate"
         >
           <Plus class="mr-1 size-4" />
-          Neuer Server
+          {{ $t('components.mcpServersSection.newServer') }}
         </UiButton>
       </div>
     </header>
@@ -392,12 +382,12 @@ function statusLabel(status: McpServerStatus): string {
     >
       <div class="flex items-center justify-between">
         <h4 class="text-sm font-semibold">
-          {{ editingId === null ? 'Neuer MCP-Server' : 'MCP-Server bearbeiten' }}
+          {{ editingId === null ? $t('components.mcpServersSection.form.createTitle') : $t('components.mcpServersSection.form.editTitle') }}
         </h4>
         <UiButton
           size="sm"
           variant="ghost"
-          aria-label="Formular schließen"
+          :aria-label="$t('components.mcpServersSection.form.closeAria')"
           data-testid="mcp-server-form-close"
           @click="closeForm"
         >
@@ -407,7 +397,7 @@ function statusLabel(status: McpServerStatus): string {
 
       <div class="grid gap-3 sm:grid-cols-2">
         <div class="space-y-1">
-          <label class="text-xs font-medium" for="mcp-name">Slug</label>
+          <label class="text-xs font-medium" for="mcp-name">{{ $t('components.mcpServersSection.form.slug') }}</label>
           <UiInput
             id="mcp-name"
             v-model="draft.name"
@@ -419,19 +409,19 @@ function statusLabel(status: McpServerStatus): string {
             v-if="editingId !== null"
             class="text-[11px] text-muted-foreground"
           >
-            Slug wird nicht geändert — er ist Teil jedes Tool-Namens.
+            {{ $t('components.mcpServersSection.form.slugLockedHint') }}
           </p>
           <p
             v-else-if="draft.name && !nameValid()"
             class="text-[11px] text-destructive"
           >
-            kebab-case, 2–32 Zeichen, kein Bindestrich am Rand
+            {{ $t('components.mcpServersSection.form.slugInvalidHint') }}
           </p>
         </div>
 
         <div class="space-y-1">
           <label class="text-xs font-medium" for="mcp-display-name">
-            Anzeigename
+            {{ $t('components.mcpServersSection.form.displayName') }}
           </label>
           <UiInput
             id="mcp-display-name"
@@ -443,7 +433,7 @@ function statusLabel(status: McpServerStatus): string {
       </div>
 
       <div class="space-y-1">
-        <span class="text-xs font-medium">Transport</span>
+        <span class="text-xs font-medium">{{ $t('components.mcpServersSection.form.transport') }}</span>
         <div class="flex gap-2">
           <button
             type="button"
@@ -457,7 +447,7 @@ function statusLabel(status: McpServerStatus): string {
             data-testid="mcp-server-transport-http"
             @click="draft.transport = 'http'"
           >
-            HTTP (StreamableHTTP)
+            {{ $t('components.mcpServersSection.form.transportHttp') }}
           </button>
           <button
             type="button"
@@ -471,22 +461,21 @@ function statusLabel(status: McpServerStatus): string {
             data-testid="mcp-server-transport-stdio"
             @click="draft.transport = 'stdio'"
           >
-            stdio (lokaler Subprozess)
+            {{ $t('components.mcpServersSection.form.transportStdio') }}
           </button>
         </div>
         <p
           v-if="editingId !== null"
           class="text-[11px] text-muted-foreground"
         >
-          Transport wird beim Edit nicht gewechselt — neuen Server anlegen,
-          wenn das nötig wäre.
+          {{ $t('components.mcpServersSection.form.transportLockedHint') }}
         </p>
       </div>
 
       <!-- HTTP-spezifische Felder -->
       <template v-if="draft.transport === 'http'">
         <div class="space-y-1">
-          <label class="text-xs font-medium" for="mcp-url">URL</label>
+          <label class="text-xs font-medium" for="mcp-url">{{ $t('components.mcpServersSection.form.url') }}</label>
           <UiInput
             id="mcp-url"
             v-model="draft.url"
@@ -498,8 +487,8 @@ function statusLabel(status: McpServerStatus): string {
 
         <div class="space-y-1">
           <label class="text-xs font-medium" for="mcp-credentials">
-            Bearer-Token / API-Key
-            <span class="font-normal text-muted-foreground">(optional)</span>
+            {{ $t('components.mcpServersSection.form.credentials') }}
+            <span class="font-normal text-muted-foreground">{{ $t('components.mcpServersSection.form.optional') }}</span>
           </label>
           <div class="flex items-center gap-2">
             <UiInput
@@ -508,7 +497,7 @@ function statusLabel(status: McpServerStatus): string {
               :type="revealCredentials ? 'text' : 'password'"
               :placeholder="
                 editingId !== null
-                  ? 'Leer lassen, um den gespeicherten Wert zu behalten'
+                  ? $t('components.mcpServersSection.form.credentialsPlaceholderEdit')
                   : 'eyJhbGc…'
               "
               data-testid="mcp-server-credentials"
@@ -518,7 +507,7 @@ function statusLabel(status: McpServerStatus): string {
               size="sm"
               variant="outline"
               type="button"
-              :aria-label="revealCredentials ? 'verbergen' : 'anzeigen'"
+              :aria-label="revealCredentials ? $t('components.mcpServersSection.form.hide') : $t('components.mcpServersSection.form.reveal')"
               data-testid="mcp-server-credentials-reveal"
               @click="revealCredentials = !revealCredentials"
             >
@@ -533,7 +522,7 @@ function statusLabel(status: McpServerStatus): string {
             data-testid="mcp-server-credentials-clear"
             @click="clearStoredCredential"
           >
-            Gespeichertes Token entfernen
+            {{ $t('components.mcpServersSection.form.clearCredential') }}
           </button>
         </div>
       </template>
@@ -541,7 +530,7 @@ function statusLabel(status: McpServerStatus): string {
       <!-- stdio-spezifische Felder -->
       <template v-else>
         <div class="space-y-1">
-          <label class="text-xs font-medium" for="mcp-command">Command</label>
+          <label class="text-xs font-medium" for="mcp-command">{{ $t('components.mcpServersSection.form.command') }}</label>
           <UiInput
             id="mcp-command"
             v-model="draft.command"
@@ -551,7 +540,7 @@ function statusLabel(status: McpServerStatus): string {
         </div>
 
         <div class="space-y-1">
-          <span class="text-xs font-medium">Arguments</span>
+          <span class="text-xs font-medium">{{ $t('components.mcpServersSection.form.arguments') }}</span>
           <div
             v-for="(arg, idx) in draft.args"
             :key="`arg-${idx}`"
@@ -565,7 +554,7 @@ function statusLabel(status: McpServerStatus): string {
             <UiButton
               size="sm"
               variant="ghost"
-              aria-label="Argument entfernen"
+              :aria-label="$t('components.mcpServersSection.form.removeArg')"
               @click="removeArg(idx)"
             >
               <X class="size-4" />
@@ -579,12 +568,12 @@ function statusLabel(status: McpServerStatus): string {
             @click="addArg"
           >
             <Plus class="mr-1 size-4" />
-            Argument
+            {{ $t('components.mcpServersSection.form.addArg') }}
           </UiButton>
         </div>
 
         <div class="space-y-1">
-          <span class="text-xs font-medium">Environment Variables</span>
+          <span class="text-xs font-medium">{{ $t('components.mcpServersSection.form.envVars') }}</span>
           <div
             v-for="(pair, idx) in draft.env"
             :key="`env-${idx}`"
@@ -605,7 +594,7 @@ function statusLabel(status: McpServerStatus): string {
             <UiButton
               size="sm"
               variant="ghost"
-              aria-label="Variable entfernen"
+              :aria-label="$t('components.mcpServersSection.form.removeEnv')"
               @click="removeEnv(idx)"
             >
               <X class="size-4" />
@@ -619,14 +608,13 @@ function statusLabel(status: McpServerStatus): string {
             @click="addEnv"
           >
             <Plus class="mr-1 size-4" />
-            Variable
+            {{ $t('components.mcpServersSection.form.addEnv') }}
           </UiButton>
           <p
             v-if="editingId !== null && draft.env.length > 0"
             class="text-[11px] text-muted-foreground"
           >
-            Werte werden beim Speichern überschrieben. Leer lassen heißt:
-            leerer String.
+            {{ $t('components.mcpServersSection.form.envHint') }}
           </p>
         </div>
       </template>
@@ -647,7 +635,7 @@ function statusLabel(status: McpServerStatus): string {
           :disabled="submitting"
           @click="closeForm"
         >
-          Abbrechen
+          {{ $t('common.cancel') }}
         </UiButton>
         <UiButton
           size="sm"
@@ -657,7 +645,7 @@ function statusLabel(status: McpServerStatus): string {
           @click="submitForm"
         >
           <Loader2 v-if="submitting" class="mr-1 size-4 animate-spin" />
-          {{ editingId === null ? 'Anlegen' : 'Speichern' }}
+          {{ editingId === null ? $t('components.mcpServersSection.form.submitCreate') : $t('common.save') }}
         </UiButton>
       </div>
     </div>
@@ -668,7 +656,7 @@ function statusLabel(status: McpServerStatus): string {
       class="p-3 text-xs text-muted-foreground"
       data-testid="mcp-servers-loading"
     >
-      Lädt…
+      {{ $t('common.loading') }}
     </p>
     <p
       v-else-if="mcp.error.value"
@@ -682,13 +670,13 @@ function statusLabel(status: McpServerStatus): string {
       class="p-4 text-xs text-muted-foreground"
       data-testid="mcp-servers-empty"
     >
-      Keine MCP-Server konfiguriert.
+      {{ $t('components.mcpServersSection.empty') }}
       <button
         type="button"
         class="underline underline-offset-2 hover:text-foreground"
         @click="openCreate"
       >
-        + Neuer Server
+        {{ $t('components.mcpServersSection.emptyCta') }}
       </button>
     </p>
     <ul v-else class="divide-y" data-testid="mcp-servers-list">
@@ -762,7 +750,7 @@ function statusLabel(status: McpServerStatus): string {
               v-if="server.env_keys.length > 0"
               class="text-xs text-muted-foreground"
             >
-              env:
+              {{ $t('components.mcpServersSection.envLabel') }}
               <code
                 v-for="key in server.env_keys"
                 :key="key"
@@ -783,7 +771,7 @@ function statusLabel(status: McpServerStatus): string {
                 class="size-4 animate-spin"
               />
               <RefreshCcw v-else class="size-4" />
-              <span class="ml-1 hidden sm:inline">Neustart</span>
+              <span class="ml-1 hidden sm:inline">{{ $t('components.mcpServersSection.restart') }}</span>
             </UiButton>
             <UiButton
               size="sm"
@@ -792,7 +780,7 @@ function statusLabel(status: McpServerStatus): string {
               :data-testid="`mcp-server-toggle-${server.name}`"
               @click="toggleEnabled(server)"
             >
-              {{ server.enabled ? 'Deaktivieren' : 'Aktivieren' }}
+              {{ server.enabled ? $t('components.mcpServersSection.disable') : $t('components.mcpServersSection.enable') }}
             </UiButton>
             <UiButton
               size="sm"
@@ -801,7 +789,7 @@ function statusLabel(status: McpServerStatus): string {
               @click="openEdit(server)"
             >
               <Pencil class="size-4" />
-              <span class="ml-1 hidden sm:inline">Bearbeiten</span>
+              <span class="ml-1 hidden sm:inline">{{ $t('common.edit') }}</span>
             </UiButton>
             <UiButton
               size="sm"
@@ -815,7 +803,7 @@ function statusLabel(status: McpServerStatus): string {
                 class="size-4 animate-spin"
               />
               <Trash2 v-else class="size-4" />
-              <span class="ml-1 hidden sm:inline">Löschen</span>
+              <span class="ml-1 hidden sm:inline">{{ $t('common.delete') }}</span>
             </UiButton>
           </div>
         </div>
@@ -835,7 +823,7 @@ function statusLabel(status: McpServerStatus): string {
               class="size-3.5"
             />
             <ChevronRight v-else class="size-3.5" />
-            Crash-Details
+            {{ $t('components.mcpServersSection.crashDetails') }}
           </button>
           <pre
             v-if="expandedErrorIds.has(server.id)"

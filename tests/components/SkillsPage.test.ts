@@ -1,5 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
+
+// skills.vue + its SkillsSection/McpServersSection children call useI18n() in
+// setup; the bare mount has no i18n plugin so useI18n would throw without the
+// importOriginal-preserving mock. t() passes the key through; useLocalePath()
+// is auto-imported from the nuxt test env (same as PreferencesPage).
+vi.mock('vue-i18n', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('vue-i18n')>()
+  return {
+    ...orig,
+    useI18n: () => ({ t: (key: string) => key }),
+  }
+})
+
 import SkillsPage from '~/pages/settings/skills.vue'
 import type {
   McpHealthResponse,
@@ -133,10 +146,10 @@ describe('settings/skills.vue', () => {
     expect(wrapper.find('[data-testid="mcp-card"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="tools-section"]').exists()).toBe(true)
     expect(wrapper.get('[data-testid="tools-count"]').text()).toContain(
-      '2 Tools',
+      'pages.skills.tools.count',
     )
     expect(wrapper.get('[data-testid="mcp-tool-count"]').text()).toContain(
-      '3 Tools',
+      'pages.skills.mcpEndpoint.toolsExposed',
     )
   })
 
@@ -144,7 +157,7 @@ describe('settings/skills.vue', () => {
     setupGet(tools([]), mcpHealth({ status: 'ok' }))
     const wrapper = mount(SkillsPage)
     await flushPromises()
-    expect(wrapper.get('[data-testid="mcp-status"]').text()).toContain('aktiv')
+    expect(wrapper.get('[data-testid="mcp-status"]').text()).toContain('pages.skills.mcpEndpoint.active')
     expect(wrapper.get('[data-testid="mcp-url"]').text()).toBe('/mcp')
 
     setupGet(
@@ -154,7 +167,7 @@ describe('settings/skills.vue', () => {
     const wrapper2 = mount(SkillsPage)
     await flushPromises()
     expect(wrapper2.get('[data-testid="mcp-status"]').text()).toContain(
-      'inaktiv',
+      'pages.skills.mcpEndpoint.inactive',
     )
   })
 
@@ -289,7 +302,7 @@ describe('settings/skills.vue', () => {
       .trigger('click')
     expect(
       wrapper.get('[data-testid="tool-schema-list_notes"]').text(),
-    ).toContain('keine Parameter')
+    ).toContain('pages.skills.tools.noParams')
   })
 
   it('disables each built-in Configure button (no per-tool config surface today)', async () => {
@@ -298,7 +311,7 @@ describe('settings/skills.vue', () => {
     await flushPromises()
     const btn = wrapper.get('[data-testid="tool-configure-save_note"]')
     expect(btn.attributes('disabled')).toBeDefined()
-    expect(btn.attributes('title')).toContain('Built-in')
+    expect(btn.attributes('title')).toContain('pages.skills.tools.builtinNoConfig')
   })
 
   it('enables Configure for mcp-sourced tools and jumps to the server card', async () => {
@@ -323,7 +336,7 @@ describe('settings/skills.vue', () => {
       'tools boom',
     )
     // MCP card still renders normally.
-    expect(wrapper.get('[data-testid="mcp-status"]').text()).toContain('aktiv')
+    expect(wrapper.get('[data-testid="mcp-status"]').text()).toContain('pages.skills.mcpEndpoint.active')
   })
 
   it('shows the MCP error banner without hiding the tool list', async () => {

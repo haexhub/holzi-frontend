@@ -1,5 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
+
+// McpServersSection calls useI18n() in setup for validation/toast/confirm/
+// status copy; the bare mount has no i18n plugin so useI18n would throw
+// without the importOriginal-preserving mock. t() passes the key through.
+vi.mock('vue-i18n', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('vue-i18n')>()
+  return {
+    ...orig,
+    useI18n: () => ({ t: (key: string) => key }),
+  }
+})
+
 import McpServersSection from '~/components/settings/McpServersSection.vue'
 import type {
   McpServer,
@@ -119,7 +131,7 @@ describe('components/settings/McpServersSection.vue', () => {
     const row = wrapper.get('[data-testid="mcp-server-fs"]')
     expect(row.text()).toContain('Filesystem')
     expect(row.get('[data-testid="mcp-server-status-fs"]').text()).toContain(
-      'bereit',
+      'components.mcpServersSection.status.ready',
     )
     expect(row.get('[data-testid="mcp-server-transport-fs"]').text()).toContain(
       'stdio',
@@ -200,7 +212,7 @@ describe('components/settings/McpServersSection.vue', () => {
     expect(apiPost).not.toHaveBeenCalled()
     expect(
       wrapper.get('[data-testid="mcp-server-form-error"]').text(),
-    ).toContain('Slug')
+    ).toContain('components.mcpServersSection.errors.slugInvalid')
   })
 
   it('omits credentials from edit-PUT when the user did not retype', async () => {

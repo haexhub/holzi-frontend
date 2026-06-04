@@ -151,6 +151,125 @@
         "pushFailed": "Push failed.",
         "pushFailedDetail": "Push failed: {message}"
       }
+    },
+    "skillsSection": {
+      "title": "Skills",
+      "introBefore": "Reusable prompt building blocks. Personas activate individual skills on the ",
+      "preferencesLink": "Preferences page",
+      "introAfter": ".",
+      "securityBefore": "Skill content flows into every system prompt of the activating personas and is therefore visible in ",
+      "securityMid": " and ",
+      "securityAfter": " — do not paste API keys or secrets here.",
+      "searchPlaceholder": "Search…",
+      "searchAria": "Search skills",
+      "newSkill": "New skill",
+      "noMatch": "No matches for \"{query}\".",
+      "empty": "No skills yet.",
+      "detailEmptyTitle": "Select a skill",
+      "emptyTitle": "Select a skill",
+      "emptyHint": "Pick a skill from the list or create a new one.",
+      "fields": {
+        "description": "Description",
+        "whenToUse": "When to use"
+      },
+      "form": {
+        "slug": "Slug",
+        "slugPlaceholder": "e.g. code-style-typescript",
+        "name": "Name",
+        "namePlaceholder": "e.g. Code Style TypeScript",
+        "description": "Description (short)",
+        "descriptionPlaceholder": "e.g. Style guidelines for TypeScript reviews",
+        "whenToUse": "When to use? (optional)",
+        "whenToUsePlaceholder": "e.g. During TypeScript code reviews",
+        "body": "Body (Markdown)",
+        "length": "{count} / {max} characters",
+        "lengthWarn": "— long body, composition gets large"
+      },
+      "deleteConfirm": {
+        "title": "Delete skill?",
+        "description": "\"{name}\" will be permanently deleted. Personas that activated this skill lose it automatically."
+      },
+      "toasts": {
+        "created": "Skill created.",
+        "saved": "Skill saved.",
+        "deleted": "Skill deleted."
+      },
+      "errors": {
+        "nameRequired": "Name is required.",
+        "descriptionRequired": "Description is required.",
+        "bodyRequired": "Body must not be empty.",
+        "bodyTooLong": "Body may be at most {max} characters long.",
+        "slugInvalid": "Slug must be kebab-case (a-z0-9, optional hyphens, 1–64 chars).",
+        "save": "Failed to save.",
+        "delete": "Failed to delete."
+      }
+    },
+    "mcpServersSection": {
+      "title": "Register MCP server",
+      "subtitle": "External MCP servers bring additional tools. They run with Holzi's permissions — only install trusted sources.",
+      "newServer": "New server",
+      "empty": "No MCP servers configured.",
+      "emptyCta": "+ New server",
+      "restart": "Restart",
+      "enable": "Enable",
+      "disable": "Disable",
+      "crashDetails": "Crash details",
+      "envLabel": "env:",
+      "status": {
+        "starting": "starting",
+        "ready": "ready",
+        "crashed": "error",
+        "disabled": "disabled",
+        "unknown": "unknown"
+      },
+      "form": {
+        "createTitle": "New MCP server",
+        "editTitle": "Edit MCP server",
+        "closeAria": "Close form",
+        "slug": "Slug",
+        "slugLockedHint": "The slug isn't changed — it's part of every tool name.",
+        "slugInvalidHint": "kebab-case, 2–32 chars, no leading/trailing hyphen",
+        "displayName": "Display name",
+        "transport": "Transport",
+        "transportHttp": "HTTP (StreamableHTTP)",
+        "transportStdio": "stdio (local subprocess)",
+        "transportLockedHint": "Transport isn't switched on edit — create a new server if you need that.",
+        "url": "URL",
+        "credentials": "Bearer token / API key",
+        "optional": "(optional)",
+        "credentialsPlaceholderEdit": "Leave empty to keep the stored value",
+        "reveal": "show",
+        "hide": "hide",
+        "clearCredential": "Remove stored token",
+        "command": "Command",
+        "arguments": "Arguments",
+        "removeArg": "Remove argument",
+        "addArg": "Argument",
+        "envVars": "Environment Variables",
+        "removeEnv": "Remove variable",
+        "addEnv": "Variable",
+        "envHint": "Values are overwritten on save. Leaving empty means: empty string.",
+        "submitCreate": "Create"
+      },
+      "deleteConfirm": {
+        "title": "Delete {name}?",
+        "description": "The server is removed. Tools disappear from the catalog immediately.",
+        "confirm": "Delete"
+      },
+      "toasts": {
+        "created": "MCP server created.",
+        "updated": "MCP server updated.",
+        "deleted": "MCP server deleted.",
+        "restarted": "{name} restarted.",
+        "restartFailed": "Restart failed: {error}"
+      },
+      "errors": {
+        "displayNameRequired": "Display name missing.",
+        "slugInvalid": "Invalid slug — only a-z, 0-9 and hyphens, 2–32 chars, no leading or trailing hyphen.",
+        "urlRequired": "URL missing.",
+        "commandRequired": "Command missing.",
+        "unknown": "Unknown error."
+      }
     }
   },
   "errors": {
@@ -535,6 +654,45 @@
         "empty": "No failed runs recorded. 🎉",
         "conversation": "Conv. #{id}",
         "noTrace": "No traceback stored."
+      }
+    },
+    "skills": {
+      "title": "Skills & Tools",
+      "relative": {
+        "never": "never checked",
+        "seconds": "{n} s ago",
+        "minutes": "{n} min ago",
+        "hours": "{n} h ago"
+      },
+      "toasts": {
+        "urlCopied": "MCP URL copied.",
+        "copyFailed": "Copy failed."
+      },
+      "mcpEndpoint": {
+        "title": "MCP endpoint (inbound)",
+        "subtitle": "External clients like Cline or HaexChat can reach this agent's tools via MCP.",
+        "reloadAria": "Reload MCP status",
+        "statusUnknownLabel": "Status unknown —",
+        "active": "active",
+        "inactive": "inactive",
+        "toolsExposed": "{count} tools exposed",
+        "copyUrlAria": "Copy MCP URL",
+        "copy": "Copy",
+        "configBefore": "Configure the endpoint URL ",
+        "configMid": " as a streamable-HTTP MCP server. Auth via bearer token (see ",
+        "configAfter": ").",
+        "configureButton": "Configure MCP server"
+      },
+      "tools": {
+        "title": "Tools",
+        "count": "{count} tools available",
+        "subtitle": "What the agent can call today.",
+        "empty": "Catalog empty — backend not initialised?",
+        "approval": "Approval",
+        "viewParams": "View parameters",
+        "noParams": "no parameters",
+        "configure": "Configure",
+        "builtinNoConfig": "Built-in tools currently have no dedicated configuration surface."
       }
     }
   }

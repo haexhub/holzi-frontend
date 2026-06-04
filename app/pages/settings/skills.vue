@@ -30,6 +30,7 @@ import type { ToolInfo } from '~/types/api'
 const toolsApi = useTools()
 const mcpApi = useMcpHealth()
 const toast = useToast()
+const { t } = useI18n()
 const mcpSectionRef = ref<InstanceType<typeof McpServersSection> | null>(null)
 
 const expandedToolNames = ref<Set<string>>(new Set())
@@ -63,13 +64,13 @@ function toggleTool(name: string) {
 }
 
 function formatRelative(epochMs: number | null, nowMs: number): string {
-  if (!epochMs) return 'noch nie geprüft'
+  if (!epochMs) return t('pages.skills.relative.never')
   const deltaSec = Math.max(0, Math.floor((nowMs - epochMs) / 1000))
-  if (deltaSec < 60) return `vor ${deltaSec} s`
+  if (deltaSec < 60) return t('pages.skills.relative.seconds', { n: deltaSec })
   const min = Math.floor(deltaSec / 60)
-  if (min < 60) return `vor ${min} min`
+  if (min < 60) return t('pages.skills.relative.minutes', { n: min })
   const hr = Math.floor(min / 60)
-  return `vor ${hr} h`
+  return t('pages.skills.relative.hours', { n: hr })
 }
 
 function prettySchema(schema: ToolInfo['parameters_schema']): string {
@@ -96,9 +97,9 @@ async function copyMcpUrl() {
   if (!mcpApi.data.value) return
   try {
     await navigator.clipboard.writeText(mcpApi.data.value.url)
-    toast.success('MCP-URL kopiert.')
+    toast.success(t('pages.skills.toasts.urlCopied'))
   } catch {
-    toast.error('Kopieren fehlgeschlagen.')
+    toast.error(t('pages.skills.toasts.copyFailed'))
   }
 }
 
@@ -140,7 +141,7 @@ function onMcpCatalogChanged() {
     <!-- ── Header ──────────────────────────────────────────────── -->
     <header class="flex items-center gap-2">
       <Wrench class="size-5 text-muted-foreground" />
-      <h2 class="text-base font-semibold">Skills &amp; Tools</h2>
+      <h2 class="text-base font-semibold">{{ $t('pages.skills.title') }}</h2>
     </header>
 
     <!-- ── Skills (Plan 33) ────────────────────────────────────── -->
@@ -156,22 +157,21 @@ function onMcpCatalogChanged() {
     <section class="rounded-md border" data-testid="mcp-card">
       <header class="flex flex-wrap items-start justify-between gap-3 border-b p-3">
         <div class="min-w-0 flex-1">
-          <h3 class="text-sm font-semibold">MCP-Endpoint (eingehend)</h3>
+          <h3 class="text-sm font-semibold">{{ $t('pages.skills.mcpEndpoint.title') }}</h3>
           <p class="mt-0.5 text-xs text-muted-foreground">
-            Externe Clients wie Cline oder HaexChat können die Tools dieses
-            Agents über MCP ansprechen.
+            {{ $t('pages.skills.mcpEndpoint.subtitle') }}
           </p>
         </div>
         <UiButton
           size="sm"
           variant="outline"
           :disabled="mcpApi.loading.value"
-          aria-label="MCP-Status neu laden"
+          :aria-label="$t('pages.skills.mcpEndpoint.reloadAria')"
           data-testid="mcp-refresh"
           @click="mcpApi.check"
         >
           <RefreshCcw class="mr-1 size-4" />
-          Neu laden
+          {{ $t('common.reload') }}
         </UiButton>
       </header>
 
@@ -181,14 +181,14 @@ function onMcpCatalogChanged() {
           class="text-xs text-muted-foreground"
           data-testid="mcp-loading"
         >
-          Lädt…
+          {{ $t('common.loading') }}
         </p>
         <p
           v-else-if="mcpApi.error.value"
           class="text-xs text-destructive"
           data-testid="mcp-error"
         >
-          Status unbekannt — {{ mcpApi.error.value }}
+          {{ $t('pages.skills.mcpEndpoint.statusUnknownLabel') }} {{ mcpApi.error.value }}
         </p>
         <template v-else-if="mcpApi.data.value">
           <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
@@ -198,7 +198,7 @@ function onMcpCatalogChanged() {
               data-testid="mcp-status"
             >
               <CheckCircle2 class="size-3.5" aria-hidden="true" />
-              aktiv
+              {{ $t('pages.skills.mcpEndpoint.active') }}
             </span>
             <span
               v-else
@@ -206,13 +206,13 @@ function onMcpCatalogChanged() {
               data-testid="mcp-status"
             >
               <AlertCircle class="size-3.5" aria-hidden="true" />
-              inaktiv
+              {{ $t('pages.skills.mcpEndpoint.inactive') }}
             </span>
             <span
               class="text-xs text-muted-foreground"
               data-testid="mcp-tool-count"
             >
-              {{ mcpApi.data.value.tool_count }} Tools exponiert
+              {{ $t('pages.skills.mcpEndpoint.toolsExposed', { count: mcpApi.data.value.tool_count }) }}
             </span>
             <span
               class="text-xs text-muted-foreground"
@@ -230,12 +230,12 @@ function onMcpCatalogChanged() {
             <UiButton
               size="sm"
               variant="ghost"
-              aria-label="MCP-URL kopieren"
+              :aria-label="$t('pages.skills.mcpEndpoint.copyUrlAria')"
               data-testid="mcp-copy-url"
               @click="copyMcpUrl"
             >
               <Copy class="mr-1 size-3.5" />
-              Kopieren
+              {{ $t('pages.skills.mcpEndpoint.copy') }}
             </UiButton>
           </div>
 
@@ -248,9 +248,7 @@ function onMcpCatalogChanged() {
           </p>
 
           <p class="text-xs text-muted-foreground">
-            Endpoint-URL <code class="font-mono">{host}/mcp</code> als
-            Streamable-HTTP-MCP-Server konfigurieren. Auth via Bearer-Token
-            (siehe <code class="font-mono">HERMES_AUTH_TOKEN</code>).
+            {{ $t('pages.skills.mcpEndpoint.configBefore') }}<code class="font-mono">{host}/mcp</code>{{ $t('pages.skills.mcpEndpoint.configMid') }}<code class="font-mono">HERMES_AUTH_TOKEN</code>{{ $t('pages.skills.mcpEndpoint.configAfter') }}
           </p>
 
           <div>
@@ -260,7 +258,7 @@ function onMcpCatalogChanged() {
               data-testid="mcp-configure"
               @click="scrollToSection('mcp-section')"
             >
-              MCP-Server konfigurieren
+              {{ $t('pages.skills.mcpEndpoint.configureButton') }}
             </button>
           </div>
         </template>
@@ -270,16 +268,16 @@ function onMcpCatalogChanged() {
     <!-- ── Tool catalog ────────────────────────────────────────── -->
     <section class="rounded-md border" data-testid="tools-section">
       <header class="border-b p-3">
-        <h3 class="text-sm font-semibold">Tools</h3>
+        <h3 class="text-sm font-semibold">{{ $t('pages.skills.tools.title') }}</h3>
         <p
           v-if="toolsApi.data.value"
           class="mt-0.5 text-xs text-muted-foreground"
           data-testid="tools-count"
         >
-          {{ toolsApi.data.value.total }} Tools verfügbar
+          {{ $t('pages.skills.tools.count', { count: toolsApi.data.value.total }) }}
         </p>
         <p v-else class="mt-0.5 text-xs text-muted-foreground">
-          Was der Agent heute aufrufen kann.
+          {{ $t('pages.skills.tools.subtitle') }}
         </p>
       </header>
 
@@ -288,7 +286,7 @@ function onMcpCatalogChanged() {
         class="p-3 text-xs text-muted-foreground"
         data-testid="tools-loading"
       >
-        Lädt…
+        {{ $t('common.loading') }}
       </p>
       <p
         v-else-if="toolsApi.error.value"
@@ -302,7 +300,7 @@ function onMcpCatalogChanged() {
         class="p-3 text-xs text-muted-foreground"
         data-testid="tools-empty"
       >
-        Catalog leer — Backend nicht initialisiert?
+        {{ $t('pages.skills.tools.empty') }}
       </p>
       <ul
         v-else-if="toolsApi.data.value"
@@ -328,7 +326,7 @@ function onMcpCatalogChanged() {
               :data-testid="`tool-approval-${tool.name}`"
             >
               <ShieldAlert class="size-3" aria-hidden="true" />
-              Approval
+              {{ $t('pages.skills.tools.approval') }}
             </span>
           </div>
           <p class="wrap-break-word text-xs text-muted-foreground">
@@ -358,7 +356,7 @@ function onMcpCatalogChanged() {
               class="size-3.5"
               aria-hidden="true"
             />
-            Parameter ansehen
+            {{ $t('pages.skills.tools.viewParams') }}
           </button>
           <div
             v-if="expandedToolNames.has(tool.name)"
@@ -368,7 +366,7 @@ function onMcpCatalogChanged() {
               v-if="!hasParameters(tool)"
               class="text-xs text-muted-foreground"
             >
-              keine Parameter
+              {{ $t('pages.skills.tools.noParams') }}
             </p>
             <pre
               v-else
@@ -391,17 +389,17 @@ function onMcpCatalogChanged() {
               :data-testid="`tool-configure-${tool.name}`"
               @click="scrollToMcpServer(tool.source)"
             >
-              Konfigurieren
+              {{ $t('pages.skills.tools.configure') }}
             </button>
             <button
               v-else
               type="button"
               class="inline-flex h-8 items-center justify-center rounded-md border border-input bg-background px-3 text-xs font-medium opacity-50"
               disabled
-              title="Built-in Tools haben aktuell keine eigene Konfigurationsoberfläche."
+              :title="$t('pages.skills.tools.builtinNoConfig')"
               :data-testid="`tool-configure-${tool.name}`"
             >
-              Konfigurieren
+              {{ $t('pages.skills.tools.configure') }}
             </button>
           </div>
         </li>

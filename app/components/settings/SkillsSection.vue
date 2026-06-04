@@ -30,6 +30,8 @@ const BODY_HARD_CAP = 16 * 1024
 const skillsApi = useSkills()
 const { confirm } = useConfirm()
 const toast = useToast()
+const { t } = useI18n()
+const localePath = useLocalePath()
 
 const selectedId = ref<number | null>(null)
 const mode = ref<Mode>('empty')
@@ -110,19 +112,19 @@ async function save() {
   const whenToUse = formWhenToUse.value.trim()
   const body = formBody.value
   if (!name) {
-    formError.value = 'Name ist erforderlich.'
+    formError.value = t('components.skillsSection.errors.nameRequired')
     return
   }
   if (!description) {
-    formError.value = 'Beschreibung ist erforderlich.'
+    formError.value = t('components.skillsSection.errors.descriptionRequired')
     return
   }
   if (!body.trim()) {
-    formError.value = 'Body darf nicht leer sein.'
+    formError.value = t('components.skillsSection.errors.bodyRequired')
     return
   }
   if (body.length > BODY_HARD_CAP) {
-    formError.value = `Body darf maximal ${BODY_HARD_CAP} Zeichen lang sein.`
+    formError.value = t('components.skillsSection.errors.bodyTooLong', { max: BODY_HARD_CAP })
     return
   }
   saving.value = true
@@ -131,8 +133,7 @@ async function save() {
     if (isCreating.value) {
       const slug = formSlug.value.trim()
       if (!SLUG_REGEX.test(slug)) {
-        formError.value =
-          'Slug muss kebab-case sein (a-z0-9, optional Bindestriche, 1–64 Zeichen).'
+        formError.value = t('components.skillsSection.errors.slugInvalid')
         saving.value = false
         return
       }
@@ -146,7 +147,7 @@ async function save() {
       const created = await skillsApi.create(payload)
       selectedId.value = created.id
       isCreating.value = false
-      toast.success('Skill angelegt.')
+      toast.success(t('components.skillsSection.toasts.created'))
     } else {
       const current = selectedSkill.value
       if (!current) return
@@ -157,12 +158,12 @@ async function save() {
         body_markdown: body,
       }
       await skillsApi.update(current.id, payload)
-      toast.success('Skill gespeichert.')
+      toast.success(t('components.skillsSection.toasts.saved'))
     }
     mode.value = 'read'
   } catch (err: unknown) {
     formError.value =
-      err instanceof Error ? err.message : 'Fehler beim Speichern.'
+      err instanceof Error ? err.message : t('components.skillsSection.errors.save')
   } finally {
     saving.value = false
   }
@@ -172,8 +173,8 @@ async function remove() {
   const skill = selectedSkill.value
   if (!skill) return
   const ok = await confirm({
-    title: 'Skill löschen?',
-    description: `"${skill.name}" wird endgültig gelöscht. Personas, die diesen Skill aktiviert haben, verlieren ihn automatisch.`,
+    title: t('components.skillsSection.deleteConfirm.title'),
+    description: t('components.skillsSection.deleteConfirm.description', { name: skill.name }),
     destructive: true,
   })
   if (!ok) return
@@ -181,10 +182,10 @@ async function remove() {
     await skillsApi.remove(skill.id)
     selectedId.value = null
     mode.value = 'empty'
-    toast.success('Skill gelöscht.')
+    toast.success(t('components.skillsSection.toasts.deleted'))
   } catch (err: unknown) {
     toast.error(
-      err instanceof Error ? err.message : 'Fehler beim Löschen.',
+      err instanceof Error ? err.message : t('components.skillsSection.errors.delete'),
     )
   }
 }
@@ -212,12 +213,10 @@ onMounted(() => {
     <header class="border-b p-3">
       <div class="flex items-center gap-2">
         <BookOpenText class="size-4 text-muted-foreground" />
-        <h3 class="text-sm font-semibold">Skills</h3>
+        <h3 class="text-sm font-semibold">{{ $t('components.skillsSection.title') }}</h3>
       </div>
       <p class="mt-1 text-xs text-muted-foreground">
-        Wiederverwendbare Prompt-Bausteine. Personas aktivieren einzelne
-        Skills auf der
-        <NuxtLink to="/settings/preferences" class="underline">Preferences-Seite</NuxtLink>.
+        {{ $t('components.skillsSection.introBefore') }}<NuxtLink :to="localePath('/settings/preferences')" class="underline">{{ $t('components.skillsSection.preferencesLink') }}</NuxtLink>{{ $t('components.skillsSection.introAfter') }}
       </p>
       <p
         class="mt-2 flex items-start gap-1.5 rounded-md border border-amber-500/40 bg-amber-500/5 p-2 text-xs text-amber-700 dark:text-amber-300"
@@ -225,11 +224,7 @@ onMounted(() => {
       >
         <AlertTriangle class="mt-0.5 size-3.5 shrink-0" />
         <span>
-          Skill-Inhalte fließen in jeden System-Prompt der
-          aktivierenden Personas und sind damit in
-          <code class="font-mono">/settings/logs</code> sowie
-          <code class="font-mono">/settings/insights</code>
-          sichtbar — keine API-Keys oder Geheimnisse hier einfügen.
+          {{ $t('components.skillsSection.securityBefore') }}<code class="font-mono">/settings/logs</code>{{ $t('components.skillsSection.securityMid') }}<code class="font-mono">/settings/insights</code>{{ $t('components.skillsSection.securityAfter') }}
         </span>
       </p>
     </header>
@@ -244,16 +239,16 @@ onMounted(() => {
             />
             <UiInput
               v-model="search"
-              placeholder="Suchen…"
+              :placeholder="$t('components.skillsSection.searchPlaceholder')"
               class="h-8 pl-7 text-sm"
-              aria-label="Skills durchsuchen"
+              :aria-label="$t('components.skillsSection.searchAria')"
               data-testid="skill-search"
             />
           </div>
           <UiButton
             size="sm"
             variant="ghost"
-            aria-label="Neuer Skill"
+            :aria-label="$t('components.skillsSection.newSkill')"
             data-testid="skill-new"
             @click="openCreate"
           >
@@ -266,7 +261,7 @@ onMounted(() => {
             v-if="skillsApi.loading.value && !skillsApi.data.value"
             class="p-3 text-xs text-muted-foreground"
           >
-            Lädt…
+            {{ $t('common.loading') }}
           </p>
           <p
             v-else-if="skillsApi.error.value"
@@ -280,10 +275,10 @@ onMounted(() => {
             data-testid="skills-empty"
           >
             <template v-if="search.trim()">
-              Keine Treffer für „{{ search }}".
+              {{ $t('components.skillsSection.noMatch', { query: search }) }}
             </template>
             <template v-else>
-              Noch keine Skills.
+              {{ $t('components.skillsSection.empty') }}
             </template>
           </p>
           <ul v-else class="flex flex-col">
@@ -317,11 +312,11 @@ onMounted(() => {
           <div class="min-w-0 flex-1">
             <template v-if="mode === 'empty'">
               <h4 class="text-sm font-semibold text-muted-foreground">
-                Skill auswählen
+                {{ $t('components.skillsSection.detailEmptyTitle') }}
               </h4>
             </template>
             <template v-else-if="mode === 'edit' && isCreating">
-              <h4 class="text-sm font-semibold">Neuer Skill</h4>
+              <h4 class="text-sm font-semibold">{{ $t('components.skillsSection.newSkill') }}</h4>
             </template>
             <template v-else-if="selectedSkill">
               <p class="truncate text-sm font-semibold">
@@ -338,7 +333,7 @@ onMounted(() => {
               <UiButton
                 size="sm"
                 variant="ghost"
-                aria-label="Bearbeiten"
+                :aria-label="$t('common.edit')"
                 data-testid="skill-edit"
                 @click="openEdit"
               >
@@ -347,7 +342,7 @@ onMounted(() => {
               <UiButton
                 size="sm"
                 variant="ghost"
-                aria-label="Löschen"
+                :aria-label="$t('common.delete')"
                 data-testid="skill-delete"
                 @click="remove"
               >
@@ -358,7 +353,7 @@ onMounted(() => {
               <UiButton
                 size="sm"
                 variant="ghost"
-                aria-label="Abbrechen"
+                :aria-label="$t('common.cancel')"
                 data-testid="skill-cancel"
                 @click="cancelEdit"
               >
@@ -366,7 +361,7 @@ onMounted(() => {
               </UiButton>
               <UiButton
                 size="sm"
-                aria-label="Speichern"
+                :aria-label="$t('common.save')"
                 :disabled="saving"
                 data-testid="skill-save"
                 @click="save"
@@ -385,9 +380,9 @@ onMounted(() => {
             data-testid="skill-empty-state"
           >
             <BookOpenText class="mb-3 size-12 stroke-[1.25]" />
-            <p class="text-sm font-medium">Wähle einen Skill</p>
+            <p class="text-sm font-medium">{{ $t('components.skillsSection.emptyTitle') }}</p>
             <p class="mt-1 text-xs">
-              Einen Skill aus der Liste auswählen oder einen neuen anlegen.
+              {{ $t('components.skillsSection.emptyHint') }}
             </p>
           </div>
 
@@ -397,10 +392,10 @@ onMounted(() => {
             class="flex flex-col gap-4"
           >
             <dl class="grid grid-cols-[max-content_1fr] gap-x-3 gap-y-1 text-xs">
-              <dt class="text-muted-foreground">Beschreibung</dt>
+              <dt class="text-muted-foreground">{{ $t('components.skillsSection.fields.description') }}</dt>
               <dd>{{ selectedSkill.description }}</dd>
               <template v-if="selectedSkill.when_to_use">
-                <dt class="text-muted-foreground">Einsatz</dt>
+                <dt class="text-muted-foreground">{{ $t('components.skillsSection.fields.whenToUse') }}</dt>
                 <dd>{{ selectedSkill.when_to_use }}</dd>
               </template>
             </dl>
@@ -424,14 +419,14 @@ onMounted(() => {
                 for="skillSlug"
                 class="text-xs font-medium text-muted-foreground"
               >
-                Slug
+                {{ $t('components.skillsSection.form.slug') }}
               </label>
               <UiInput
                 id="skillSlug"
                 v-model="formSlug"
                 :readonly="!isCreating"
                 :disabled="!isCreating"
-                placeholder="z. B. code-style-typescript"
+                :placeholder="$t('components.skillsSection.form.slugPlaceholder')"
                 class="font-mono text-sm"
                 data-testid="skill-form-slug"
               />
@@ -441,12 +436,12 @@ onMounted(() => {
                 for="skillName"
                 class="text-xs font-medium text-muted-foreground"
               >
-                Name
+                {{ $t('components.skillsSection.form.name') }}
               </label>
               <UiInput
                 id="skillName"
                 v-model="formName"
-                placeholder="z. B. Code Style TypeScript"
+                :placeholder="$t('components.skillsSection.form.namePlaceholder')"
                 data-testid="skill-form-name"
               />
             </div>
@@ -455,12 +450,12 @@ onMounted(() => {
                 for="skillDescription"
                 class="text-xs font-medium text-muted-foreground"
               >
-                Beschreibung (kurz)
+                {{ $t('components.skillsSection.form.description') }}
               </label>
               <UiInput
                 id="skillDescription"
                 v-model="formDescription"
-                placeholder="z. B. Style-Guidelines für TypeScript-Reviews"
+                :placeholder="$t('components.skillsSection.form.descriptionPlaceholder')"
                 data-testid="skill-form-description"
               />
             </div>
@@ -469,12 +464,12 @@ onMounted(() => {
                 for="skillWhenToUse"
                 class="text-xs font-medium text-muted-foreground"
               >
-                Wann einsetzen? (optional)
+                {{ $t('components.skillsSection.form.whenToUse') }}
               </label>
               <UiInput
                 id="skillWhenToUse"
                 v-model="formWhenToUse"
-                placeholder="z. B. Bei TypeScript-Code-Reviews"
+                :placeholder="$t('components.skillsSection.form.whenToUsePlaceholder')"
                 data-testid="skill-form-when-to-use"
               />
             </div>
@@ -483,7 +478,7 @@ onMounted(() => {
                 for="skillBody"
                 class="text-xs font-medium text-muted-foreground"
               >
-                Body (Markdown)
+                {{ $t('components.skillsSection.form.body') }}
               </label>
               <UiTextarea
                 id="skillBody"
@@ -501,9 +496,9 @@ onMounted(() => {
                 "
                 data-testid="skill-form-length"
               >
-                {{ bodyLength }} / {{ BODY_HARD_CAP }} Zeichen
+                {{ $t('components.skillsSection.form.length', { count: bodyLength, max: BODY_HARD_CAP }) }}
                 <template v-if="bodyAtSoftWarning">
-                  — langer Body, Composition wird groß
+                  {{ $t('components.skillsSection.form.lengthWarn') }}
                 </template>
               </p>
             </div>

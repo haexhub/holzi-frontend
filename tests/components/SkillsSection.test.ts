@@ -1,5 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
+
+// SkillsSection calls useI18n() in setup for validation/toast/confirm copy;
+// the bare mount has no i18n plugin so useI18n would throw without the
+// importOriginal-preserving mock. t() passes the key through; useLocalePath()
+// is auto-imported from the nuxt test env.
+vi.mock('vue-i18n', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('vue-i18n')>()
+  return {
+    ...orig,
+    useI18n: () => ({ t: (key: string) => key }),
+  }
+})
+
 import SkillsSection from '~/components/settings/SkillsSection.vue'
 import type { Skill, SkillListResponse } from '~/types/api'
 
@@ -164,7 +177,7 @@ describe('settings/SkillsSection.vue', () => {
 
     expect(
       wrapper.get('[data-testid="skill-form-error"]').text(),
-    ).toContain('kebab-case')
+    ).toContain('components.skillsSection.errors.slugInvalid')
     expect(apiPost).not.toHaveBeenCalled()
   })
 
@@ -229,8 +242,8 @@ describe('settings/SkillsSection.vue', () => {
     const wrapper = mount(SkillsSection)
     await flushPromises()
     const notice = wrapper.get('[data-testid="skill-security-notice"]')
-    expect(notice.text()).toContain('System-Prompt')
-    expect(notice.text()).toContain('keine')
+    expect(notice.text()).toContain('components.skillsSection.securityBefore')
+    expect(notice.text()).toContain('components.skillsSection.securityAfter')
     // Notice stays visible after switching to read mode of an existing
     // skill (header lives above the two-pane).
   })

@@ -151,6 +151,125 @@
         "pushFailed": "Push fehlgeschlagen.",
         "pushFailedDetail": "Push fehlgeschlagen: {message}"
       }
+    },
+    "skillsSection": {
+      "title": "Skills",
+      "introBefore": "Wiederverwendbare Prompt-Bausteine. Personas aktivieren einzelne Skills auf der ",
+      "preferencesLink": "Preferences-Seite",
+      "introAfter": ".",
+      "securityBefore": "Skill-Inhalte fließen in jeden System-Prompt der aktivierenden Personas und sind damit in ",
+      "securityMid": " sowie ",
+      "securityAfter": " sichtbar — keine API-Keys oder Geheimnisse hier einfügen.",
+      "searchPlaceholder": "Suchen…",
+      "searchAria": "Skills durchsuchen",
+      "newSkill": "Neuer Skill",
+      "noMatch": "Keine Treffer für „{query}\".",
+      "empty": "Noch keine Skills.",
+      "detailEmptyTitle": "Skill auswählen",
+      "emptyTitle": "Wähle einen Skill",
+      "emptyHint": "Einen Skill aus der Liste auswählen oder einen neuen anlegen.",
+      "fields": {
+        "description": "Beschreibung",
+        "whenToUse": "Einsatz"
+      },
+      "form": {
+        "slug": "Slug",
+        "slugPlaceholder": "z. B. code-style-typescript",
+        "name": "Name",
+        "namePlaceholder": "z. B. Code Style TypeScript",
+        "description": "Beschreibung (kurz)",
+        "descriptionPlaceholder": "z. B. Style-Guidelines für TypeScript-Reviews",
+        "whenToUse": "Wann einsetzen? (optional)",
+        "whenToUsePlaceholder": "z. B. Bei TypeScript-Code-Reviews",
+        "body": "Body (Markdown)",
+        "length": "{count} / {max} Zeichen",
+        "lengthWarn": "— langer Body, Composition wird groß"
+      },
+      "deleteConfirm": {
+        "title": "Skill löschen?",
+        "description": "\"{name}\" wird endgültig gelöscht. Personas, die diesen Skill aktiviert haben, verlieren ihn automatisch."
+      },
+      "toasts": {
+        "created": "Skill angelegt.",
+        "saved": "Skill gespeichert.",
+        "deleted": "Skill gelöscht."
+      },
+      "errors": {
+        "nameRequired": "Name ist erforderlich.",
+        "descriptionRequired": "Beschreibung ist erforderlich.",
+        "bodyRequired": "Body darf nicht leer sein.",
+        "bodyTooLong": "Body darf maximal {max} Zeichen lang sein.",
+        "slugInvalid": "Slug muss kebab-case sein (a-z0-9, optional Bindestriche, 1–64 Zeichen).",
+        "save": "Fehler beim Speichern.",
+        "delete": "Fehler beim Löschen."
+      }
+    },
+    "mcpServersSection": {
+      "title": "MCP-Server registrieren",
+      "subtitle": "Externe MCP-Server bringen zusätzliche Tools mit. Sie laufen mit Holzi-Rechten — nur vertrauenswürdige Quellen installieren.",
+      "newServer": "Neuer Server",
+      "empty": "Keine MCP-Server konfiguriert.",
+      "emptyCta": "+ Neuer Server",
+      "restart": "Neustart",
+      "enable": "Aktivieren",
+      "disable": "Deaktivieren",
+      "crashDetails": "Crash-Details",
+      "envLabel": "env:",
+      "status": {
+        "starting": "startet",
+        "ready": "bereit",
+        "crashed": "fehler",
+        "disabled": "deaktiviert",
+        "unknown": "unbekannt"
+      },
+      "form": {
+        "createTitle": "Neuer MCP-Server",
+        "editTitle": "MCP-Server bearbeiten",
+        "closeAria": "Formular schließen",
+        "slug": "Slug",
+        "slugLockedHint": "Slug wird nicht geändert — er ist Teil jedes Tool-Namens.",
+        "slugInvalidHint": "kebab-case, 2–32 Zeichen, kein Bindestrich am Rand",
+        "displayName": "Anzeigename",
+        "transport": "Transport",
+        "transportHttp": "HTTP (StreamableHTTP)",
+        "transportStdio": "stdio (lokaler Subprozess)",
+        "transportLockedHint": "Transport wird beim Edit nicht gewechselt — neuen Server anlegen, wenn das nötig wäre.",
+        "url": "URL",
+        "credentials": "Bearer-Token / API-Key",
+        "optional": "(optional)",
+        "credentialsPlaceholderEdit": "Leer lassen, um den gespeicherten Wert zu behalten",
+        "reveal": "anzeigen",
+        "hide": "verbergen",
+        "clearCredential": "Gespeichertes Token entfernen",
+        "command": "Command",
+        "arguments": "Arguments",
+        "removeArg": "Argument entfernen",
+        "addArg": "Argument",
+        "envVars": "Environment Variables",
+        "removeEnv": "Variable entfernen",
+        "addEnv": "Variable",
+        "envHint": "Werte werden beim Speichern überschrieben. Leer lassen heißt: leerer String.",
+        "submitCreate": "Anlegen"
+      },
+      "deleteConfirm": {
+        "title": "{name} löschen?",
+        "description": "Der Server wird entfernt. Tools verschwinden sofort aus dem Catalog.",
+        "confirm": "Löschen"
+      },
+      "toasts": {
+        "created": "MCP-Server erstellt.",
+        "updated": "MCP-Server aktualisiert.",
+        "deleted": "MCP-Server gelöscht.",
+        "restarted": "{name} neu gestartet.",
+        "restartFailed": "Neustart fehlgeschlagen: {error}"
+      },
+      "errors": {
+        "displayNameRequired": "Anzeigename fehlt.",
+        "slugInvalid": "Slug ungültig — nur a-z, 0-9 und Bindestriche, 2–32 Zeichen, kein Bindestrich am Anfang oder Ende.",
+        "urlRequired": "URL fehlt.",
+        "commandRequired": "Command fehlt.",
+        "unknown": "Unbekannter Fehler."
+      }
     }
   },
   "errors": {
@@ -535,6 +654,45 @@
         "empty": "Keine Fehlläufe registriert. 🎉",
         "conversation": "Conv. #{id}",
         "noTrace": "Kein Traceback gespeichert."
+      }
+    },
+    "skills": {
+      "title": "Skills & Tools",
+      "relative": {
+        "never": "noch nie geprüft",
+        "seconds": "vor {n} s",
+        "minutes": "vor {n} min",
+        "hours": "vor {n} h"
+      },
+      "toasts": {
+        "urlCopied": "MCP-URL kopiert.",
+        "copyFailed": "Kopieren fehlgeschlagen."
+      },
+      "mcpEndpoint": {
+        "title": "MCP-Endpoint (eingehend)",
+        "subtitle": "Externe Clients wie Cline oder HaexChat können die Tools dieses Agents über MCP ansprechen.",
+        "reloadAria": "MCP-Status neu laden",
+        "statusUnknownLabel": "Status unbekannt —",
+        "active": "aktiv",
+        "inactive": "inaktiv",
+        "toolsExposed": "{count} Tools exponiert",
+        "copyUrlAria": "MCP-URL kopieren",
+        "copy": "Kopieren",
+        "configBefore": "Endpoint-URL ",
+        "configMid": " als Streamable-HTTP-MCP-Server konfigurieren. Auth via Bearer-Token (siehe ",
+        "configAfter": ").",
+        "configureButton": "MCP-Server konfigurieren"
+      },
+      "tools": {
+        "title": "Tools",
+        "count": "{count} Tools verfügbar",
+        "subtitle": "Was der Agent heute aufrufen kann.",
+        "empty": "Catalog leer — Backend nicht initialisiert?",
+        "approval": "Approval",
+        "viewParams": "Parameter ansehen",
+        "noParams": "keine Parameter",
+        "configure": "Konfigurieren",
+        "builtinNoConfig": "Built-in Tools haben aktuell keine eigene Konfigurationsoberfläche."
       }
     }
   }
