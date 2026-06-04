@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { BadgeCheck, ExternalLink, Trash2 } from 'lucide-vue-next'
-import { useI18n } from 'vue-i18n'
 import ModelSelect from '~/components/settings/ModelSelect.vue'
 import { useLlmCredentials } from '~/composables/useLlmCredentials'
 import type {

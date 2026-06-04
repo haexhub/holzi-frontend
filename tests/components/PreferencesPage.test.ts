@@ -29,9 +29,13 @@ vi.mock('~/composables/useConfirm', () => ({
   useConfirm: () => ({ confirm: (opts: unknown) => confirmFn(opts) }),
 }))
 
-// Plan 30 Wave 0: language picker uses vue-i18n's setLocale().
+// Plan 30 Wave 0: language picker uses the @nuxtjs/i18n-augmented
+// `setLocale` from useI18n({ useScope: 'global' }). The composer must
+// be partially mocked so the rest of the runtime (createI18n etc.) stays
+// intact — see the importOriginal shim. `localeRef` is a real Vue ref so
+// proxyRefs auto-unwraps it in the template.
 const setLocaleMock = vi.fn()
-const localeRef = { value: 'de' }
+const localeRef = ref('de')
 vi.mock('vue-i18n', async (importOriginal) => {
   const orig = await importOriginal<typeof import('vue-i18n')>()
   return {
@@ -39,12 +43,10 @@ vi.mock('vue-i18n', async (importOriginal) => {
     useI18n: () => ({
       t: (key: string) => key,
       locale: localeRef,
-      locales: {
-        value: [
-          { code: 'de', name: 'Deutsch' },
-          { code: 'en', name: 'English' },
-        ],
-      },
+      locales: ref([
+        { code: 'de', name: 'Deutsch' },
+        { code: 'en', name: 'English' },
+      ]),
       setLocale: setLocaleMock,
     }),
   }

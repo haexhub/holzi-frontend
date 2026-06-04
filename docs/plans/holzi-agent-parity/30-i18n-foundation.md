@@ -48,9 +48,11 @@ gewählten Sprache.
 
 ### Frontend (Nuxt)
 
-- `@nuxtjs/i18n` mit Locales `de` (default) + `en`, Strategy `no_prefix`
-  (URLs bleiben unverändert; Locale lebt in Cookie + `Accept-Language`-
-  fallback bei Erstbesuch).
+- `@nuxtjs/i18n` mit Locales `de` (default) + `en`, Strategy
+  `prefix_except_default` (DE bleibt unter `/`, EN bekommt `/en/`-
+  Prefix; manuelle User-Wahl 2026-06-04, überstimmt den initialen
+  `no_prefix`-Vorschlag). Locale lebt zusätzlich im i18n-Cookie +
+  `Accept-Language`-Fallback bei Erstbesuch.
 - Lazy-Loading aus `app/i18n/locales/{de,en}.json`.
 - Key-Hierarchie:
   - `common.*` — wiederverwendete Buttons, Labels („Speichern",
@@ -61,9 +63,12 @@ gewählten Sprache.
     nicht trivial in `pages.*` integrierbar.
   - `errors.<CODE>` — Backend-Error-Code-Übersetzungen (UPPER_SNAKE
     Keys passend zu Backend `ErrorCode`-Enum).
-- `setLocale()` aus `useI18n()` setzt Sprache + persistiert via
-  i18n-Cookie. Keine Backend-Persistenz (single-user; bei Wave C wird
-  Locale dann per-user-Preference gespeichert).
+- `setLocale()` aus `useI18n({ useScope: 'global' })` setzt Sprache +
+  persistiert via i18n-Cookie + navigiert auf die Prefix-URL. **Wichtig:**
+  ohne `useScope: 'global'` gibt vue-i18n im composition-mode einen
+  lokalen Composer zurück, der keine `setLocale`-Augmentierung hat — der
+  Call ist dann ein stiller no-op. Keine Backend-Persistenz (single-user;
+  bei Wave C wird Locale dann per-user-Preference gespeichert).
 - `detectBrowserLanguage: true` als initiale Auswahl; manuelle User-Wahl
   überschreibt.
 

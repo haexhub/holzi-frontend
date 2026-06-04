@@ -16,7 +16,9 @@ export default defineNuxtConfig({
   // manual pick in /settings/preferences overrides. EN-completeness is
   // enforced by tests/i18n/keys.test.ts; no fallback-on-missing.
   i18n: {
-    strategy: 'no_prefix',
+    // Default-Locale (de) bleibt unter `/`, non-default bekommt /en/.
+    // User-Preference (2026-06-04, überstimmt Plan 30's no_prefix).
+    strategy: 'prefix_except_default',
     defaultLocale: 'de',
     locales: [
       { code: 'de', name: 'Deutsch', file: 'de.json' },
