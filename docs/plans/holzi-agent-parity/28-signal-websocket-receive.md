@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-Status: **Merged 2026-06-04** ([Holzi#69](https://github.com/haexhub/Holzi/pull/69)). 6 commits — deps, `SignalClient.receive_stream`, `SignalWorker` WS loop + reconnect, recorded envelope fixtures, `_extract_self_text` both shapes + security boundaries, debug-log fix-up for malformed / non-dict WS payloads. 919 pytest passing (+5 new `_extract_self_text` cases), ruff + mypy clean on `src/hermes/signal/`. Tasks 1–7 done in-repo; Tasks 4 (live-recorded fixture diff) and 8–10 (Ansible quadlet flip + live verification on haex.cloud + roadmap README + memory rewrite) remain deferred to a follow-up session once a maintenance window on the box opens up.
+Status: **Obsolet (durch [Plan 34](./34-remove-messengers.md) 2026-06-04 ausgebaut).** Wurde am 2026-06-04 als [Holzi#69](https://github.com/haexhub/Holzi/pull/69) gemerged (6 commits, 919 pytest passing), aber NIE produktiv aktiviert — der Ansible-Quadlet-Flip auf `MODE=json-rpc` (Task 8) blieb deferred, und Recherche zeigte dass selbst mit json-rpc das eigentliche Problem (signal-cli's syncMessage-Filter für linked-secondary-Devices) NICHT gelöst gewesen wäre. Per User-Entscheidung wurde die gesamte Messenger-Familie via Plan 34 entfernt statt eine eigene Primary-Signal-Number zu beschaffen. Der WS-Receive-Code lebt nur noch in der Git-Historie (commits unter `Holzi#69`); falls Signal jemals wieder eingebaut wird, ist das ein neuer Plan auf dem Stand der eigenen Primary-Number.
 
 Depends on: existing Signal integration (Plan 19 baseline + the messenger
 accounts CRUD already on main). No frontend-facing changes — pure backend +
