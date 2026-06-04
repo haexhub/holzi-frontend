@@ -272,24 +272,46 @@ TDD-Philosophie: erst Test schreiben, dann Impl, dann commit.
 2. Page-spezifische Keys unter `pages.<pagename>.*` in beide
    Locale-Files schreiben.
 3. Page umstellen.
-4. Component-Test für diese Page anpassen (assertet entweder auf
-   i18n-Key oder auf das DE-Render-Result je nach existierendem
-   Stil).
-5. Smoke: `pnpm dev` starten, Page in DE öffnen, Locale auf EN
-   wechseln, Page öffnen → kein Key-String („pages.tasks.title")
-   leakt ins DOM.
+4. Component-Test für diese Page anpassen: DE-String-/aria-Assertions
+   auf den i18n-Key umbauen (Passthrough-`$t`-Stub rendert den Key).
+   **Test-Pattern (etabliert 4b):** sobald die Component `useI18n()` im
+   *script* nutzt (toast/confirm/error/label-maps), braucht der Test
+   `vi.mock('vue-i18n', importOriginal → useI18n: () => ({ t: k=>k }))`
+   VOR dem statischen Component-Import. `useLocalePath()` ist im
+   nuxt-Test-Env auto-imported. Interpolierte Werte (`{count}`,
+   `{error}`) fallen beim Passthrough weg → wo ein Test den *Wert*
+   prüft (Exit-Code, Fehlermeldung), Label + Wert getrennt rendern
+   (`{{ $t('…label') }} {{ value }}`) statt `{{ $t('…', { value }) }}`.
+5. Smoke: Live-DE↔EN-Check braucht den vollen Stack (`make up-local-full`)
+   — `/settings/*` liegt hinter `auth.global.ts` (localStorage-Token
+   `hermes.auth.token` reicht, keine Backend-Validierung) und die Pages
+   rufen Backend-APIs. `pnpm dev` allein zeigt nur Error-States (aber
+   lokalisiert). Unit-seitig deckt `keys.test` (de≡en) + Key-Assertions
+   die String-Korrektheit ab.
 
-Reihenfolge (klein → groß, damit man früh Routine entwickelt):
-- `settings/{insights,logs,llm}` (klein)
-- `settings/{memory,tasks,workspaces}` (mittel)
-- `settings/{skills,preferences,diagnostics}` (mittel)
-- `chat/index` + `ChatHub.vue` (groß, viele Strings)
-- `EmptyChatState.vue`, `ChatComposer.vue`,
-  `MessageList.vue` (zentrale Chat-Komponenten)
+**Sub-Splits:**
+- **4a** (Commit `dbc5a48`, done): Settings-Shell (`settings.vue` +
+  Layout-Header), Sidebar-Nav (`app/lib/settingsNav.ts`),
+  `preferences.vue` Personas + Channels.
+- **4b** (Commits `efd9a7f`+`8d41980`+`9c8b8fd`, done): ALLE restlichen
+  `/settings/*`-Pages (`logs`, `insights`, `memory`, `workspaces`,
+  `tasks`, `diagnostics`, `skills`) + `ThemeToggle.vue` +
+  `panels/{WorkspacePanel,WorkspaceGitTab}.vue` +
+  `settings/{SkillsSection,McpServersSection}.vue`. 327 vitest grün,
+  typecheck clean.
+- **4c** (TODO, nächste Session): Chat-Family — `app/pages/index.vue`
+  (chat root), `ChatHub.vue`, `ChatComposer.vue`, `MessageList.vue`,
+  `EmptyChatState.vue`, `chat/SandboxCrashCard.vue` (via ChatHub) +
+  alle weiteren `chat/`-Components mit deutschen Strings. Größter
+  verbleibender Frontend-Brocken, Single-Repo.
 
-**Schritt-Größe:** Pro Page ein Commit. Diese Task läuft über mehrere
-Sessions; ggf. als 4a/4b/4c/4d aufteilen, wenn der Plan zu lang
-wird.
+**Schritt-Größe:** Pro logischer Gruppe ein Commit.
+
+**Reihenfolge der verbleibenden Tasks (Empfehlung):** 4c → Task 2 + 3
+(Backend-ErrorCodes + FE-Error-Render, Cross-Repo-Paar) → Task 5
+(`no-raw-text`-Lint als Abschluss-Sweep, fischt Übersehenes raus).
+Task 3 hängt zwingend an Task 2; die deutschen Error-Fallbacks in
+`app/composables/use*.ts` bleiben bis dahin bewusst stehen.
 
 ### Task 5: ESLint-Rule + Smoke-Verifikation
 
