@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { Copy, FileText, RefreshCcw, WrapText } from 'lucide-vue-next'
-import { useLogs, type LogLevelFilter, type LogTailSize } from '~/composables/useLogs'
-import { useToast } from '~/composables/useToast'
 import type { LogRow } from '~/types/api'
 
 // Plan 27: tail of the rotating structlog file. Severity filter,

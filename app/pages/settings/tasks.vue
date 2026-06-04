@@ -11,8 +11,6 @@ import {
   Trash2,
   X,
 } from 'lucide-vue-next'
-import { useConfirm } from '~/composables/useConfirm'
-import { useTasks } from '~/composables/useTasks'
 import type {
   AgentTask,
   AgentTaskCreate,

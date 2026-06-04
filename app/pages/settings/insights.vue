@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { BarChart3, RefreshCcw } from 'lucide-vue-next'
-import { useInsights } from '~/composables/useInsights'
 import { estimateTotalCostUsd } from '~/lib/pricing'
 import type { InsightsPeriod } from '~/types/api'
 

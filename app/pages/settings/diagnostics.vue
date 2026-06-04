@@ -8,7 +8,6 @@ import {
   ChevronRight,
   RefreshCcw,
 } from 'lucide-vue-next'
-import { useDiagnostics } from '~/composables/useDiagnostics'
 import type {
   AgentRun,
   DiagnosticsStatus,

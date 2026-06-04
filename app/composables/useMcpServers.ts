@@ -1,4 +1,3 @@
-import { useApi } from '~/composables/useApi'
 import type {
   McpServer,
   McpServerCreate,

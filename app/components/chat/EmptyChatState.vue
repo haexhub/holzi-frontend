@@ -5,7 +5,6 @@ import {
   KeyRound,
   MessageCircle,
 } from 'lucide-vue-next'
-import { useDiagnostics } from '~/composables/useDiagnostics'
 
 // `null` = credentials list still loading. We don't want to flash the
 // "Start by adding credentials" CTA before the request resolves, so

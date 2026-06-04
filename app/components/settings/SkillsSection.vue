@@ -9,9 +9,6 @@ import {
   Trash2,
   X,
 } from 'lucide-vue-next'
-import { useConfirm } from '~/composables/useConfirm'
-import { useSkills } from '~/composables/useSkills'
-import { useToast } from '~/composables/useToast'
 import type { Skill, SkillCreate, SkillUpdate } from '~/types/api'
 
 // Plan 33 — Skills section on /settings/skills.

@@ -10,10 +10,6 @@ import {
   Trash2,
   X,
 } from 'lucide-vue-next'
-import { useApi } from '~/composables/useApi'
-import { useConfirm } from '~/composables/useConfirm'
-import { usePromptDialog } from '~/composables/usePromptDialog'
-import { useToast } from '~/composables/useToast'
 import type {
   SandboxStatusResponse,
   Workspace,

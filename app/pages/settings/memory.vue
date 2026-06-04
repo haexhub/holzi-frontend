@@ -8,8 +8,6 @@ import {
   Trash2,
   X,
 } from 'lucide-vue-next'
-import { useApi } from '~/composables/useApi'
-import { useConfirm } from '~/composables/useConfirm'
 import type { Note, NoteCreate, NoteUpdate } from '~/types/api'
 
 // Plan 15 — /settings/memory in the Hermes WebUI memory-panel layout:

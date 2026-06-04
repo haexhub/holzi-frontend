@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { BadgeCheck, ExternalLink, Trash2 } from 'lucide-vue-next'
-import { useLlmCredentials } from '~/composables/useLlmCredentials'
 import type {
   LlmCredential,
   LlmCredentialCreate,

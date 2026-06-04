@@ -6,7 +6,6 @@
 // the same chat. Otherwise the empty hub renders. `ready` keeps the
 // hub unmounted during the redirect so its onMounted doesn't fire a
 // stray fetch we'd immediately throw away.
-import { useApi } from '~/composables/useApi'
 import { useLastConversationStore } from '~/stores/lastConversation'
 
 const api = useApi()

@@ -1,4 +1,3 @@
-import { useApi } from '~/composables/useApi'
 import type { LogRow, LogsResponse } from '~/types/api'
 
 export type LogLevelFilter = 'info' | 'warning' | 'error'

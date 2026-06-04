@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { AlertOctagon, Check, Loader2, ShieldAlert, X } from 'lucide-vue-next'
-import type { ApprovalDecision } from '~/composables/useChatStream'
 
 // A risky tool call paused for the user's go-ahead. `status` is owned by the
 // page: `pending` shows the buttons, `submitting` while the POST is in flight,

@@ -9,7 +9,6 @@ import {
   Trash2,
   X,
 } from 'lucide-vue-next'
-import { useConfirm } from '~/composables/useConfirm'
 import type { Conversation } from '~/types/api'
 
 const { confirm } = useConfirm()

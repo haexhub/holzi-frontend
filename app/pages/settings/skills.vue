@@ -10,9 +10,6 @@ import {
   Wrench,
 } from 'lucide-vue-next'
 import type McpServersSection from '~/components/settings/McpServersSection.vue'
-import { useMcpHealth } from '~/composables/useMcpHealth'
-import { useTools } from '~/composables/useTools'
-import { useToast } from '~/composables/useToast'
 import type { ToolInfo } from '~/types/api'
 
 // Plan 31 + 32 + 33: skills & tools page.

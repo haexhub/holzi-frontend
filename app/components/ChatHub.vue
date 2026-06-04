@@ -12,23 +12,6 @@ import {
 import { Brain } from 'lucide-vue-next'
 import type ResizablePanel from '~/components/ui/resizable/ResizablePanel.vue'
 import { useMediaQuery } from '@vueuse/core'
-import { useApi } from '~/composables/useApi'
-import { useChatQueue } from '~/composables/useChatQueue'
-import { useToast } from '~/composables/useToast'
-import {
-  type ApprovalDecision,
-  cancelChatRun,
-  type ChatStreamCallbacks,
-  type ChatStreamResult,
-  editAndRegenerate,
-  friendlyChatError,
-  resolveApproval,
-  retryLastResponse,
-  sendChatMessage,
-  type StreamState,
-} from '~/composables/useChatStream'
-import { useLlmCredentials } from '~/composables/useLlmCredentials'
-import { useReasoningPreference } from '~/composables/useReasoningPreference'
 import { useLastConversationStore } from '~/stores/lastConversation'
 import { useAuthStore } from '~/stores/auth'
 import type {

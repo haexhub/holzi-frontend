@@ -15,9 +15,6 @@ import {
   Trash2,
   X,
 } from 'lucide-vue-next'
-import { useConfirm } from '~/composables/useConfirm'
-import { useMcpServers } from '~/composables/useMcpServers'
-import { useToast } from '~/composables/useToast'
 import type {
   McpServer,
   McpServerCreate,

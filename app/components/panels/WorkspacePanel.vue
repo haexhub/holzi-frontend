@@ -9,9 +9,6 @@ import {
   RefreshCw,
   Trash2,
 } from 'lucide-vue-next'
-import { useApi } from '~/composables/useApi'
-import { useConfirm } from '~/composables/useConfirm'
-import { usePromptDialog } from '~/composables/usePromptDialog'
 import type {
   TreeEntry,
   Workspace,

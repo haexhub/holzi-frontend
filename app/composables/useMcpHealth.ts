@@ -1,4 +1,3 @@
-import { useApi } from '~/composables/useApi'
 import type { McpHealthResponse } from '~/types/api'
 
 /**

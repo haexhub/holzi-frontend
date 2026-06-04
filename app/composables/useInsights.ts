@@ -1,4 +1,3 @@
-import { useApi } from '~/composables/useApi'
 import type { InsightsPeriod, InsightsResponse } from '~/types/api'
 
 /**

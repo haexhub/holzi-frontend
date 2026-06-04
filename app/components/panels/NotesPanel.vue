@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Trash2 } from 'lucide-vue-next'
-import { useApi } from '~/composables/useApi'
 import type { Note, NoteCreate } from '~/types/api'
 
 const api = useApi()

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Brain, ChevronDown, ChevronRight, Loader2 } from 'lucide-vue-next'
-import { useReasoningPreference } from '~/composables/useReasoningPreference'
 
 // The model's reasoning / "thinking" for one assistant turn. Collapsed by
 // default so it never dominates the chat; the user's "show reasoning by

@@ -12,10 +12,6 @@ import {
   Trash2,
   X,
 } from 'lucide-vue-next'
-import { useChannels } from '~/composables/useChannels'
-import { useConfirm } from '~/composables/useConfirm'
-import { usePersonas } from '~/composables/usePersonas'
-import { useSkills } from '~/composables/useSkills'
 import type {
   ChannelPrompt,
   Persona,
