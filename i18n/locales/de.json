@@ -541,6 +541,9 @@
     "PERSONA_DEFAULT_DELETE": "Default-Persona kann nicht gelöscht werden — wähle vorher eine andere Persona als Default.",
     "PERSONA_REF_INVALID": "Persona {id} existiert nicht.",
     "PERSONA_SKILL_ACTIVATION_INVALID": "Ungültige Skill-Aktivierungsliste: unbekannte skill_id oder Duplikat.",
+    "PERSONA_FRAGMENTS_ALL_EMPTY": "Mindestens eines der drei Persona-Felder (Soul, Identity oder Agents) muss gefüllt sein.",
+    "PERSONA_HISTORY_NOT_FOUND": "Die gewählte Versions-Zeile existiert nicht mehr.",
+    "PERSONA_HISTORY_PERSONA_MISMATCH": "Die Versions-Zeile gehört zu einer anderen Persona.",
     "CHANNEL_NOT_FOUND": "Unbekannter Channel: {channel}",
     "CHANNEL_ROW_MISSING": "Channel-Eintrag fehlt: {channel}",
     "WORKSPACE_NOT_FOUND": "Workspace nicht gefunden.",
@@ -643,10 +646,35 @@
         "form": {
           "name": "Name",
           "namePlaceholder": "z. B. Hermes der Direkte",
-          "prompt": "Prompt (Identität + Stil)",
-          "promptShort": "Prompt",
           "isDefault": "Als globale Default-Persona setzen",
           "isDefaultShort": "Default-Persona"
+        },
+        "fragments": {
+          "soul": {
+            "label": "Soul – Stimme & Ton",
+            "description": "Wie der Agent klingt: direkt, höflich, sachlich, locker — und welche Grenzen er respektiert.",
+            "placeholder": "Du bist direkt, präzise und technisch. Keine Floskeln."
+          },
+          "identity": {
+            "label": "Identity – Name & Vibe",
+            "description": "Wer der Agent ist: Name, Persönlichkeit, optional ein Emoji.",
+            "placeholder": "Du bist Hermes, ein persönlicher KI-Assistent."
+          },
+          "agents": {
+            "label": "Agents – Arbeitsregeln",
+            "description": "Wie der Agent arbeitet: Test-Driven, fragt vor destruktiven Aktionen, …",
+            "placeholder": "Du befolgst Test-Driven-Development. Du fragst vor destruktiven Aktionen."
+          }
+        },
+        "history": {
+          "title": "Verlauf",
+          "toggle": "Verlauf",
+          "empty": "Keine Versionen gespeichert.",
+          "restoreButton": "Wiederherstellen",
+          "restoreConfirm": {
+            "title": "Version wiederherstellen?",
+            "description": "„{name}\" wird auf die Version vom angezeigten Zeitpunkt (Autor: {author}) zurückgesetzt. Eine neue Verlaufs-Zeile wird automatisch erzeugt."
+          }
         },
         "defaultBadge": "Default",
         "editAria": "Bearbeiten",

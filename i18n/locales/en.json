@@ -541,6 +541,9 @@
     "PERSONA_DEFAULT_DELETE": "Cannot delete the default persona — pick another persona as default first.",
     "PERSONA_REF_INVALID": "Persona {id} does not exist.",
     "PERSONA_SKILL_ACTIVATION_INVALID": "Invalid skill activation list: unknown skill_id or duplicate entry.",
+    "PERSONA_FRAGMENTS_ALL_EMPTY": "At least one of the three persona fragments (Soul, Identity, or Agents) must have content.",
+    "PERSONA_HISTORY_NOT_FOUND": "That history entry no longer exists.",
+    "PERSONA_HISTORY_PERSONA_MISMATCH": "That history entry belongs to a different persona.",
     "CHANNEL_NOT_FOUND": "Unknown channel: {channel}",
     "CHANNEL_ROW_MISSING": "Channel row missing: {channel}",
     "WORKSPACE_NOT_FOUND": "Workspace not found.",
@@ -643,10 +646,35 @@
         "form": {
           "name": "Name",
           "namePlaceholder": "e.g. Hermes the Direct",
-          "prompt": "Prompt (identity + tone)",
-          "promptShort": "Prompt",
           "isDefault": "Set as global default persona",
           "isDefaultShort": "Default persona"
+        },
+        "fragments": {
+          "soul": {
+            "label": "Soul – voice & tone",
+            "description": "How the agent sounds: direct, polite, formal, playful — and what boundaries it respects.",
+            "placeholder": "You are direct, precise, and technical. No filler."
+          },
+          "identity": {
+            "label": "Identity – name & vibe",
+            "description": "Who the agent is: name, personality, optionally an emoji.",
+            "placeholder": "You are Hermes, a personal AI assistant."
+          },
+          "agents": {
+            "label": "Agents – operating rules",
+            "description": "How the agent works: test-driven, asks before destructive actions, …",
+            "placeholder": "You follow test-driven development. You ask before destructive actions."
+          }
+        },
+        "history": {
+          "title": "History",
+          "toggle": "History",
+          "empty": "No versions stored.",
+          "restoreButton": "Restore",
+          "restoreConfirm": {
+            "title": "Restore version?",
+            "description": "\"{name}\" will be rolled back to the displayed snapshot (author: {author}). A new history entry is created automatically."
+          }
         },
         "defaultBadge": "Default",
         "editAria": "Edit",
