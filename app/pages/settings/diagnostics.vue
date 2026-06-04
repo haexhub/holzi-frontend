@@ -33,6 +33,7 @@ const {
   crashesError,
   loadAll,
 } = useDiagnostics()
+const { t } = useI18n()
 
 const expandedRunIds = ref<Set<string>>(new Set())
 
@@ -47,15 +48,11 @@ const overall = computed<DiagnosticsStatus | null>(() => {
   return diagnostics.value?.overall ?? null
 })
 
-// `satisfies Record<DiagnosticsStatus, ...>` keeps these maps exhaustive
+// `satisfies Record<DiagnosticsStatus, ...>` keeps this map exhaustive
 // against future schema additions — adding a status value to the backend
-// without updating these maps becomes a TS error.
-const STATUS_LABEL = {
-  ok: 'OK',
-  warning: 'Warnung',
-  error: 'Fehler',
-} as const satisfies Record<DiagnosticsStatus, string>
-
+// without updating it becomes a TS error. The label counterpart lives in
+// the locale files under `pages.diagnostics.status.*` and is keyed by the
+// same enum value via the template literal in statusLabel().
 const STATUS_BADGE_CLASS = {
   ok: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
   warning: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
@@ -63,7 +60,7 @@ const STATUS_BADGE_CLASS = {
 } as const satisfies Record<DiagnosticsStatus, string>
 
 function statusLabel(status: DiagnosticsStatus): string {
-  return STATUS_LABEL[status]
+  return t(`pages.diagnostics.status.${status}`)
 }
 
 function statusBadgeClass(status: DiagnosticsStatus): string {
@@ -78,16 +75,10 @@ function formatTimestamp(epoch: number | null): string {
 // Plan 20-A: persisted sandbox crashes. Always an "error" badge (a row
 // only exists if the watcher saw a dead transition), but the state value
 // itself — crashed | oom | removed — disambiguates the failure mode for
-// the operator. `satisfies` keeps the map exhaustive against backend
-// schema additions, same pattern as STATUS_LABEL above.
-const CRASH_STATE_LABEL = {
-  crashed: 'Crashed',
-  oom: 'Out of memory',
-  removed: 'Removed',
-} as const satisfies Record<SandboxCrashState, string>
-
+// the operator. Labels live under `pages.diagnostics.crashState.*`, keyed
+// by the enum value via the template literal in crashStateLabel().
 function crashStateLabel(state: SandboxCrashState): string {
-  return CRASH_STATE_LABEL[state]
+  return t(`pages.diagnostics.crashState.${state}`)
 }
 
 function formatCrashExitCode(crash: SandboxCrash): string {
@@ -95,7 +86,7 @@ function formatCrashExitCode(crash: SandboxCrash): string {
 }
 
 function describeDuration(run: AgentRun): string {
-  if (!run.finished_at) return 'läuft …'
+  if (!run.finished_at) return t('pages.diagnostics.running')
   const ms = (run.finished_at - run.started_at) * 1000
   if (ms < 1000) return `${ms} ms`
   return `${(ms / 1000).toFixed(1)} s`
@@ -110,7 +101,7 @@ onMounted(loadAll)
     <header class="flex items-center justify-between gap-3">
       <div class="flex items-center gap-2">
         <Activity class="size-5 text-muted-foreground" />
-        <h2 class="text-base font-semibold">Diagnostics</h2>
+        <h2 class="text-base font-semibold">{{ $t('pages.diagnostics.title') }}</h2>
         <span
           v-if="overall"
           class="rounded-full px-2 py-0.5 text-xs font-medium"
@@ -124,26 +115,26 @@ onMounted(loadAll)
         size="sm"
         variant="outline"
         :disabled="diagnosticsLoading || failuresLoading || crashesLoading"
-        aria-label="Neu laden"
+        :aria-label="$t('common.reload')"
         data-testid="diagnostics-refresh"
         @click="loadAll"
       >
         <RefreshCcw class="mr-1 size-4" />
-        Neu laden
+        {{ $t('common.reload') }}
       </UiButton>
     </header>
 
     <!-- ── Subsystem checks ─────────────────────────────────────── -->
     <section class="rounded-md border" data-testid="diagnostics-checks">
       <header class="border-b p-3">
-        <h3 class="text-sm font-semibold">Subsysteme</h3>
+        <h3 class="text-sm font-semibold">{{ $t('pages.diagnostics.subsystems.title') }}</h3>
         <p class="mt-0.5 text-xs text-muted-foreground">
-          Was der Agent zum Starten und für Chat / Messenger / Tools braucht.
+          {{ $t('pages.diagnostics.subsystems.subtitle') }}
         </p>
       </header>
 
       <p v-if="diagnosticsLoading" class="p-3 text-xs text-muted-foreground">
-        Lädt…
+        {{ $t('common.loading') }}
       </p>
       <p
         v-else-if="diagnosticsError"
@@ -200,16 +191,14 @@ onMounted(loadAll)
     <!-- ── Sandbox crashes (Plan 20-A) ──────────────────────────── -->
     <section class="rounded-md border" data-testid="diagnostics-crashes">
       <header class="border-b p-3">
-        <h3 class="text-sm font-semibold">Sandbox-Abstürze</h3>
+        <h3 class="text-sm font-semibold">{{ $t('pages.diagnostics.crashes.title') }}</h3>
         <p class="mt-0.5 text-xs text-muted-foreground">
-          Workspace-Sandboxes, die der Health-Watcher als gestorben
-          gemeldet hat — bleibt auch ohne offenen Chat-Stream und über
-          Container-Neustarts hinweg sichtbar.
+          {{ $t('pages.diagnostics.crashes.subtitle') }}
         </p>
       </header>
 
       <p v-if="crashesLoading" class="p-3 text-xs text-muted-foreground">
-        Lädt…
+        {{ $t('common.loading') }}
       </p>
       <p
         v-else-if="crashesError"
@@ -223,7 +212,7 @@ onMounted(loadAll)
         class="p-3 text-xs text-muted-foreground"
         data-testid="diagnostics-crashes-empty"
       >
-        Keine Sandbox-Abstürze registriert. 🎉
+        {{ $t('pages.diagnostics.crashes.empty') }}
       </p>
       <ul v-else class="divide-y">
         <li
@@ -247,7 +236,7 @@ onMounted(loadAll)
             </div>
             <p class="mt-0.5 truncate text-xs text-muted-foreground">
               {{ formatTimestamp(crash.crashed_at) }} ·
-              exit {{ formatCrashExitCode(crash) }} ·
+              {{ $t('pages.diagnostics.crashes.exitLabel') }} {{ formatCrashExitCode(crash) }} ·
               <span class="font-mono">{{ crash.sandbox_id }}</span>
             </p>
             <p
@@ -264,15 +253,14 @@ onMounted(loadAll)
     <!-- ── Recent failures ──────────────────────────────────────── -->
     <section class="rounded-md border" data-testid="diagnostics-failures">
       <header class="border-b p-3">
-        <h3 class="text-sm font-semibold">Letzte Fehlläufe</h3>
+        <h3 class="text-sm font-semibold">{{ $t('pages.diagnostics.failures.title') }}</h3>
         <p class="mt-0.5 text-xs text-muted-foreground">
-          Agent-Runs mit Status <code>error</code> aus
-          <code>/api/runs</code>. Zeile aufklappen für Trace.
+          {{ $t('pages.diagnostics.failures.subtitleBefore') }}<code>error</code>{{ $t('pages.diagnostics.failures.subtitleMid') }}<code>/api/runs</code>{{ $t('pages.diagnostics.failures.subtitleAfter') }}
         </p>
       </header>
 
       <p v-if="failuresLoading" class="p-3 text-xs text-muted-foreground">
-        Lädt…
+        {{ $t('common.loading') }}
       </p>
       <p
         v-else-if="failuresError"
@@ -286,7 +274,7 @@ onMounted(loadAll)
         class="p-3 text-xs text-muted-foreground"
         data-testid="diagnostics-failures-empty"
       >
-        Keine Fehlläufe registriert. 🎉
+        {{ $t('pages.diagnostics.failures.empty') }}
       </p>
       <ul v-else class="divide-y">
         <li
@@ -322,7 +310,7 @@ onMounted(loadAll)
               <p class="mt-0.5 truncate text-xs text-muted-foreground">
                 {{ formatTimestamp(run.started_at) }} ·
                 {{ describeDuration(run) }} ·
-                Conv. #{{ run.conversation_id }}
+                {{ $t('pages.diagnostics.failures.conversation', { id: run.conversation_id }) }}
               </p>
               <p
                 v-if="run.error_message"
@@ -340,7 +328,7 @@ onMounted(loadAll)
             v-else-if="expandedRunIds.has(run.id)"
             class="mx-3 mb-3 text-xs text-muted-foreground"
           >
-            Kein Traceback gespeichert.
+            {{ $t('pages.diagnostics.failures.noTrace') }}
           </p>
         </li>
       </ul>

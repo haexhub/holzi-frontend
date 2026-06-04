@@ -1,5 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
+
+// diagnostics.vue calls useI18n() in setup for the status/crash-state labels
+// and the "running …" duration string; the bare mount has no i18n plugin so
+// useI18n would throw without the importOriginal-preserving mock. t() passes
+// the key through (interpolation params dropped, which assertions allow).
+vi.mock('vue-i18n', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('vue-i18n')>()
+  return {
+    ...orig,
+    useI18n: () => ({ t: (key: string) => key }),
+  }
+})
+
 import DiagnosticsPage from '~/pages/settings/diagnostics.vue'
 import type {
   AgentRun,
@@ -143,7 +156,7 @@ describe('settings/diagnostics.vue', () => {
     }
     // Overall badge mirrors the worst child.
     expect(wrapper.get('[data-testid="diagnostics-overall"]').text()).toBe(
-      'Warnung',
+      'pages.diagnostics.status.warning',
     )
   })
 
@@ -210,7 +223,7 @@ describe('settings/diagnostics.vue', () => {
     await item.get('button').trigger('click')
     await flushPromises()
 
-    expect(item.text()).toContain('Kein Traceback gespeichert')
+    expect(item.text()).toContain('pages.diagnostics.failures.noTrace')
   })
 
   it('surfaces a failures-load error in its own panel', async () => {
@@ -281,14 +294,15 @@ describe('settings/diagnostics.vue', () => {
 
     const newest = wrapper.get('[data-testid="diagnostics-crash-7"]')
     expect(newest.text()).toContain('projects')
-    expect(newest.text()).toContain('Out of memory')
+    expect(newest.text()).toContain('pages.diagnostics.crashState.oom')
     // No exit code → '—' fallback, not "null" or "0".
-    expect(newest.text()).toContain('exit —')
+    expect(newest.text()).toContain('pages.diagnostics.crashes.exitLabel')
+    expect(newest.text()).toContain('—')
 
     const older = wrapper.get('[data-testid="diagnostics-crash-6"]')
     expect(older.text()).toContain('scratch')
-    expect(older.text()).toContain('Crashed')
-    expect(older.text()).toContain('exit 137')
+    expect(older.text()).toContain('pages.diagnostics.crashState.crashed')
+    expect(older.text()).toContain('137')
     expect(older.text()).toContain('cont-older')
   })
 

@@ -454,6 +454,88 @@
         "created": "Created: {timestamp}",
         "archived": "Archived: {timestamp}"
       }
+    },
+    "tasks": {
+      "sidebarTitle": "Agent tasks",
+      "newTask": "New task",
+      "emptyList": "No tasks yet. \"+\" at the top creates one.",
+      "detailEmptyTitle": "Tasks",
+      "emptyTitle": "Select a task",
+      "emptyHint": "Pick a task from the list or create a new one.",
+      "statusActive": "active",
+      "statusPaused": "paused",
+      "lastRun": "Last run: {timestamp} ({status})",
+      "notRunYet": "Not run yet.",
+      "runNowAria": "Run now",
+      "pauseAria": "Pause",
+      "activateAria": "Activate",
+      "prompt": "Prompt",
+      "scheduleHeading": "Schedule",
+      "form": {
+        "title": "Title",
+        "titlePlaceholder": "e.g. Daily summary",
+        "promptPlaceholder": "What should the agent do?",
+        "mode": "Mode",
+        "once": "One-time",
+        "cron": "Recurring",
+        "dueAt": "Time (local)",
+        "cronExpr": "Cron expression (5 fields)",
+        "timezone": "Timezone (IANA)"
+      },
+      "cronHint": {
+        "prefix": "e.g. ",
+        "mid": " = daily 08:00, ",
+        "suffix": " = every 15 min."
+      },
+      "deleteConfirm": {
+        "title": "Delete task?",
+        "description": "\"{title}\" will be permanently deleted."
+      },
+      "errors": {
+        "titleRequired": "Title is required.",
+        "promptRequired": "Prompt is required.",
+        "dueAtInvalid": "Please pick a valid time.",
+        "cronRequired": "Cron expression is required.",
+        "deletedMeanwhile": "Task was deleted in the meantime.",
+        "save": "Failed to save.",
+        "toggle": "Failed to toggle.",
+        "reload": "Failed to reload.",
+        "run": "Failed to run.",
+        "delete": "Failed to delete."
+      }
+    },
+    "diagnostics": {
+      "title": "Diagnostics",
+      "status": {
+        "ok": "OK",
+        "warning": "Warning",
+        "error": "Error"
+      },
+      "crashState": {
+        "crashed": "Crashed",
+        "oom": "Out of memory",
+        "removed": "Removed"
+      },
+      "running": "running …",
+      "subsystems": {
+        "title": "Subsystems",
+        "subtitle": "What the agent needs to start and for chat / messenger / tools."
+      },
+      "crashes": {
+        "title": "Sandbox crashes",
+        "subtitle": "Workspace sandboxes the health watcher reported as dead — stays visible even without an open chat stream and across container restarts.",
+        "empty": "No sandbox crashes recorded. 🎉",
+        "exitLabel": "exit"
+      },
+      "failures": {
+        "title": "Recent failures",
+        "subtitleBefore": "Agent runs with status ",
+        "subtitleMid": " from ",
+        "subtitleAfter": ". Expand a row for the trace.",
+        "empty": "No failed runs recorded. 🎉",
+        "conversation": "Conv. #{id}",
+        "noTrace": "No traceback stored."
+      }
     }
   }
 }

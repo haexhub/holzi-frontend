@@ -454,6 +454,88 @@
         "created": "Angelegt: {timestamp}",
         "archived": "Archiviert: {timestamp}"
       }
+    },
+    "tasks": {
+      "sidebarTitle": "Agent-Tasks",
+      "newTask": "Neuer Task",
+      "emptyList": "Noch keine Tasks. „+\" oben legt einen an.",
+      "detailEmptyTitle": "Tasks",
+      "emptyTitle": "Wähle einen Task",
+      "emptyHint": "Einen Task aus der Liste auswählen oder einen neuen anlegen.",
+      "statusActive": "aktiv",
+      "statusPaused": "pausiert",
+      "lastRun": "Zuletzt: {timestamp} ({status})",
+      "notRunYet": "Noch nicht ausgeführt.",
+      "runNowAria": "Jetzt ausführen",
+      "pauseAria": "Pausieren",
+      "activateAria": "Aktivieren",
+      "prompt": "Prompt",
+      "scheduleHeading": "Zeitplan",
+      "form": {
+        "title": "Titel",
+        "titlePlaceholder": "z. B. Daily summary",
+        "promptPlaceholder": "Was soll der Agent ausführen?",
+        "mode": "Modus",
+        "once": "Einmalig",
+        "cron": "Wiederkehrend",
+        "dueAt": "Zeitpunkt (lokale Zeit)",
+        "cronExpr": "Cron-Ausdruck (5 Felder)",
+        "timezone": "Zeitzone (IANA)"
+      },
+      "cronHint": {
+        "prefix": "z. B. ",
+        "mid": " = täglich 08:00, ",
+        "suffix": " = alle 15 Min."
+      },
+      "deleteConfirm": {
+        "title": "Task löschen?",
+        "description": "\"{title}\" wird endgültig gelöscht."
+      },
+      "errors": {
+        "titleRequired": "Titel ist erforderlich.",
+        "promptRequired": "Prompt ist erforderlich.",
+        "dueAtInvalid": "Bitte einen gültigen Zeitpunkt wählen.",
+        "cronRequired": "Cron-Ausdruck ist erforderlich.",
+        "deletedMeanwhile": "Task wurde zwischenzeitlich gelöscht.",
+        "save": "Fehler beim Speichern.",
+        "toggle": "Fehler beim Umschalten.",
+        "reload": "Fehler beim Neuladen.",
+        "run": "Fehler beim Ausführen.",
+        "delete": "Fehler beim Löschen."
+      }
+    },
+    "diagnostics": {
+      "title": "Diagnose",
+      "status": {
+        "ok": "OK",
+        "warning": "Warnung",
+        "error": "Fehler"
+      },
+      "crashState": {
+        "crashed": "Crashed",
+        "oom": "Out of memory",
+        "removed": "Removed"
+      },
+      "running": "läuft …",
+      "subsystems": {
+        "title": "Subsysteme",
+        "subtitle": "Was der Agent zum Starten und für Chat / Messenger / Tools braucht."
+      },
+      "crashes": {
+        "title": "Sandbox-Abstürze",
+        "subtitle": "Workspace-Sandboxes, die der Health-Watcher als gestorben gemeldet hat — bleibt auch ohne offenen Chat-Stream und über Container-Neustarts hinweg sichtbar.",
+        "empty": "Keine Sandbox-Abstürze registriert. 🎉",
+        "exitLabel": "Exit"
+      },
+      "failures": {
+        "title": "Letzte Fehlläufe",
+        "subtitleBefore": "Agent-Runs mit Status ",
+        "subtitleMid": " aus ",
+        "subtitleAfter": ". Zeile aufklappen für Trace.",
+        "empty": "Keine Fehlläufe registriert. 🎉",
+        "conversation": "Conv. #{id}",
+        "noTrace": "Kein Traceback gespeichert."
+      }
     }
   }
 }

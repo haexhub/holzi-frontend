@@ -1,5 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
+
+// tasks.vue calls useI18n() in setup for validation/error/confirm copy; the
+// bare mount has no i18n plugin so useI18n would throw without the
+// importOriginal-preserving mock. t() passes the key through.
+vi.mock('vue-i18n', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('vue-i18n')>()
+  return {
+    ...orig,
+    useI18n: () => ({ t: (key: string) => key }),
+  }
+})
+
 import TasksPage from '~/pages/settings/tasks.vue'
 import type { AgentTask } from '~/types/api'
 
@@ -60,8 +72,8 @@ describe('settings/tasks.vue', () => {
     await flushPromises()
 
     expect(apiGet).toHaveBeenCalledWith('/api/tasks', undefined)
-    expect(wrapper.text()).toContain('Noch keine Tasks')
-    expect(wrapper.text()).toContain('Wähle einen Task')
+    expect(wrapper.text()).toContain('pages.tasks.emptyList')
+    expect(wrapper.text()).toContain('pages.tasks.emptyTitle')
   })
 
   it('lists tasks with title + schedule chip', async () => {
@@ -108,7 +120,7 @@ describe('settings/tasks.vue', () => {
     const wrapper = mount(TasksPage)
     await flushPromises()
 
-    await wrapper.get('button[aria-label="Neuer Task"]').trigger('click')
+    await wrapper.get('button[aria-label="pages.tasks.newTask"]').trigger('click')
     await wrapper.find('#taskTitle').setValue('wake up')
     await wrapper.find('#taskPrompt').setValue('say good morning')
     // Mode defaults to 'once' on create.
@@ -139,7 +151,7 @@ describe('settings/tasks.vue', () => {
     const wrapper = mount(TasksPage)
     await flushPromises()
 
-    await wrapper.get('button[aria-label="Neuer Task"]').trigger('click')
+    await wrapper.get('button[aria-label="pages.tasks.newTask"]').trigger('click')
     await wrapper.find('#taskTitle').setValue('daily')
     await wrapper.find('#taskPrompt').setValue('summary')
 
@@ -263,7 +275,7 @@ describe('settings/tasks.vue', () => {
     await wrapper.get('[data-testid="task-item-1"]').trigger('click')
     await flushPromises()
 
-    await wrapper.get('button[aria-label="Bearbeiten"]').trigger('click')
+    await wrapper.get('button[aria-label="common.edit"]').trigger('click')
     await wrapper.find('#taskCron').setValue('0 9 * * *')
 
     await wrapper.get('[data-testid="task-save"]').trigger('click')

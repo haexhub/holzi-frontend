@@ -26,6 +26,7 @@ type ScheduleKind = 'once' | 'cron'
 
 const { tasks, loading, error, load, create, patch, remove, runNow } = useTasks()
 const { confirm } = useConfirm()
+const { t } = useI18n()
 
 const selectedId = ref<number | null>(null)
 const mode = ref<Mode>('empty')
@@ -120,11 +121,11 @@ function cancelEdit() {
 
 async function save() {
   if (!formTitle.value.trim()) {
-    formError.value = 'Titel ist erforderlich.'
+    formError.value = t('pages.tasks.errors.titleRequired')
     return
   }
   if (!formPrompt.value.trim()) {
-    formError.value = 'Prompt ist erforderlich.'
+    formError.value = t('pages.tasks.errors.promptRequired')
     return
   }
   let dueAt: number | null = null
@@ -132,13 +133,13 @@ async function save() {
   if (formScheduleKind.value === 'once') {
     const epoch = localInputToEpoch(formDueAtLocal.value)
     if (epoch === null) {
-      formError.value = 'Bitte einen gültigen Zeitpunkt wählen.'
+      formError.value = t('pages.tasks.errors.dueAtInvalid')
       return
     }
     dueAt = epoch
   } else {
     if (!formSchedule.value.trim()) {
-      formError.value = 'Cron-Ausdruck ist erforderlich.'
+      formError.value = t('pages.tasks.errors.cronRequired')
       return
     }
     schedule = formSchedule.value.trim()
@@ -164,7 +165,7 @@ async function save() {
         // Task was deleted (here or elsewhere) between openEdit() and
         // Save. Don't silently succeed — surface it so the user knows
         // their change wasn't applied.
-        formError.value = 'Task wurde zwischenzeitlich gelöscht.'
+        formError.value = t('pages.tasks.errors.deletedMeanwhile')
         return
       }
       // The two `clear_*` flags always carry the *opposite* mode's clear
@@ -187,7 +188,7 @@ async function save() {
     mode.value = 'read'
   } catch (err: unknown) {
     formError.value =
-      err instanceof Error ? err.message : 'Fehler beim Speichern.'
+      err instanceof Error ? err.message : t('pages.tasks.errors.save')
   } finally {
     saving.value = false
   }
@@ -207,7 +208,7 @@ async function togglePause() {
     })
   } catch (err: unknown) {
     actionError.value =
-      err instanceof Error ? err.message : 'Fehler beim Umschalten.'
+      err instanceof Error ? err.message : t('pages.tasks.errors.toggle')
   }
 }
 
@@ -238,14 +239,14 @@ async function onRunNow() {
           // than swallowing them — a 500 on the list endpoint shouldn't
           // be invisible just because it came from a background reload.
           error.value =
-            err instanceof Error ? err.message : 'Fehler beim Neuladen.'
+            err instanceof Error ? err.message : t('pages.tasks.errors.reload')
         })
       }, delay)
       pollTimers.add(id)
     }
   } catch (err: unknown) {
     actionError.value =
-      err instanceof Error ? err.message : 'Fehler beim Ausführen.'
+      err instanceof Error ? err.message : t('pages.tasks.errors.run')
   } finally {
     running.value = false
   }
@@ -260,8 +261,8 @@ async function onRemove() {
   const task = selected.value
   if (!task) return
   const ok = await confirm({
-    title: 'Task löschen?',
-    description: `"${task.title}" wird endgültig gelöscht.`,
+    title: t('pages.tasks.deleteConfirm.title'),
+    description: t('pages.tasks.deleteConfirm.description', { title: task.title }),
     destructive: true,
   })
   if (!ok) return
@@ -272,7 +273,7 @@ async function onRemove() {
     mode.value = 'empty'
   } catch (err: unknown) {
     actionError.value =
-      err instanceof Error ? err.message : 'Fehler beim Löschen.'
+      err instanceof Error ? err.message : t('pages.tasks.errors.delete')
   }
 }
 
@@ -331,12 +332,12 @@ onMounted(load)
       <header class="flex items-center justify-between gap-2 border-b p-3">
         <div class="flex items-center gap-2">
           <ListChecks class="size-4 text-muted-foreground" />
-          <h2 class="text-sm font-semibold">Agent tasks</h2>
+          <h2 class="text-sm font-semibold">{{ $t('pages.tasks.sidebarTitle') }}</h2>
         </div>
         <UiButton
           size="sm"
           variant="ghost"
-          aria-label="Neuer Task"
+          :aria-label="$t('pages.tasks.newTask')"
           @click="openCreate"
         >
           <Plus class="size-4" />
@@ -348,7 +349,7 @@ onMounted(load)
           v-if="loading"
           class="p-3 text-xs text-muted-foreground"
         >
-          Lädt…
+          {{ $t('common.loading') }}
         </p>
         <p
           v-else-if="error"
@@ -360,7 +361,7 @@ onMounted(load)
           v-else-if="tasks.length === 0"
           class="p-3 text-xs text-muted-foreground"
         >
-          Noch keine Tasks. „+" oben legt einen an.
+          {{ $t('pages.tasks.emptyList') }}
         </p>
         <ul v-else class="flex flex-col">
           <li v-for="task in tasks" :key="task.id">
@@ -378,7 +379,7 @@ onMounted(load)
               <span
                 class="mt-1.5 size-2 shrink-0 rounded-full"
                 :class="statusDotColor(task)"
-                :aria-label="task.enabled ? 'aktiv' : 'pausiert'"
+                :aria-label="task.enabled ? $t('pages.tasks.statusActive') : $t('pages.tasks.statusPaused')"
               />
               <div class="min-w-0 flex-1">
                 <p class="truncate text-sm font-medium">{{ task.title }}</p>
@@ -402,10 +403,10 @@ onMounted(load)
       >
         <div class="min-w-0 flex-1">
           <template v-if="mode === 'empty'">
-            <h2 class="text-sm font-semibold text-muted-foreground">Tasks</h2>
+            <h2 class="text-sm font-semibold text-muted-foreground">{{ $t('pages.tasks.detailEmptyTitle') }}</h2>
           </template>
           <template v-else-if="mode === 'edit' && isCreating">
-            <h2 class="text-sm font-semibold">Neuer Task</h2>
+            <h2 class="text-sm font-semibold">{{ $t('pages.tasks.newTask') }}</h2>
           </template>
           <template v-else-if="selected">
             <p class="truncate text-sm font-semibold" data-testid="task-detail-title">
@@ -420,11 +421,10 @@ onMounted(load)
             </p>
             <p v-else class="text-xs text-muted-foreground">
               <template v-if="selected.last_run_at">
-                Zuletzt: {{ formatTimestamp(selected.last_run_at) }}
-                ({{ selected.last_status ?? '—' }})
+                {{ $t('pages.tasks.lastRun', { timestamp: formatTimestamp(selected.last_run_at), status: selected.last_status ?? '—' }) }}
               </template>
               <template v-else>
-                Noch nicht ausgeführt.
+                {{ $t('pages.tasks.notRunYet') }}
               </template>
             </p>
           </template>
@@ -435,7 +435,7 @@ onMounted(load)
               size="sm"
               variant="outline"
               :disabled="running"
-              aria-label="Jetzt ausführen"
+              :aria-label="$t('pages.tasks.runNowAria')"
               data-testid="task-run-now"
               @click="onRunNow"
             >
@@ -444,7 +444,7 @@ onMounted(load)
             <UiButton
               size="sm"
               variant="ghost"
-              :aria-label="selected.enabled ? 'Pausieren' : 'Aktivieren'"
+              :aria-label="selected.enabled ? $t('pages.tasks.pauseAria') : $t('pages.tasks.activateAria')"
               data-testid="task-toggle-enabled"
               @click="togglePause"
             >
@@ -454,7 +454,7 @@ onMounted(load)
             <UiButton
               size="sm"
               variant="ghost"
-              aria-label="Bearbeiten"
+              :aria-label="$t('common.edit')"
               @click="openEdit"
             >
               <Pencil class="size-4" />
@@ -462,7 +462,7 @@ onMounted(load)
             <UiButton
               size="sm"
               variant="ghost"
-              aria-label="Löschen"
+              :aria-label="$t('common.delete')"
               data-testid="task-delete"
               @click="onRemove"
             >
@@ -473,14 +473,14 @@ onMounted(load)
             <UiButton
               size="sm"
               variant="ghost"
-              aria-label="Abbrechen"
+              :aria-label="$t('common.cancel')"
               @click="cancelEdit"
             >
               <X class="size-4" />
             </UiButton>
             <UiButton
               size="sm"
-              aria-label="Speichern"
+              :aria-label="$t('common.save')"
               data-testid="task-save"
               :disabled="saving"
               @click="save"
@@ -498,22 +498,22 @@ onMounted(load)
           class="flex h-full flex-col items-center justify-center text-center text-muted-foreground"
         >
           <ListChecks class="mb-3 size-12 stroke-[1.25]" />
-          <p class="text-sm font-medium">Wähle einen Task</p>
+          <p class="text-sm font-medium">{{ $t('pages.tasks.emptyTitle') }}</p>
           <p class="mt-1 text-xs">
-            Einen Task aus der Liste auswählen oder einen neuen anlegen.
+            {{ $t('pages.tasks.emptyHint') }}
           </p>
         </div>
 
         <!-- Read mode -->
         <div v-else-if="mode === 'read' && selected" class="flex flex-col gap-4">
           <section>
-            <h3 class="mb-1 text-xs font-medium text-muted-foreground">Prompt</h3>
+            <h3 class="mb-1 text-xs font-medium text-muted-foreground">{{ $t('pages.tasks.prompt') }}</h3>
             <p class="whitespace-pre-wrap rounded-md bg-muted/40 p-3 text-sm">
               {{ selected.prompt }}
             </p>
           </section>
           <section>
-            <h3 class="mb-1 text-xs font-medium text-muted-foreground">Zeitplan</h3>
+            <h3 class="mb-1 text-xs font-medium text-muted-foreground">{{ $t('pages.tasks.scheduleHeading') }}</h3>
             <p class="flex items-center gap-1.5 text-sm">
               <Repeat v-if="selected.schedule" class="size-4" />
               <Timer v-else class="size-4" />
@@ -531,28 +531,28 @@ onMounted(load)
         >
           <div class="flex flex-col gap-1">
             <label for="taskTitle" class="text-xs font-medium text-muted-foreground">
-              Titel
+              {{ $t('pages.tasks.form.title') }}
             </label>
             <UiInput
               id="taskTitle"
               v-model="formTitle"
-              placeholder="z. B. Daily summary"
+              :placeholder="$t('pages.tasks.form.titlePlaceholder')"
             />
           </div>
           <div class="flex flex-col gap-1">
             <label for="taskPrompt" class="text-xs font-medium text-muted-foreground">
-              Prompt
+              {{ $t('pages.tasks.prompt') }}
             </label>
             <UiTextarea
               id="taskPrompt"
               v-model="formPrompt"
               class="min-h-32 font-mono text-sm"
               spellcheck="false"
-              placeholder="Was soll der Agent ausführen?"
+              :placeholder="$t('pages.tasks.form.promptPlaceholder')"
             />
           </div>
           <div class="flex flex-col gap-1">
-            <label class="text-xs font-medium text-muted-foreground">Modus</label>
+            <label class="text-xs font-medium text-muted-foreground">{{ $t('pages.tasks.form.mode') }}</label>
             <div class="flex gap-2">
               <label
                 class="flex flex-1 cursor-pointer items-center gap-2 rounded-md border p-2 text-sm"
@@ -564,7 +564,7 @@ onMounted(load)
                   value="once"
                 />
                 <Timer class="size-4" />
-                Einmalig
+                {{ $t('pages.tasks.form.once') }}
               </label>
               <label
                 class="flex flex-1 cursor-pointer items-center gap-2 rounded-md border p-2 text-sm"
@@ -576,13 +576,13 @@ onMounted(load)
                   value="cron"
                 />
                 <Repeat class="size-4" />
-                Wiederkehrend
+                {{ $t('pages.tasks.form.cron') }}
               </label>
             </div>
           </div>
           <div v-if="formScheduleKind === 'once'" class="flex flex-col gap-1">
             <label for="taskDueAt" class="text-xs font-medium text-muted-foreground">
-              Zeitpunkt (lokale Zeit)
+              {{ $t('pages.tasks.form.dueAt') }}
             </label>
             <UiInput
               id="taskDueAt"
@@ -593,7 +593,7 @@ onMounted(load)
           <template v-else>
             <div class="flex flex-col gap-1">
               <label for="taskCron" class="text-xs font-medium text-muted-foreground">
-                Cron-Ausdruck (5 Felder)
+                {{ $t('pages.tasks.form.cronExpr') }}
               </label>
               <UiInput
                 id="taskCron"
@@ -602,12 +602,12 @@ onMounted(load)
                 class="font-mono text-sm"
               />
               <p class="text-[11px] text-muted-foreground">
-                z. B. <code>0 8 * * *</code> = täglich 08:00, <code>*/15 * * * *</code> = alle 15 Min.
+                {{ $t('pages.tasks.cronHint.prefix') }}<code>0 8 * * *</code>{{ $t('pages.tasks.cronHint.mid') }}<code>*/15 * * * *</code>{{ $t('pages.tasks.cronHint.suffix') }}
               </p>
             </div>
             <div class="flex flex-col gap-1">
               <label for="taskTz" class="text-xs font-medium text-muted-foreground">
-                Zeitzone (IANA)
+                {{ $t('pages.tasks.form.timezone') }}
               </label>
               <UiInput
                 id="taskTz"
