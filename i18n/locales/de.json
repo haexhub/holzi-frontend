@@ -404,6 +404,58 @@
         "commandRequired": "Command fehlt.",
         "unknown": "Unbekannter Fehler."
       }
+    },
+    "chatHub": {
+      "header": {
+        "newChat": "Neuer Chat",
+        "conversation": "Conversation #{id}",
+        "settings": "Settings",
+        "logout": "Logout"
+      },
+      "aria": {
+        "leftSidebar": "Conversations",
+        "rightSidebar": "Notes & Workspace",
+        "toggleLeft": {
+          "show": "Conversations einblenden",
+          "hide": "Conversations ausblenden"
+        },
+        "toggleRight": {
+          "show": "Notes & Workspace einblenden",
+          "hide": "Notes & Workspace ausblenden"
+        },
+        "dismissError": "Fehler ausblenden"
+      },
+      "reasoning": {
+        "collapseDefault": "Gedankengang standardmäßig einklappen",
+        "showDefault": "Gedankengang standardmäßig anzeigen"
+      },
+      "panel": {
+        "notes": "Notes",
+        "workspace": "Workspace"
+      },
+      "queue": {
+        "streaming": "In Warteschlange…",
+        "waiting": "Wartet — nicht gesendet",
+        "sendNow": "Warteschlange jetzt senden"
+      },
+      "cancelled": "Antwort abgebrochen.",
+      "errors": {
+        "loadConversations": "Fehler beim Laden.",
+        "loadConversation": "Fehler beim Laden.",
+        "bookmark": "Bookmark fehlgeschlagen.",
+        "rename": "Fehler beim Umbenennen.",
+        "delete": "Fehler beim Löschen."
+      },
+      "upload": {
+        "tooLarge": "Datei zu groß (max. 25 MB).",
+        "unsupportedType": "Dateityp wird nicht unterstützt.",
+        "failedWithDetail": "Upload fehlgeschlagen: {detail}",
+        "failed": "Upload fehlgeschlagen."
+      },
+      "sandbox": {
+        "restartFailedWithDetail": "Sandbox-Neustart fehlgeschlagen: {detail}",
+        "restartFailed": "Sandbox-Neustart fehlgeschlagen. Bitte erneut versuchen."
+      }
     }
   },
   "errors": {

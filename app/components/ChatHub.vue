@@ -39,6 +39,8 @@ const api = useApi()
 const llm = useLlmCredentials()
 const router = useRouter()
 const toast = useToast()
+const localePath = useLocalePath()
+const { t } = useI18n({ useScope: 'global' })
 const { showReasoningByDefault, setShowReasoningByDefault } = useReasoningPreference()
 
 const conversations = ref<Conversation[]>([])
@@ -177,7 +179,7 @@ async function loadConversations() {
     }
   } catch (err: unknown) {
     if (seq === loadSeq) {
-      error.value = err instanceof Error ? err.message : 'Fehler beim Laden.'
+      error.value = err instanceof Error ? err.message : t('components.chatHub.errors.loadConversations')
     }
   }
 }
@@ -198,7 +200,7 @@ async function toggleBookmark(id: number) {
       c.id === id ? { ...c, ...updated } : c,
     )
   } catch (err: unknown) {
-    error.value = err instanceof Error ? err.message : 'Bookmark fehlgeschlagen.'
+    error.value = err instanceof Error ? err.message : t('components.chatHub.errors.bookmark')
   }
 }
 
@@ -207,7 +209,7 @@ async function renameConversation(id: number, title: string) {
     await api.patch<Conversation>(`/api/conversations/${id}`, { title })
     await loadConversations()
   } catch (err: unknown) {
-    error.value = err instanceof Error ? err.message : 'Fehler beim Umbenennen.'
+    error.value = err instanceof Error ? err.message : t('components.chatHub.errors.rename')
   }
 }
 
@@ -220,7 +222,7 @@ async function deleteConversation(id: number) {
       newChat()
     }
   } catch (err: unknown) {
-    error.value = err instanceof Error ? err.message : 'Fehler beim Löschen.'
+    error.value = err instanceof Error ? err.message : t('components.chatHub.errors.delete')
   }
 }
 
@@ -239,7 +241,7 @@ async function loadCredentialState() {
 // Plan 26: row clicks now drive the URL — the route watcher loads.
 function onSelect(id: number) {
   if (activeId.value === id) return
-  navigateTo(`/chat/${id}`)
+  navigateTo(localePath(`/chat/${id}`))
 }
 
 // Load + activate a conversation by id. Used by the route watcher; not
@@ -262,7 +264,7 @@ async function loadConversation(id: number) {
   } catch (err: unknown) {
     // 404 fallback for direct deep-links lives in pages/chat/[id].vue.
     // Here we just surface the error if reload fails for other reasons.
-    error.value = err instanceof Error ? err.message : 'Fehler beim Laden.'
+    error.value = err instanceof Error ? err.message : t('components.chatHub.errors.loadConversation')
   } finally {
     loadingConversation.value = false
   }
@@ -279,7 +281,7 @@ async function reloadActive(id: number) {
     const detail = await api.get<ConversationDetail>(`/api/conversations/${id}`)
     messages.value = detail.messages
   } catch (err: unknown) {
-    error.value = err instanceof Error ? err.message : 'Fehler beim Laden.'
+    error.value = err instanceof Error ? err.message : t('components.chatHub.errors.loadConversation')
   }
   await nextTick()
   scrollToBottom()
@@ -294,8 +296,9 @@ function newChat() {
   loadingConversation.value = false
   rememberLastConversation(null)
   // Drop the id from the URL so a reload doesn't reopen the previous chat.
-  if (router.currentRoute.value.path !== '/') {
-    navigateTo('/')
+  const homePath = localePath('/')
+  if (router.currentRoute.value.path !== homePath) {
+    navigateTo(homePath)
   }
 }
 
@@ -454,7 +457,7 @@ async function runStream(
     // Plan 26: a fresh chat now has a stable URL — replace, don't push,
     // so the back button still returns to the previous route (e.g. `/`).
     if (wasFreshChat && activeId.value !== null) {
-      const target = `/chat/${activeId.value}`
+      const target = localePath(`/chat/${activeId.value}`)
       if (router.currentRoute.value.path !== target) {
         navigateTo(target, { replace: true })
       }
@@ -511,11 +514,11 @@ async function uploadAttachments(
 
 function uploadErrorMessage(err: unknown): string {
   const e = err as { statusCode?: number; data?: { detail?: string } }
-  if (e?.statusCode === 413) return 'Datei zu groß (max. 25 MB).'
-  if (e?.statusCode === 415) return 'Dateityp wird nicht unterstützt.'
+  if (e?.statusCode === 413) return t('components.chatHub.upload.tooLarge')
+  if (e?.statusCode === 415) return t('components.chatHub.upload.unsupportedType')
   return e?.data?.detail
-    ? `Upload fehlgeschlagen: ${e.data.detail}`
-    : 'Upload fehlgeschlagen.'
+    ? t('components.chatHub.upload.failedWithDetail', { detail: e.data.detail })
+    : t('components.chatHub.upload.failed')
 }
 
 async function send(payload: { text: string; files: File[] }) {
@@ -698,8 +701,8 @@ async function restartSandbox(sandboxId: string) {
   } catch (err: unknown) {
     const detail = err instanceof Error ? err.message : ''
     error.value = detail
-      ? `Sandbox-Neustart fehlgeschlagen: ${detail}`
-      : 'Sandbox-Neustart fehlgeschlagen. Bitte erneut versuchen.'
+      ? t('components.chatHub.sandbox.restartFailedWithDetail', { detail })
+      : t('components.chatHub.sandbox.restartFailed')
     sandboxCrashes.value = sandboxCrashes.value.map((c) =>
       c.crash.sandbox_id === sandboxId ? { ...c, restarting: false } : c,
     )
@@ -714,7 +717,7 @@ function scrollToBottom() {
 function logout() {
   auth.clear()
   rememberLastConversation(null)
-  router.replace('/login')
+  router.replace(localePath('/login'))
 }
 
 function toggleLeftSidebar() {
@@ -806,7 +809,7 @@ onMounted(() => {
       <aside
         id="left-sidebar"
         class="h-screen overflow-hidden border-r bg-background"
-        aria-label="Conversations"
+        :aria-label="$t('components.chatHub.aria.leftSidebar')"
       >
         <ChatConversationList
           :conversations="conversations"
@@ -836,7 +839,7 @@ onMounted(() => {
           <UiButton
             size="icon"
             variant="ghost"
-            :aria-label="leftCollapsed ? 'Conversations einblenden' : 'Conversations ausblenden'"
+            :aria-label="leftCollapsed ? $t('components.chatHub.aria.toggleLeft.show') : $t('components.chatHub.aria.toggleLeft.hide')"
             :aria-expanded="!leftCollapsed"
             aria-controls="left-sidebar"
             @click="toggleLeftSidebar"
@@ -844,7 +847,7 @@ onMounted(() => {
             <Menu class="size-4" />
           </UiButton>
           <h1 class="text-sm font-semibold">
-            {{ activeId === null ? 'Neuer Chat' : `Conversation #${activeId}` }}
+            {{ activeId === null ? $t('components.chatHub.header.newChat') : $t('components.chatHub.header.conversation', { id: activeId }) }}
           </h1>
         </div>
         <div class="flex items-center gap-1">
@@ -853,26 +856,26 @@ onMounted(() => {
             class="inline-flex size-9 items-center justify-center rounded-md transition-colors hover:bg-muted"
             :class="showReasoningByDefault ? 'text-violet-600 dark:text-violet-400' : 'text-muted-foreground'"
             :aria-pressed="showReasoningByDefault"
-            :title="showReasoningByDefault ? 'Gedankengang standardmäßig einklappen' : 'Gedankengang standardmäßig anzeigen'"
+            :title="showReasoningByDefault ? $t('components.chatHub.reasoning.collapseDefault') : $t('components.chatHub.reasoning.showDefault')"
             @click="setShowReasoningByDefault(!showReasoningByDefault)"
           >
             <Brain class="size-4" />
           </button>
           <ThemeToggle />
-          <NuxtLink to="/settings/llm">
+          <NuxtLink :to="localePath('/settings/llm')">
             <UiButton size="sm" variant="ghost">
               <Settings class="mr-1 size-4" />
-              Settings
+              {{ $t('components.chatHub.header.settings') }}
             </UiButton>
           </NuxtLink>
           <UiButton size="sm" variant="ghost" @click="logout">
             <LogOut class="mr-1 size-4" />
-            Logout
+            {{ $t('components.chatHub.header.logout') }}
           </UiButton>
           <UiButton
             size="icon"
             variant="ghost"
-            :aria-label="rightCollapsed ? 'Notes &amp; Workspace einblenden' : 'Notes &amp; Workspace ausblenden'"
+            :aria-label="rightCollapsed ? $t('components.chatHub.aria.toggleRight.show') : $t('components.chatHub.aria.toggleRight.hide')"
             :aria-expanded="!rightCollapsed"
             aria-controls="right-sidebar"
             @click="toggleRightSidebar"
@@ -1004,7 +1007,7 @@ onMounted(() => {
             />
           </div>
           <span class="mt-1 text-xs italic text-muted-foreground">
-            {{ isStreaming ? 'In Warteschlange…' : 'Wartet — nicht gesendet' }}
+            {{ isStreaming ? $t('components.chatHub.queue.streaming') : $t('components.chatHub.queue.waiting') }}
           </span>
         </div>
         <!-- The turn ended without a clean finish (drop or cancel) while
@@ -1015,7 +1018,7 @@ onMounted(() => {
           class="flex justify-start"
         >
           <UiButton size="sm" variant="outline" @click="flushQueue">
-            Warteschlange jetzt senden
+            {{ $t('components.chatHub.queue.sendNow') }}
           </UiButton>
         </div>
         <div
@@ -1026,7 +1029,7 @@ onMounted(() => {
           "
           class="flex justify-start text-xs italic text-muted-foreground"
         >
-          Antwort abgebrochen.
+          {{ $t('components.chatHub.cancelled') }}
         </div>
         <div
           v-if="error"
@@ -1038,7 +1041,7 @@ onMounted(() => {
           <button
             type="button"
             class="rounded p-0.5 text-destructive/70 hover:text-destructive"
-            aria-label="Fehler ausblenden"
+            :aria-label="$t('components.chatHub.aria.dismissError')"
             @click="error = null"
           >
             <X class="size-3.5" />
@@ -1073,7 +1076,7 @@ onMounted(() => {
       <aside
         id="right-sidebar"
         class="flex h-screen flex-col overflow-hidden border-l bg-background"
-        aria-label="Notes &amp; Workspace"
+        :aria-label="$t('components.chatHub.aria.rightSidebar')"
       >
         <nav class="flex border-b">
           <button
@@ -1082,7 +1085,7 @@ onMounted(() => {
             :class="activePanel === 'notes' ? 'bg-accent' : 'hover:bg-muted'"
             @click="activePanel = 'notes'"
           >
-            <NotebookPen class="size-3.5" /> Notes
+            <NotebookPen class="size-3.5" /> {{ $t('components.chatHub.panel.notes') }}
           </button>
           <button
             type="button"
@@ -1090,7 +1093,7 @@ onMounted(() => {
             :class="activePanel === 'workspace' ? 'bg-accent' : 'hover:bg-muted'"
             @click="activePanel = 'workspace'"
           >
-            <FolderTree class="size-3.5" /> Workspace
+            <FolderTree class="size-3.5" /> {{ $t('components.chatHub.panel.workspace') }}
           </button>
         </nav>
         <UiSeparator />

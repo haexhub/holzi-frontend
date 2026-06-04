@@ -404,6 +404,58 @@
         "commandRequired": "Command missing.",
         "unknown": "Unknown error."
       }
+    },
+    "chatHub": {
+      "header": {
+        "newChat": "New chat",
+        "conversation": "Conversation #{id}",
+        "settings": "Settings",
+        "logout": "Logout"
+      },
+      "aria": {
+        "leftSidebar": "Conversations",
+        "rightSidebar": "Notes & Workspace",
+        "toggleLeft": {
+          "show": "Show conversations",
+          "hide": "Hide conversations"
+        },
+        "toggleRight": {
+          "show": "Show Notes & Workspace",
+          "hide": "Hide Notes & Workspace"
+        },
+        "dismissError": "Dismiss error"
+      },
+      "reasoning": {
+        "collapseDefault": "Collapse reasoning by default",
+        "showDefault": "Show reasoning by default"
+      },
+      "panel": {
+        "notes": "Notes",
+        "workspace": "Workspace"
+      },
+      "queue": {
+        "streaming": "Queued…",
+        "waiting": "Pending — not sent",
+        "sendNow": "Send queue now"
+      },
+      "cancelled": "Response cancelled.",
+      "errors": {
+        "loadConversations": "Failed to load.",
+        "loadConversation": "Failed to load.",
+        "bookmark": "Bookmark failed.",
+        "rename": "Rename failed.",
+        "delete": "Delete failed."
+      },
+      "upload": {
+        "tooLarge": "File too large (max. 25 MB).",
+        "unsupportedType": "File type not supported.",
+        "failedWithDetail": "Upload failed: {detail}",
+        "failed": "Upload failed."
+      },
+      "sandbox": {
+        "restartFailedWithDetail": "Sandbox restart failed: {detail}",
+        "restartFailed": "Sandbox restart failed. Please try again."
+      }
     }
   },
   "errors": {
