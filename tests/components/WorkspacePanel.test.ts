@@ -1,5 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
+
+// WorkspacePanel calls useI18n() in setup for inline error/notice copy; the
+// bare mount has no i18n plugin so useI18n would throw without the
+// importOriginal-preserving mock. t() passes the key through. useLocalePath()
+// is auto-imported from the nuxt test env (same as PreferencesPage).
+vi.mock('vue-i18n', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('vue-i18n')>()
+  return {
+    ...orig,
+    useI18n: () => ({ t: (key: string) => key }),
+  }
+})
+
 import WorkspacePanel from '~/components/panels/WorkspacePanel.vue'
 import type {
   TreeEntry,
@@ -131,8 +144,8 @@ describe('WorkspacePanel.vue', () => {
     })
     const wrapper = mount(WorkspacePanel, { global: { stubs } })
     await flushPromises()
-    expect(wrapper.text()).toContain('Keine Workspaces angelegt')
-    expect(wrapper.text()).toContain('Im Control Center anlegen')
+    expect(wrapper.text()).toContain('components.workspacePanel.noWorkspaces')
+    expect(wrapper.text()).toContain('components.workspacePanel.createInControlCenter')
   })
 
   it('auto-selects the first root and renders its tree entries', async () => {
@@ -304,7 +317,7 @@ describe('WorkspacePanel.vue', () => {
     const item = wrapper.findAll('li').find((li) => li.text().includes('app.bin'))
     await item!.trigger('click')
     await flushPromises()
-    expect(wrapper.text()).toContain('Vorschau nicht verfügbar (Binärdatei)')
+    expect(wrapper.text()).toContain('components.workspacePanel.binaryPreview')
     expect(wrapper.find('pre').exists()).toBe(false)
     expect(wrapper.find('img').exists()).toBe(false)
   })
@@ -333,7 +346,7 @@ describe('WorkspacePanel.vue', () => {
     const item = wrapper.findAll('li').find((li) => li.text().includes('big.txt'))
     await item!.trigger('click')
     await flushPromises()
-    expect(wrapper.text()).toContain('Vorschau gekürzt')
+    expect(wrapper.text()).toContain('components.workspacePanel.truncated')
   })
 
   it('shows "Workspace nicht verfügbar" when /tree returns 503', async () => {
@@ -345,7 +358,7 @@ describe('WorkspacePanel.vue', () => {
     })
     const wrapper = mount(WorkspacePanel, { global: { stubs } })
     await flushPromises()
-    expect(wrapper.text()).toContain('Workspace nicht verfügbar')
+    expect(wrapper.text()).toContain('components.workspacePanel.errors.unavailable')
   })
 
   it('shows "Pfad nicht gefunden" on a 404 but the breadcrumb is still navigable', async () => {
@@ -368,14 +381,14 @@ describe('WorkspacePanel.vue', () => {
     const dirItem = wrapper.findAll('li').find((li) => li.text().includes('missing'))
     await dirItem!.trigger('click')
     await flushPromises()
-    expect(wrapper.text()).toContain('Pfad nicht gefunden')
+    expect(wrapper.text()).toContain('components.workspacePanel.errors.pathNotFound')
     // Breadcrumb back to root still works.
     serveError = false
     const rootCrumb = wrapper.findAll('button').find((b) => b.text() === 'ws')
     expect(rootCrumb).toBeTruthy()
     await rootCrumb!.trigger('click')
     await flushPromises()
-    expect(wrapper.text()).not.toContain('Pfad nicht gefunden')
+    expect(wrapper.text()).not.toContain('components.workspacePanel.errors.pathNotFound')
     expect(wrapper.text()).toContain('missing')
   })
 
@@ -399,7 +412,7 @@ describe('WorkspacePanel.vue', () => {
     await file!.trigger('click')
     await flushPromises()
     // The preview region (aria-live) shows the 503 copy.
-    expect(wrapper.text()).toContain('Workspace nicht verfügbar')
+    expect(wrapper.text()).toContain('components.workspacePanel.errors.unavailable')
   })
 
   it('refresh button re-fetches tree and current file preview', async () => {
@@ -429,7 +442,7 @@ describe('WorkspacePanel.vue', () => {
     apiGet.mockClear()
     const refresh = wrapper
       .findAll('button')
-      .find((b) => b.attributes('aria-label') === 'Aktualisieren')
+      .find((b) => b.attributes('aria-label') === 'common.refresh')
     expect(refresh).toBeTruthy()
     await refresh!.trigger('click')
     await flushPromises()
@@ -550,9 +563,9 @@ describe('WorkspacePanel.vue', () => {
     const file = wrapper.findAll('li').find((li) => li.text().includes('a.txt'))
     await file!.trigger('click')
     await flushPromises()
-    const edit = wrapper.findAll('button').find((b) => b.attributes('aria-label') === 'Bearbeiten')
+    const edit = wrapper.findAll('button').find((b) => b.attributes('aria-label') === 'common.edit')
     expect(edit).toBeFalsy()
-    expect(wrapper.text()).toContain('Wähle eine Konversation')
+    expect(wrapper.text()).toContain('components.workspacePanel.noConversation')
   })
 
   it('save: PUT /api/workspace/file with base_sha and conversation_id, refresh on success', async () => {
@@ -598,7 +611,7 @@ describe('WorkspacePanel.vue', () => {
     // Enter edit mode.
     const editBtn = wrapper
       .findAll('button')
-      .find((b) => b.attributes('aria-label') === 'Bearbeiten')
+      .find((b) => b.attributes('aria-label') === 'common.edit')
     expect(editBtn).toBeTruthy()
     await editBtn!.trigger('click')
     const textarea = wrapper.find('textarea')
@@ -607,7 +620,7 @@ describe('WorkspacePanel.vue', () => {
 
     // Click Save.
     nextFile = updated
-    const saveBtn = wrapper.findAll('button').find((b) => b.text().match(/Speichern/))
+    const saveBtn = wrapper.findAll('button').find((b) => b.text().match(/common\.save/))
     expect(saveBtn).toBeTruthy()
     await saveBtn!.trigger('click')
     await flushPromises()
@@ -654,13 +667,13 @@ describe('WorkspacePanel.vue', () => {
     await flushPromises()
     await wrapper
       .findAll('button')
-      .find((b) => b.attributes('aria-label') === 'Bearbeiten')!
+      .find((b) => b.attributes('aria-label') === 'common.edit')!
       .trigger('click')
     await wrapper.find('textarea').setValue('new')
-    await wrapper.findAll('button').find((b) => b.text().match(/Speichern/))!.trigger('click')
+    await wrapper.findAll('button').find((b) => b.text().match(/common\.save/))!.trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Konflikt')
+    expect(wrapper.text()).toContain('components.workspacePanel.errors.saveConflict')
     // Still in edit mode so the user can recover.
     expect(wrapper.find('textarea').exists()).toBe(true)
   })
@@ -687,13 +700,13 @@ describe('WorkspacePanel.vue', () => {
       props: { conversationId: 7 },
     })
     await flushPromises()
-    const newBtn = wrapper.findAll('button').find((b) => b.attributes('aria-label') === 'Neue Datei')
+    const newBtn = wrapper.findAll('button').find((b) => b.attributes('aria-label') === 'components.workspacePanel.newFileAria')
     expect(newBtn).toBeTruthy()
     await newBtn!.trigger('click')
     const input = wrapper.find('input[type="text"]')
     expect(input.exists()).toBe(true)
     await input.setValue('new.py')
-    const create = wrapper.findAll('button').find((b) => b.text() === 'Anlegen')
+    const create = wrapper.findAll('button').find((b) => b.text() === 'components.workspacePanel.createSubmit')
     await create!.trigger('click')
     await flushPromises()
 
@@ -743,7 +756,7 @@ describe('WorkspacePanel.vue', () => {
     await flushPromises()
     const delBtn = wrapper
       .findAll('button')
-      .find((b) => b.attributes('aria-label') === 'Löschen')
+      .find((b) => b.attributes('aria-label') === 'common.delete')
     expect(delBtn).toBeTruthy()
     await delBtn!.trigger('click')
     await flushPromises()
@@ -786,7 +799,7 @@ describe('WorkspacePanel.vue', () => {
     await flushPromises()
     await wrapper
       .findAll('button')
-      .find((b) => b.attributes('aria-label') === 'Löschen')!
+      .find((b) => b.attributes('aria-label') === 'common.delete')!
       .trigger('click')
     await flushPromises()
 
@@ -840,7 +853,7 @@ describe('WorkspacePanel.vue', () => {
 
     const renameBtn = wrapper
       .findAll('button')
-      .find((b) => b.attributes('aria-label') === 'Umbenennen')
+      .find((b) => b.attributes('aria-label') === 'components.workspacePanel.renameAria')
     expect(renameBtn).toBeTruthy()
     await renameBtn!.trigger('click')
     await flushPromises()
@@ -883,11 +896,11 @@ describe('WorkspacePanel.vue', () => {
     await flushPromises()
     await wrapper
       .findAll('button')
-      .find((b) => b.attributes('aria-label') === 'Umbenennen')!
+      .find((b) => b.attributes('aria-label') === 'components.workspacePanel.renameAria')!
       .trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Zielpfad existiert bereits')
+    expect(wrapper.text()).toContain('components.workspacePanel.errors.destExists')
   })
 
   // --- Plan 13: git status error path ---------------------------------------
@@ -901,7 +914,7 @@ describe('WorkspacePanel.vue', () => {
     })
     const wrapper = mount(WorkspacePanel, { global: { stubs } })
     await flushPromises()
-    expect(wrapper.text()).toContain('Sandbox nicht verfügbar.')
+    expect(wrapper.text()).toContain('components.workspacePanel.errors.sandboxUnavailable')
     // No branch label has been rendered.
     expect(wrapper.findAll('span').some((s) => s.text() === 'main')).toBe(false)
   })
@@ -923,14 +936,14 @@ describe('WorkspacePanel.vue', () => {
     await flushPromises()
     await wrapper
       .findAll('button')
-      .find((b) => b.attributes('aria-label') === 'Neue Datei')!
+      .find((b) => b.attributes('aria-label') === 'components.workspacePanel.newFileAria')!
       .trigger('click')
     const input = wrapper.find('input[type="text"]')
     await input.setValue('   ')
-    await wrapper.findAll('button').find((b) => b.text() === 'Anlegen')!.trigger('click')
+    await wrapper.findAll('button').find((b) => b.text() === 'components.workspacePanel.createSubmit')!.trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Pfad darf nicht leer sein.')
+    expect(wrapper.text()).toContain('components.workspacePanel.errors.pathEmpty')
     expect(apiPost).not.toHaveBeenCalled()
   })
 
@@ -965,7 +978,7 @@ describe('WorkspacePanel.vue', () => {
     await flushPromises()
     await wrapper
       .findAll('button')
-      .find((b) => b.attributes('aria-label') === 'Bearbeiten')!
+      .find((b) => b.attributes('aria-label') === 'common.edit')!
       .trigger('click')
     expect(wrapper.find('textarea').exists()).toBe(true)
     await wrapper.find('textarea').setValue('new')
@@ -976,7 +989,7 @@ describe('WorkspacePanel.vue', () => {
     await wrapper.setProps({ conversationId: null })
     await flushPromises()
     expect(wrapper.find('textarea').exists()).toBe(false)
-    expect(wrapper.text()).toContain('Wähle eine Konversation')
+    expect(wrapper.text()).toContain('components.workspacePanel.noConversation')
   })
 
   // --- Plan 13: save survives root switch mid-flight ------------------------
@@ -1026,10 +1039,10 @@ describe('WorkspacePanel.vue', () => {
     await flushPromises()
     await wrapper
       .findAll('button')
-      .find((b) => b.attributes('aria-label') === 'Bearbeiten')!
+      .find((b) => b.attributes('aria-label') === 'common.edit')!
       .trigger('click')
     await wrapper.find('textarea').setValue('new')
-    await wrapper.findAll('button').find((b) => b.text().match(/Speichern/))!.trigger('click')
+    await wrapper.findAll('button').find((b) => b.text().match(/common\.save/))!.trigger('click')
     // Save is in flight. Switch root before it resolves.
     await wrapper.find('select').setValue('ws-b')
     await flushPromises()

@@ -1,5 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
+
+// logs.vue calls useI18n() in its setup for toast messages; without the
+// importOriginal-preserving mock the bare vitest mount has no i18n plugin
+// installed and useI18n throws. t() is a passthrough on the key.
+vi.mock('vue-i18n', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('vue-i18n')>()
+  return {
+    ...orig,
+    useI18n: () => ({ t: (key: string) => key }),
+  }
+})
+
 import LogsPage from '~/pages/settings/logs.vue'
 import type { LogsResponse } from '~/types/api'
 

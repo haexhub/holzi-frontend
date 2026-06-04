@@ -32,6 +32,7 @@ const api = useApi()
 const { confirm } = useConfirm()
 const { prompt } = usePromptDialog()
 const toast = useToast()
+const { t } = useI18n()
 
 type Mode = 'empty' | 'detail'
 
@@ -68,7 +69,7 @@ async function load() {
     }
   } catch (err: unknown) {
     loadError.value =
-      err instanceof Error ? err.message : 'Fehler beim Laden.'
+      err instanceof Error ? err.message : t('pages.workspaces.errors.load')
   } finally {
     loading.value = false
   }
@@ -89,19 +90,18 @@ function selectWorkspace(ws: Workspace) {
 // ── Create ────────────────────────────────────────────────────────────
 async function openCreate() {
   const slug = await prompt({
-    title: 'Workspace anlegen',
-    description:
-      'Slug = Verzeichnisname im Sandbox-Volume. Klein, kebab-case, 2–64 Zeichen.',
-    placeholder: 'z. B. notes oder my-project',
-    confirmLabel: 'Weiter',
+    title: t('pages.workspaces.create.slugTitle'),
+    description: t('pages.workspaces.create.slugDescription'),
+    placeholder: t('pages.workspaces.create.slugPlaceholder'),
+    confirmLabel: t('pages.workspaces.create.slugConfirm'),
   })
   if (!slug) return
   const name = await prompt({
-    title: 'Anzeigename',
-    description: 'Label für die Liste — kann später umbenannt werden.',
-    placeholder: 'z. B. Notizen',
+    title: t('pages.workspaces.create.nameTitle'),
+    description: t('pages.workspaces.create.nameDescription'),
+    placeholder: t('pages.workspaces.create.namePlaceholder'),
     defaultValue: slug,
-    confirmLabel: 'Anlegen',
+    confirmLabel: t('pages.workspaces.create.nameConfirm'),
   })
   if (!name) return
   try {
@@ -110,11 +110,11 @@ async function openCreate() {
     await load()
     selectedId.value = created.id
     mode.value = 'detail'
-    toast.success(`Workspace „${created.display_name}" angelegt.`)
+    toast.success(t('pages.workspaces.create.success', { name: created.display_name }))
   } catch (err: unknown) {
     const detail =
       (err as { data?: { detail?: string } })?.data?.detail ??
-      (err instanceof Error ? err.message : 'Fehler beim Anlegen.')
+      (err instanceof Error ? err.message : t('pages.workspaces.create.error'))
     toast.error(detail)
   }
 }
@@ -138,7 +138,7 @@ async function saveRename() {
   if (!ws) return
   const next = renameDraft.value.trim()
   if (!next) {
-    renameError.value = 'Anzeigename darf nicht leer sein.'
+    renameError.value = t('pages.workspaces.rename.empty')
     return
   }
   if (next === ws.display_name) {
@@ -155,11 +155,11 @@ async function saveRename() {
     )
     renaming.value = false
     await load()
-    toast.success('Workspace umbenannt.')
+    toast.success(t('pages.workspaces.rename.success'))
   } catch (err: unknown) {
     renameError.value =
       (err as { data?: { detail?: string } })?.data?.detail ??
-      (err instanceof Error ? err.message : 'Fehler beim Umbenennen.')
+      (err instanceof Error ? err.message : t('pages.workspaces.rename.error'))
   } finally {
     renameSaving.value = false
   }
@@ -170,11 +170,8 @@ async function archive() {
   const ws = selected.value
   if (!ws) return
   const ok = await confirm({
-    title: 'Workspace archivieren?',
-    description:
-      `"${ws.display_name}" wird aus der Liste entfernt. ` +
-      'Die Daten im Sandbox-Volume bleiben — Wiederherstellung erfordert ' +
-      'einen direkten DB-Eingriff.',
+    title: t('pages.workspaces.archive.title'),
+    description: t('pages.workspaces.archive.description', { name: ws.display_name }),
     destructive: true,
   })
   if (!ok) return
@@ -183,11 +180,11 @@ async function archive() {
     selectedId.value = null
     mode.value = 'empty'
     await load()
-    toast.success('Workspace archiviert.')
+    toast.success(t('pages.workspaces.archive.success'))
   } catch (err: unknown) {
     const detail =
       (err as { data?: { detail?: string } })?.data?.detail ??
-      (err instanceof Error ? err.message : 'Fehler beim Archivieren.')
+      (err instanceof Error ? err.message : t('pages.workspaces.archive.error'))
     toast.error(detail)
   }
 }
@@ -201,13 +198,13 @@ async function restartSandbox(ws: Workspace) {
       `/api/workspaces/${encodeURIComponent(ws.id)}/sandbox/restart`,
     )
     await load()
-    toast.success(`Sandbox „${ws.display_name}" neugestartet.`)
+    toast.success(t('pages.workspaces.restart.success', { name: ws.display_name }))
   } catch (err: unknown) {
     const detail =
       (err as { data?: { detail?: string } })?.data?.detail ??
       (err instanceof Error
         ? err.message
-        : 'Sandbox-Restart fehlgeschlagen.')
+        : t('pages.workspaces.restart.error'))
     toast.error(detail)
   } finally {
     restartingId.value = null
@@ -224,13 +221,8 @@ const SANDBOX_DOT_CLASS: Record<WorkspaceSandboxState, string> = {
   removed: 'bg-muted-foreground/40',
 }
 
-const SANDBOX_LABEL: Record<WorkspaceSandboxState, string> = {
-  absent: 'Kein Sandbox-Handle',
-  running: 'Sandbox läuft',
-  exited: 'Sandbox beendet',
-  crashed: 'Sandbox abgestürzt',
-  oom: 'Sandbox OOM',
-  removed: 'Sandbox entfernt',
+function sandboxLabel(state: WorkspaceSandboxState): string {
+  return t(`pages.workspaces.sandbox.states.${state}`)
 }
 
 function formatTimestamp(epoch: number): string {
@@ -253,12 +245,12 @@ onMounted(load)
       <header class="flex items-center justify-between gap-2 border-b p-3">
         <div class="flex items-center gap-2">
           <FolderTree class="size-4 text-muted-foreground" />
-          <h2 class="text-sm font-semibold">Workspaces</h2>
+          <h2 class="text-sm font-semibold">{{ $t('pages.workspaces.title') }}</h2>
         </div>
         <UiButton
           size="sm"
           variant="ghost"
-          aria-label="Workspace anlegen"
+          :aria-label="$t('pages.workspaces.createAria')"
           data-testid="workspace-create-button"
           @click="openCreate"
         >
@@ -271,7 +263,7 @@ onMounted(load)
           v-if="loading"
           class="p-3 text-xs text-muted-foreground"
         >
-          Lädt…
+          {{ $t('common.loading') }}
         </p>
         <p
           v-else-if="loadError"
@@ -283,8 +275,7 @@ onMounted(load)
           v-else-if="workspaces.length === 0"
           class="p-3 text-xs text-muted-foreground"
         >
-          Noch keine Workspaces. Lege einen neuen an, um Sandbox-Operationen
-          und Workspace-Browser nutzen zu können.
+          {{ $t('pages.workspaces.emptyList') }}
         </p>
         <ul v-else class="flex flex-col">
           <li
@@ -302,7 +293,7 @@ onMounted(load)
                 <span
                   class="size-2 shrink-0 rounded-full"
                   :class="SANDBOX_DOT_CLASS[ws.sandbox.state]"
-                  :aria-label="SANDBOX_LABEL[ws.sandbox.state]"
+                  :aria-label="sandboxLabel(ws.sandbox.state)"
                 />
                 <span class="truncate text-sm font-medium">{{ ws.display_name }}</span>
               </div>
@@ -321,7 +312,7 @@ onMounted(load)
                     v-if="ws.git.dirty"
                     class="rounded bg-amber-500/15 px-1 text-amber-700 dark:text-amber-300"
                   >
-                    dirty
+                    {{ $t('pages.workspaces.list.dirty') }}
                   </span>
                 </template>
               </div>
@@ -340,7 +331,7 @@ onMounted(load)
         <div class="min-w-0 flex-1">
           <template v-if="mode === 'empty'">
             <h2 class="text-sm font-semibold text-muted-foreground">
-              Workspace
+              {{ $t('pages.workspaces.detailEmptyTitle') }}
             </h2>
           </template>
           <template v-else-if="selected">
@@ -360,7 +351,7 @@ onMounted(load)
             <UiButton
               size="sm"
               variant="ghost"
-              aria-label="Sandbox neu starten"
+              :aria-label="$t('pages.workspaces.restartAria')"
               :disabled="restartingId === selected.id"
               data-testid="workspace-restart-button"
               @click="restartSandbox(selected)"
@@ -373,7 +364,7 @@ onMounted(load)
             <UiButton
               size="sm"
               variant="ghost"
-              aria-label="Umbenennen"
+              :aria-label="$t('pages.workspaces.renameAria')"
               data-testid="workspace-rename-button"
               @click="openRename"
             >
@@ -382,7 +373,7 @@ onMounted(load)
             <UiButton
               size="sm"
               variant="ghost"
-              aria-label="Archivieren"
+              :aria-label="$t('pages.workspaces.archiveAria')"
               data-testid="workspace-archive-button"
               @click="archive"
             >
@@ -393,14 +384,14 @@ onMounted(load)
             <UiButton
               size="sm"
               variant="ghost"
-              aria-label="Abbrechen"
+              :aria-label="$t('common.cancel')"
               @click="cancelRename"
             >
               <X class="size-4" />
             </UiButton>
             <UiButton
               size="sm"
-              aria-label="Speichern"
+              :aria-label="$t('common.save')"
               :disabled="renameSaving"
               @click="saveRename"
             >
@@ -417,9 +408,9 @@ onMounted(load)
           class="flex h-full flex-col items-center justify-center text-center text-muted-foreground"
         >
           <FolderTree class="mb-3 size-12 stroke-[1.25]" />
-          <p class="text-sm font-medium">Wähle einen Workspace</p>
+          <p class="text-sm font-medium">{{ $t('pages.workspaces.emptyTitle') }}</p>
           <p class="mt-1 text-xs">
-            Einen Workspace aus der Liste auswählen oder einen neuen anlegen.
+            {{ $t('pages.workspaces.emptyHint') }}
           </p>
         </div>
 
@@ -439,13 +430,13 @@ onMounted(load)
               for="workspaceDisplayName"
               class="text-xs font-medium text-muted-foreground"
             >
-              Anzeigename
+              {{ $t('pages.workspaces.displayName') }}
             </label>
             <UiInput
               id="workspaceDisplayName"
               v-model="renameDraft"
               :disabled="renameSaving"
-              placeholder="z. B. Notizen"
+              :placeholder="$t('pages.workspaces.displayNamePlaceholder')"
               autofocus
             />
             <p v-if="renameError" class="text-sm text-destructive">
@@ -456,25 +447,23 @@ onMounted(load)
           <!-- Sandbox status block -->
           <section class="flex flex-col gap-2">
             <h3 class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Sandbox
+              {{ $t('pages.workspaces.sandbox.heading') }}
             </h3>
             <div class="flex items-center gap-2 text-sm">
               <span
                 class="size-2 shrink-0 rounded-full"
                 :class="SANDBOX_DOT_CLASS[selected.sandbox.state]"
               />
-              <span>{{ SANDBOX_LABEL[selected.sandbox.state] }}</span>
+              <span>{{ sandboxLabel(selected.sandbox.state) }}</span>
               <span
                 v-if="selected.sandbox.exit_code != null"
                 class="text-xs text-muted-foreground"
               >
-                · Exit {{ selected.sandbox.exit_code }}
+                {{ $t('pages.workspaces.sandbox.exit', { code: selected.sandbox.exit_code }) }}
               </span>
             </div>
             <p class="text-xs text-muted-foreground">
-              Sandbox startet automatisch beim ersten Tool-Call. Der Restart-
-              Knopf oben rechts wirft den Container weg und legt einen
-              neuen an (Daten im Volume bleiben).
+              {{ $t('pages.workspaces.sandbox.hint') }}
             </p>
           </section>
 
@@ -483,19 +472,19 @@ onMounted(load)
             <h3 class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               <span class="inline-flex items-center gap-1">
                 <HardDrive class="size-3" />
-                Disk
+                {{ $t('pages.workspaces.disk.heading') }}
               </span>
             </h3>
             <div class="text-sm">
-              {{ formatUsedMb(selected.disk.used_mb) }} benutzt
+              {{ formatUsedMb(selected.disk.used_mb) }} {{ $t('pages.workspaces.disk.used') }}
               <template v-if="selected.disk.quota_mb != null">
-                · Quota {{ formatUsedMb(selected.disk.quota_mb) }}
+                {{ $t('pages.workspaces.disk.quota', { value: formatUsedMb(selected.disk.quota_mb) }) }}
               </template>
               <span
                 v-else
                 class="text-xs text-muted-foreground"
               >
-                · keine Quota gesetzt
+                {{ $t('pages.workspaces.disk.noQuota') }}
               </span>
             </div>
             <!-- Pure-CSS usage bar so we don't pull in a chart dep for
@@ -523,16 +512,14 @@ onMounted(load)
             <h3 class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               <span class="inline-flex items-center gap-1">
                 <GitBranch class="size-3" />
-                Git
+                {{ $t('pages.workspaces.git.heading') }}
               </span>
             </h3>
             <p
               v-if="!selected.git.is_repo"
               class="text-sm text-muted-foreground"
             >
-              Workspace ist (noch) kein Git-Repo. Erste Schreiboperation aus
-              dem Chat initialisiert nichts automatisch — `git init` wird
-              manuell im Sandbox-Tool gemacht.
+              {{ $t('pages.workspaces.git.notRepo') }}
             </p>
             <div v-else class="flex items-center gap-2 text-sm">
               <span class="font-mono">{{ selected.git.branch ?? 'HEAD (detached)' }}</span>
@@ -540,22 +527,22 @@ onMounted(load)
                 v-if="selected.git.dirty"
                 class="rounded bg-amber-500/15 px-1.5 py-0.5 text-xs text-amber-700 dark:text-amber-300"
               >
-                Änderungen
+                {{ $t('pages.workspaces.git.dirty') }}
               </span>
               <span
                 v-else
                 class="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
               >
-                clean
+                {{ $t('pages.workspaces.git.clean') }}
               </span>
             </div>
           </section>
 
           <!-- Meta -->
           <section class="flex flex-col gap-1 text-xs text-muted-foreground">
-            <div>Angelegt: {{ formatTimestamp(selected.created_at) }}</div>
+            <div>{{ $t('pages.workspaces.meta.created', { timestamp: formatTimestamp(selected.created_at) }) }}</div>
             <div v-if="selected.archived_at != null">
-              Archiviert: {{ formatTimestamp(selected.archived_at) }}
+              {{ $t('pages.workspaces.meta.archived', { timestamp: formatTimestamp(selected.archived_at) }) }}
             </div>
           </section>
         </div>

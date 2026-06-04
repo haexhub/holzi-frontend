@@ -34,6 +34,7 @@ const emit = defineEmits<{
 const api = useApi()
 const { prompt } = usePromptDialog()
 const toast = useToast()
+const { t } = useI18n()
 
 const status = ref<WorkspaceGitResponse | null>(null)
 const branches = ref<GitBranchesResponse | null>(null)
@@ -100,7 +101,7 @@ async function fetchStatus(): Promise<void> {
     if (seq === statusSeq) status.value = res
   } catch (err) {
     if (seq === statusSeq) {
-      statusError.value = errorMsg(err, 'Git-Status konnte nicht geladen werden.')
+      statusError.value = errorMsg(err, t('components.workspaceGitTab.errors.statusLoad'))
       status.value = null
     }
   } finally {
@@ -128,7 +129,7 @@ async function fetchBranches(): Promise<void> {
     }
   } catch (err) {
     if (seq === branchesSeq) {
-      branchesError.value = errorMsg(err, 'Branches konnten nicht geladen werden.')
+      branchesError.value = errorMsg(err, t('components.workspaceGitTab.errors.branchesLoad'))
       branches.value = null
       selectedBranch.value = ''
     }
@@ -155,7 +156,7 @@ async function fetchDiff(): Promise<void> {
     if (seq === diffSeq) diff.value = res
   } catch (err) {
     if (seq === diffSeq) {
-      diffError.value = errorMsg(err, 'Diff konnte nicht geladen werden.')
+      diffError.value = errorMsg(err, t('components.workspaceGitTab.errors.diffLoad'))
       diff.value = null
     }
   } finally {
@@ -215,7 +216,7 @@ async function stageOne(path: string) {
       root: props.root,
       paths: [path],
     }),
-    'Datei staged.',
+    t('components.workspaceGitTab.toasts.staged'),
   )
 }
 
@@ -226,13 +227,13 @@ async function unstageOne(path: string) {
       root: props.root,
       paths: [path],
     }),
-    'Datei unstaged.',
+    t('components.workspaceGitTab.toasts.unstaged'),
   )
 }
 
 async function discardOne(path: string) {
   if (!canWrite.value) {
-    toast.warning('Bitte zuerst eine Konversation auswählen.')
+    toast.warning(t('components.workspaceGitTab.toasts.needConversation'))
     return
   }
   clearSelectionIfMatches(path)
@@ -242,17 +243,14 @@ async function discardOne(path: string) {
       paths: [path],
       conversation_id: String(props.conversationId),
     })
-    toast.success('Lokale Änderungen verworfen.')
+    toast.success(t('components.workspaceGitTab.toasts.discarded'))
     await refreshAll()
     emit('changed')
   } catch (err) {
     if (errorStatus(err) === 403) {
-      toast.error(
-        'Destruktive Git-Operationen sind serverseitig deaktiviert '
-          + '(HERMES_WORKSPACE_GIT_DESTRUCTIVE).',
-      )
+      toast.error(t('components.workspaceGitTab.errors.discardDisabled'))
     } else {
-      toast.error(errorMsg(err, 'Verwerfen fehlgeschlagen.'))
+      toast.error(errorMsg(err, t('components.workspaceGitTab.errors.discardFailed')))
     }
   }
 }
@@ -267,17 +265,17 @@ async function runOp(
     await refreshAll()
     emit('changed')
   } catch (err) {
-    toast.error(errorMsg(err, 'Aktion fehlgeschlagen.'))
+    toast.error(errorMsg(err, t('components.workspaceGitTab.errors.opFailed')))
   }
 }
 
 async function commit() {
   if (!commitMessage.value.trim()) {
-    toast.warning('Bitte eine Commit-Nachricht eingeben.')
+    toast.warning(t('components.workspaceGitTab.toasts.needCommitMessage'))
     return
   }
   if (!canWrite.value) {
-    toast.warning('Bitte zuerst eine Konversation auswählen.')
+    toast.warning(t('components.workspaceGitTab.toasts.needConversation'))
     return
   }
   commitBusy.value = true
@@ -288,12 +286,12 @@ async function commit() {
       conversation_id: String(props.conversationId),
       all: false,
     })
-    toast.success('Commit erstellt.')
+    toast.success(t('components.workspaceGitTab.toasts.committed'))
     commitMessage.value = ''
     await refreshAll()
     emit('changed')
   } catch (err) {
-    toast.error(errorMsg(err, 'Commit fehlgeschlagen.'))
+    toast.error(errorMsg(err, t('components.workspaceGitTab.errors.commitFailed')))
   } finally {
     commitBusy.value = false
   }
@@ -311,9 +309,9 @@ function restoreBranchSelection() {
 async function onBranchSelect(target: string | '__create__') {
   if (target === '__create__') {
     const name = await prompt({
-      title: 'Neuen Branch erstellen',
-      description: 'Name des neuen Branches',
-      placeholder: 'feature/x',
+      title: t('components.workspaceGitTab.createBranch.title'),
+      description: t('components.workspaceGitTab.createBranch.description'),
+      placeholder: t('components.workspaceGitTab.createBranch.placeholder'),
     })
     if (!name) {
       restoreBranchSelection()
@@ -334,18 +332,19 @@ async function checkoutBranch(branch: string, create: boolean) {
       branch,
       create,
     })
-    toast.success(create ? `Branch "${branch}" angelegt.` : `Auf "${branch}" gewechselt.`)
+    toast.success(
+      create
+        ? t('components.workspaceGitTab.toasts.branchCreated', { branch })
+        : t('components.workspaceGitTab.toasts.branchSwitched', { branch }),
+    )
     selectedPath.value = null
     await refreshAll()
     emit('changed')
   } catch (err) {
     if (errorStatus(err) === 409) {
-      toast.error(
-        'Working tree enthält ungesicherte Änderungen — '
-          + 'erst commit/discard/stash, dann erneut versuchen.',
-      )
+      toast.error(t('components.workspaceGitTab.errors.checkoutConflict'))
     } else {
-      toast.error(errorMsg(err, 'Checkout fehlgeschlagen.'))
+      toast.error(errorMsg(err, t('components.workspaceGitTab.errors.checkoutFailed')))
     }
     // Failed checkout = branch didn't change; resync the dropdown so
     // it doesn't look as if the target was selected.
@@ -362,11 +361,11 @@ async function fetchRemote() {
       root: props.root,
     })
     remoteMessage.value = res.ok
-      ? (res.message || 'Fetch erfolgreich.')
-      : `Fetch fehlgeschlagen: ${res.message}`
+      ? (res.message || t('components.workspaceGitTab.toasts.fetchOk'))
+      : t('components.workspaceGitTab.errors.fetchFailedDetail', { message: res.message })
     await refreshAll()
   } catch (err) {
-    remoteMessage.value = errorMsg(err, 'Fetch fehlgeschlagen.')
+    remoteMessage.value = errorMsg(err, t('components.workspaceGitTab.errors.fetchFailed'))
   } finally {
     remoteBusy.value = false
   }
@@ -381,7 +380,7 @@ async function pullRemote() {
       root: props.root,
     })
     if (res.ok) {
-      remoteMessage.value = res.message || 'Pull erfolgreich.'
+      remoteMessage.value = res.message || t('components.workspaceGitTab.toasts.pullOk')
     } else {
       remoteMessage.value = res.message
       pullConflicts.value = res.conflicts ?? []
@@ -389,7 +388,7 @@ async function pullRemote() {
     await refreshAll()
     emit('changed')
   } catch (err) {
-    remoteMessage.value = errorMsg(err, 'Pull fehlgeschlagen.')
+    remoteMessage.value = errorMsg(err, t('components.workspaceGitTab.errors.pullFailed'))
   } finally {
     remoteBusy.value = false
   }
@@ -405,14 +404,22 @@ async function pushRemote(setUpstream: boolean) {
       set_upstream: setUpstream,
     })
     remoteMessage.value = res.ok
-      ? (res.message || 'Push erfolgreich.')
-      : `Push fehlgeschlagen: ${res.message}`
+      ? (res.message || t('components.workspaceGitTab.toasts.pushOk'))
+      : t('components.workspaceGitTab.errors.pushFailedDetail', { message: res.message })
   } catch (err) {
-    remoteMessage.value = errorMsg(err, 'Push fehlgeschlagen.')
+    remoteMessage.value = errorMsg(err, t('components.workspaceGitTab.errors.pushFailed'))
   } finally {
     remoteBusy.value = false
   }
 }
+
+// Header for the diff pane: "<side> · <path>" when a row is selected, or a
+// prompt to pick one. `selectedSide` is already the literal 'staged' /
+// 'unstaged' git term, kept verbatim in both locales.
+const diffHeaderLabel = computed(() => {
+  if (!selectedPath.value) return t('components.workspaceGitTab.diffSelectPrompt')
+  return `${selectedSide.value} · ${selectedPath.value}`
+})
 
 // The diff body is rendered as a fenced ```diff block so shiki (already
 // preloaded with the `diff` grammar — see app/utils/markdown.ts) handles
@@ -458,7 +465,7 @@ defineExpose({ refreshAll })
         @change="onBranchSelect(($event.target as HTMLSelectElement).value)"
       >
         <option v-if="!branches?.current" value="" disabled>
-          {{ branchesLoading ? 'Lädt…' : '(detached)' }}
+          {{ branchesLoading ? $t('common.loading') : $t('components.workspaceGitTab.detached') }}
         </option>
         <option
           v-for="b in branches?.all ?? []"
@@ -468,13 +475,13 @@ defineExpose({ refreshAll })
         >
           {{ b.is_remote ? `remote: ${b.name}` : b.name }}
         </option>
-        <option value="__create__">+ Neuen Branch erstellen…</option>
+        <option value="__create__">{{ $t('components.workspaceGitTab.createBranchOption') }}</option>
       </select>
       <UiButton
         size="sm"
         variant="ghost"
         :disabled="statusLoading || branchesLoading"
-        aria-label="Aktualisieren"
+        :aria-label="$t('common.refresh')"
         @click="refreshAll"
       >
         <RefreshCw
@@ -493,18 +500,18 @@ defineExpose({ refreshAll })
         v-else-if="!status || (!status.is_repo)"
         class="p-3 text-sm text-muted-foreground"
       >
-        Kein Git-Repo in diesem Workspace.
+        {{ $t('components.workspaceGitTab.noRepo') }}
       </div>
       <div
         v-else-if="stagedEntries.length === 0 && unstagedEntries.length === 0"
         class="p-3 text-sm text-muted-foreground"
       >
-        Working tree clean.
+        {{ $t('components.workspaceGitTab.workingTreeClean') }}
       </div>
       <template v-else>
         <section v-if="unstagedEntries.length > 0">
           <h4 class="bg-muted/50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Unstaged ({{ unstagedEntries.length }})
+            {{ $t('components.workspaceGitTab.sections.unstaged', { count: unstagedEntries.length }) }}
           </h4>
           <ul class="divide-y text-sm">
             <li
@@ -530,7 +537,7 @@ defineExpose({ refreshAll })
               <UiButton
                 size="sm"
                 variant="ghost"
-                aria-label="Stage"
+                :aria-label="$t('components.workspaceGitTab.stageAria')"
                 :disabled="!canWrite"
                 @click="stageOne(entry.path)"
               >
@@ -539,7 +546,7 @@ defineExpose({ refreshAll })
               <UiButton
                 size="sm"
                 variant="ghost"
-                aria-label="Verwerfen"
+                :aria-label="$t('components.workspaceGitTab.discardAria')"
                 class="text-destructive hover:text-destructive"
                 :disabled="!canWrite"
                 @click="discardOne(entry.path)"
@@ -551,7 +558,7 @@ defineExpose({ refreshAll })
         </section>
         <section v-if="stagedEntries.length > 0">
           <h4 class="bg-muted/50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Staged ({{ stagedEntries.length }})
+            {{ $t('components.workspaceGitTab.sections.staged', { count: stagedEntries.length }) }}
           </h4>
           <ul class="divide-y text-sm">
             <li
@@ -577,7 +584,7 @@ defineExpose({ refreshAll })
               <UiButton
                 size="sm"
                 variant="ghost"
-                aria-label="Unstage"
+                :aria-label="$t('components.workspaceGitTab.unstageAria')"
                 :disabled="!canWrite"
                 @click="unstageOne(entry.path)"
               >
@@ -593,39 +600,35 @@ defineExpose({ refreshAll })
     <div class="flex flex-1 flex-col overflow-hidden">
       <div class="flex items-center justify-between border-b px-3 py-2 text-xs text-muted-foreground">
         <span class="truncate font-mono">
-          {{
-            selectedPath
-              ? `${selectedSide === 'staged' ? 'staged' : 'unstaged'} · ${selectedPath}`
-              : 'Datei für Diff auswählen…'
-          }}
+          {{ diffHeaderLabel }}
         </span>
         <span v-if="diff && diff.kind !== 'none'" class="shrink-0">
-          {{ diff.summary.files }} Datei(en) ·
+          {{ diff.summary.files }} {{ $t('components.workspaceGitTab.filesLabel') }} ·
           <span class="text-emerald-600 dark:text-emerald-400">+{{ diff.summary.insertions }}</span> /
           <span class="text-rose-600 dark:text-rose-400">-{{ diff.summary.deletions }}</span>
         </span>
       </div>
       <div class="flex-1 overflow-auto">
-        <p v-if="diffLoading" class="p-3 text-sm text-muted-foreground">Lädt…</p>
+        <p v-if="diffLoading" class="p-3 text-sm text-muted-foreground">{{ $t('common.loading') }}</p>
         <p v-else-if="diffError" class="p-3 text-sm text-destructive">{{ diffError }}</p>
         <p
           v-else-if="!diff || diff.kind === 'none'"
           class="p-3 text-sm text-muted-foreground"
         >
-          Keine Änderungen.
+          {{ $t('components.workspaceGitTab.noChanges') }}
         </p>
         <p
           v-else-if="diff.kind === 'binary'"
           class="p-3 text-sm text-muted-foreground"
         >
-          Binärdatei — kein Patch verfügbar.
+          {{ $t('components.workspaceGitTab.binary') }}
         </p>
         <template v-else>
           <p
             v-if="diff.truncated"
             class="border-b bg-muted px-3 py-1 text-xs text-muted-foreground"
           >
-            Patch gekürzt — Diff ist größer als 256 KiB.
+            {{ $t('components.workspaceGitTab.patchTruncated') }}
           </p>
           <div class="p-3 text-xs">
             <ChatRenderedMarkdown :content="diffMarkdown" />
@@ -639,7 +642,7 @@ defineExpose({ refreshAll })
       <textarea
         v-model="commitMessage"
         class="min-h-15 w-full resize-y rounded-md border bg-background p-2 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-ring"
-        placeholder="Commit-Nachricht…"
+        :placeholder="$t('components.workspaceGitTab.commitPlaceholder')"
         :disabled="commitBusy || !canWrite"
         spellcheck="false"
       />
@@ -649,19 +652,19 @@ defineExpose({ refreshAll })
           :disabled="commitBusy || !canWrite || !commitMessage.trim() || stagedEntries.length === 0"
           @click="commit"
         >
-          {{ commitBusy ? 'Commit…' : 'Commit (staged)' }}
+          {{ commitBusy ? $t('components.workspaceGitTab.commitBusy') : $t('components.workspaceGitTab.commitButton') }}
         </UiButton>
         <p
           v-if="!canWrite"
           class="text-xs text-muted-foreground"
         >
-          Wähle eine Konversation, um zu committen.
+          {{ $t('components.workspaceGitTab.commitNoConversation') }}
         </p>
         <p
           v-else-if="stagedEntries.length === 0"
           class="text-xs text-muted-foreground"
         >
-          Erst Dateien stagen, dann committen.
+          {{ $t('components.workspaceGitTab.commitNeedsStaged') }}
         </p>
       </div>
     </div>
@@ -675,7 +678,7 @@ defineExpose({ refreshAll })
           :disabled="remoteBusy"
           @click="fetchRemote"
         >
-          Fetch
+          {{ $t('components.workspaceGitTab.fetch') }}
         </UiButton>
         <UiButton
           size="sm"
@@ -683,7 +686,7 @@ defineExpose({ refreshAll })
           :disabled="remoteBusy"
           @click="pullRemote"
         >
-          <ArrowDown class="mr-1 size-3" /> Pull
+          <ArrowDown class="mr-1 size-3" /> {{ $t('components.workspaceGitTab.pull') }}
         </UiButton>
         <UiButton
           size="sm"
@@ -691,7 +694,7 @@ defineExpose({ refreshAll })
           :disabled="remoteBusy"
           @click="pushRemote(false)"
         >
-          <ArrowUp class="mr-1 size-3" /> Push
+          <ArrowUp class="mr-1 size-3" /> {{ $t('components.workspaceGitTab.push') }}
         </UiButton>
         <UiButton
           size="sm"
@@ -699,7 +702,7 @@ defineExpose({ refreshAll })
           :disabled="remoteBusy"
           @click="pushRemote(true)"
         >
-          Push --set-upstream
+          {{ $t('components.workspaceGitTab.pushUpstream') }}
         </UiButton>
       </div>
       <pre
@@ -708,7 +711,7 @@ defineExpose({ refreshAll })
       >{{ remoteMessage }}</pre>
       <div v-if="pullConflicts.length > 0" class="rounded border border-amber-500/60 bg-amber-500/10 p-2 text-xs">
         <p class="font-semibold text-amber-700 dark:text-amber-300">
-          Konflikte manuell auflösen:
+          {{ $t('components.workspaceGitTab.pullConflicts') }}
         </p>
         <ul class="mt-1 list-disc space-y-0.5 pl-5 font-mono">
           <li v-for="path in pullConflicts" :key="path">{{ path }}</li>

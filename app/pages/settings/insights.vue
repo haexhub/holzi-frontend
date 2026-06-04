@@ -9,12 +9,13 @@ import type { InsightsPeriod } from '~/types/api'
 // visible so a long-running session doesn't go stale.
 
 const { insights, loading, error, period, load, setPeriod } = useInsights()
+const { t } = useI18n()
 
-const PERIOD_OPTIONS: { value: InsightsPeriod; label: string }[] = [
-  { value: '24h', label: '24h' },
-  { value: '7d', label: '7 Tage' },
-  { value: '30d', label: '30 Tage' },
-]
+const PERIOD_OPTIONS = computed<{ value: InsightsPeriod; label: string }[]>(() => [
+  { value: '24h', label: t('pages.insights.periods.24h') },
+  { value: '7d', label: t('pages.insights.periods.7d') },
+  { value: '30d', label: t('pages.insights.periods.30d') },
+])
 
 const refreshTimer = ref<ReturnType<typeof setInterval> | null>(null)
 
@@ -100,13 +101,13 @@ const sortedByModel = computed(() => {
     <header class="flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-center gap-2">
         <BarChart3 class="size-5 text-muted-foreground" />
-        <h2 class="text-base font-semibold">Insights</h2>
+        <h2 class="text-base font-semibold">{{ $t('pages.insights.title') }}</h2>
       </div>
       <div class="flex items-center gap-2">
         <div
           class="inline-flex rounded-md border bg-background p-0.5"
           role="group"
-          aria-label="Zeitraum"
+          :aria-label="$t('pages.insights.periodAria')"
           data-testid="insights-period"
         >
           <button
@@ -130,18 +131,18 @@ const sortedByModel = computed(() => {
           size="sm"
           variant="outline"
           :disabled="loading"
-          aria-label="Neu laden"
+          :aria-label="$t('common.reload')"
           data-testid="insights-refresh"
           @click="load"
         >
           <RefreshCcw class="mr-1 size-4" />
-          Neu laden
+          {{ $t('common.reload') }}
         </UiButton>
       </div>
     </header>
 
     <p v-if="loading && !insights" class="text-xs text-muted-foreground">
-      Lädt…
+      {{ $t('common.loading') }}
     </p>
     <p
       v-if="error"
@@ -159,7 +160,7 @@ const sortedByModel = computed(() => {
     >
       <div class="rounded-md border p-3" data-testid="insights-tile-runs">
         <p class="text-[11px] uppercase tracking-wide text-muted-foreground">
-          Runs
+          {{ $t('pages.insights.tiles.runs') }}
         </p>
         <p class="mt-1 text-2xl font-semibold tabular-nums">
           {{ totals.runs }}
@@ -167,7 +168,7 @@ const sortedByModel = computed(() => {
       </div>
       <div class="rounded-md border p-3" data-testid="insights-tile-tokens">
         <p class="text-[11px] uppercase tracking-wide text-muted-foreground">
-          Tokens (in / out)
+          {{ $t('pages.insights.tiles.tokens') }}
         </p>
         <p class="mt-1 text-2xl font-semibold tabular-nums">
           {{ formatTokens(totals.input_tokens) }}
@@ -178,7 +179,7 @@ const sortedByModel = computed(() => {
       </div>
       <div class="rounded-md border p-3" data-testid="insights-tile-errors">
         <p class="text-[11px] uppercase tracking-wide text-muted-foreground">
-          Errors
+          {{ $t('pages.insights.tiles.errors') }}
         </p>
         <p
           class="mt-1 text-2xl font-semibold tabular-nums"
@@ -189,7 +190,7 @@ const sortedByModel = computed(() => {
       </div>
       <div class="rounded-md border p-3" data-testid="insights-tile-cost">
         <p class="text-[11px] uppercase tracking-wide text-muted-foreground">
-          Kosten (geschätzt)
+          {{ $t('pages.insights.tiles.cost') }}
         </p>
         <p class="mt-1 text-2xl font-semibold tabular-nums">
           {{ formatCost(totalCostUsd) }}
@@ -204,13 +205,13 @@ const sortedByModel = computed(() => {
       data-testid="insights-series"
     >
       <header class="border-b p-3">
-        <h3 class="text-sm font-semibold">Tägliche Token-Nutzung</h3>
+        <h3 class="text-sm font-semibold">{{ $t('pages.insights.chart.title') }}</h3>
         <p class="mt-0.5 text-xs text-muted-foreground">
-          UTC-Tage, Bars summieren Input + Output.
+          {{ $t('pages.insights.chart.subtitle') }}
         </p>
       </header>
       <div class="p-4">
-        <div class="flex h-32 items-end gap-1" role="img" aria-label="Token-Nutzung pro Tag">
+        <div class="flex h-32 items-end gap-1" role="img" :aria-label="$t('pages.insights.chart.aria')">
           <div
             v-for="bucket in series"
             :key="bucket.bucket"
@@ -243,12 +244,12 @@ const sortedByModel = computed(() => {
       data-testid="insights-by-model"
     >
       <header class="border-b p-3">
-        <h3 class="text-sm font-semibold">Pro Modell</h3>
+        <h3 class="text-sm font-semibold">{{ $t('pages.insights.byModel.title') }}</h3>
       </header>
       <table class="w-full text-sm">
         <thead>
           <tr class="bg-muted/40 text-left text-xs text-muted-foreground">
-            <th class="px-3 py-2 font-medium" scope="col">Modell</th>
+            <th class="px-3 py-2 font-medium" scope="col">{{ $t('pages.insights.byModel.model') }}</th>
             <th
               class="px-3 py-2 text-right font-medium tabular-nums"
               scope="col"
@@ -261,7 +262,7 @@ const sortedByModel = computed(() => {
                 data-testid="insights-by-model-sort-runs"
                 @click="sortKey = 'runs'"
               >
-                Runs
+                {{ $t('pages.insights.byModel.runs') }}
               </button>
             </th>
             <th
@@ -276,7 +277,7 @@ const sortedByModel = computed(() => {
                 data-testid="insights-by-model-sort-input"
                 @click="sortKey = 'input_tokens'"
               >
-                In
+                {{ $t('pages.insights.byModel.in') }}
               </button>
             </th>
             <th
@@ -291,7 +292,7 @@ const sortedByModel = computed(() => {
                 data-testid="insights-by-model-sort-output"
                 @click="sortKey = 'output_tokens'"
               >
-                Out
+                {{ $t('pages.insights.byModel.out') }}
               </button>
             </th>
             <th
@@ -306,7 +307,7 @@ const sortedByModel = computed(() => {
                 data-testid="insights-by-model-sort-errors"
                 @click="sortKey = 'errors'"
               >
-                Errors
+                {{ $t('pages.insights.byModel.errors') }}
               </button>
             </th>
           </tr>
@@ -343,26 +344,26 @@ const sortedByModel = computed(() => {
       class="rounded-md border p-3"
       data-testid="insights-by-status"
     >
-      <h3 class="text-sm font-semibold">Run-Status</h3>
+      <h3 class="text-sm font-semibold">{{ $t('pages.insights.status.title') }}</h3>
       <ul class="mt-2 flex flex-wrap gap-3 text-xs">
         <li class="flex items-center gap-1.5" data-testid="insights-status-success">
           <span class="size-2 rounded-full bg-emerald-500" />
-          <span class="text-muted-foreground">Success:</span>
+          <span class="text-muted-foreground">{{ $t('pages.insights.status.success') }}</span>
           <span class="font-medium tabular-nums">{{ byStatus.success }}</span>
         </li>
         <li class="flex items-center gap-1.5" data-testid="insights-status-error">
           <span class="size-2 rounded-full bg-destructive" />
-          <span class="text-muted-foreground">Error:</span>
+          <span class="text-muted-foreground">{{ $t('pages.insights.status.error') }}</span>
           <span class="font-medium tabular-nums">{{ byStatus.error }}</span>
         </li>
         <li class="flex items-center gap-1.5" data-testid="insights-status-cancelled">
           <span class="size-2 rounded-full bg-amber-500" />
-          <span class="text-muted-foreground">Cancelled:</span>
+          <span class="text-muted-foreground">{{ $t('pages.insights.status.cancelled') }}</span>
           <span class="font-medium tabular-nums">{{ byStatus.cancelled }}</span>
         </li>
         <li class="flex items-center gap-1.5" data-testid="insights-status-running">
           <span class="size-2 rounded-full bg-sky-500" />
-          <span class="text-muted-foreground">Running:</span>
+          <span class="text-muted-foreground">{{ $t('pages.insights.status.running') }}</span>
           <span class="font-medium tabular-nums">{{ byStatus.running }}</span>
         </li>
       </ul>
@@ -373,7 +374,7 @@ const sortedByModel = computed(() => {
       class="text-xs text-muted-foreground"
       data-testid="insights-empty"
     >
-      Noch keine Runs im gewählten Zeitraum.
+      {{ $t('pages.insights.empty') }}
     </p>
   </div>
 </template>

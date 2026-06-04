@@ -1,5 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
+
+// insights.vue calls useI18n() in setup for the period labels; without the
+// importOriginal-preserving mock the bare mount has no i18n plugin and
+// useI18n throws. t() is a passthrough on the key.
+vi.mock('vue-i18n', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('vue-i18n')>()
+  return {
+    ...orig,
+    useI18n: () => ({ t: (key: string) => key }),
+  }
+})
+
 import InsightsPage from '~/pages/settings/insights.vue'
 import type { InsightsResponse } from '~/types/api'
 

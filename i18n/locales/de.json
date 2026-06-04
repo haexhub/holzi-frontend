@@ -9,7 +9,9 @@
     "error": "Fehler",
     "retry": "Erneut versuchen",
     "confirm": "Bestätigen",
-    "back": "Zurück"
+    "back": "Zurück",
+    "reload": "Neu laden",
+    "refresh": "Aktualisieren"
   },
   "nav": {
     "preferences": { "label": "Preferences" },
@@ -24,6 +26,131 @@
     "aria": {
       "desktop": "Control Center (Desktop)",
       "mobile": "Control Center (Mobil)"
+    }
+  },
+  "components": {
+    "themeToggle": {
+      "toLight": "Light-Mode",
+      "toDark": "Dark-Mode"
+    },
+    "workspacePanel": {
+      "title": "Workspace",
+      "newFileAria": "Neue Datei",
+      "noWorkspaces": "Keine Workspaces angelegt.",
+      "createInControlCenter": "Im Control Center anlegen",
+      "tabs": {
+        "files": "Dateien",
+        "git": "Git"
+      },
+      "dirty": "dirty",
+      "clean": "clean",
+      "dirtyTitle": "{count} geänderte Datei(en) — Git-Tab öffnen",
+      "createLabel": "Neue Datei (relativer Pfad):",
+      "createPlaceholder": "src/new.py",
+      "createSubmit": "Anlegen",
+      "noConversation": "Wähle eine Konversation, um Dateien zu bearbeiten.",
+      "emptyFolder": "Ordner ist leer.",
+      "selectFile": "Datei auswählen…",
+      "renameAria": "Umbenennen",
+      "truncated": "Vorschau gekürzt — Datei ist größer als 256 KiB.",
+      "saving": "Speichert…",
+      "binaryPreview": "Vorschau nicht verfügbar (Binärdatei).",
+      "sizeUnknown": "Größe unbekannt",
+      "rename": {
+        "title": "Datei umbenennen",
+        "description": "Neuer Pfad (relativ zur Workspace-Wurzel):",
+        "confirm": "Umbenennen"
+      },
+      "delete": {
+        "title": "Datei löschen?",
+        "description": "\"{path}\" wird endgültig gelöscht."
+      },
+      "notices": {
+        "savedNoCommit": "Gespeichert (kein Git-Repo, kein Commit erstellt)."
+      },
+      "errors": {
+        "rootsLoad": "Fehler beim Laden der Workspaces.",
+        "unavailable": "Workspace nicht verfügbar — Sandbox läuft nicht oder ist nicht konfiguriert.",
+        "pathNotFound": "Pfad nicht gefunden.",
+        "invalidPath": "Ungültiger Pfad.",
+        "treeLoad": "Fehler beim Laden des Verzeichnisses.",
+        "fileNotFound": "Datei nicht gefunden.",
+        "fileLoad": "Fehler beim Laden der Datei.",
+        "sandboxUnavailable": "Sandbox nicht verfügbar.",
+        "gitUnavailable": "Git-Status nicht verfügbar.",
+        "saveConflict": "Konflikt: Datei wurde auf der Festplatte geändert. Bitte neu laden und erneut bearbeiten.",
+        "invalidContent": "Ungültiger Inhalt.",
+        "workspaceUnavailable": "Workspace nicht verfügbar.",
+        "saveFailed": "Speichern fehlgeschlagen.",
+        "pathEmpty": "Pfad darf nicht leer sein.",
+        "pathExists": "Pfad existiert bereits.",
+        "createFailed": "Anlegen fehlgeschlagen.",
+        "destExists": "Zielpfad existiert bereits.",
+        "renameFailed": "Umbenennen fehlgeschlagen.",
+        "deleteFailed": "Löschen fehlgeschlagen."
+      }
+    },
+    "workspaceGitTab": {
+      "createBranchOption": "+ Neuen Branch erstellen…",
+      "detached": "(detached)",
+      "noRepo": "Kein Git-Repo in diesem Workspace.",
+      "workingTreeClean": "Working tree clean.",
+      "sections": {
+        "unstaged": "Unstaged ({count})",
+        "staged": "Staged ({count})"
+      },
+      "stageAria": "Stage",
+      "unstageAria": "Unstage",
+      "discardAria": "Verwerfen",
+      "diffSelectPrompt": "Datei für Diff auswählen…",
+      "filesLabel": "Datei(en)",
+      "noChanges": "Keine Änderungen.",
+      "binary": "Binärdatei — kein Patch verfügbar.",
+      "patchTruncated": "Patch gekürzt — Diff ist größer als 256 KiB.",
+      "commitPlaceholder": "Commit-Nachricht…",
+      "commitBusy": "Commit…",
+      "commitButton": "Commit (staged)",
+      "commitNoConversation": "Wähle eine Konversation, um zu committen.",
+      "commitNeedsStaged": "Erst Dateien stagen, dann committen.",
+      "fetch": "Fetch",
+      "pull": "Pull",
+      "push": "Push",
+      "pushUpstream": "Push --set-upstream",
+      "pullConflicts": "Konflikte manuell auflösen:",
+      "createBranch": {
+        "title": "Neuen Branch erstellen",
+        "description": "Name des neuen Branches",
+        "placeholder": "feature/x"
+      },
+      "toasts": {
+        "staged": "Datei staged.",
+        "unstaged": "Datei unstaged.",
+        "discarded": "Lokale Änderungen verworfen.",
+        "committed": "Commit erstellt.",
+        "branchCreated": "Branch \"{branch}\" angelegt.",
+        "branchSwitched": "Auf \"{branch}\" gewechselt.",
+        "fetchOk": "Fetch erfolgreich.",
+        "pullOk": "Pull erfolgreich.",
+        "pushOk": "Push erfolgreich.",
+        "needConversation": "Bitte zuerst eine Konversation auswählen.",
+        "needCommitMessage": "Bitte eine Commit-Nachricht eingeben."
+      },
+      "errors": {
+        "statusLoad": "Git-Status konnte nicht geladen werden.",
+        "branchesLoad": "Branches konnten nicht geladen werden.",
+        "diffLoad": "Diff konnte nicht geladen werden.",
+        "discardDisabled": "Destruktive Git-Operationen sind serverseitig deaktiviert (HERMES_WORKSPACE_GIT_DESTRUCTIVE).",
+        "discardFailed": "Verwerfen fehlgeschlagen.",
+        "opFailed": "Aktion fehlgeschlagen.",
+        "commitFailed": "Commit fehlgeschlagen.",
+        "checkoutConflict": "Working tree enthält ungesicherte Änderungen — erst commit/discard/stash, dann erneut versuchen.",
+        "checkoutFailed": "Checkout fehlgeschlagen.",
+        "fetchFailed": "Fetch fehlgeschlagen.",
+        "fetchFailedDetail": "Fetch fehlgeschlagen: {message}",
+        "pullFailed": "Pull fehlgeschlagen.",
+        "pushFailed": "Push fehlgeschlagen.",
+        "pushFailedDetail": "Push fehlgeschlagen: {message}"
+      }
     }
   },
   "errors": {
@@ -165,6 +292,167 @@
         "save": "Fehler beim Speichern.",
         "activate": "Fehler beim Aktivieren.",
         "delete": "Fehler beim Löschen."
+      }
+    },
+    "logs": {
+      "title": "Logs",
+      "copy": "Kopieren",
+      "copyAria": "Alle kopieren",
+      "wrap": "Wrap",
+      "wrapOn": "Zeilenumbruch an",
+      "wrapOff": "Zeilenumbruch aus",
+      "severityAria": "Schweregrad",
+      "lineCountAria": "Anzahl Zeilen",
+      "searchPlaceholder": "Suche (Substring)…",
+      "searchAria": "Logs durchsuchen",
+      "disabled": {
+        "before": "Log-Tailing ist nicht aktiv. Setze ",
+        "middle": " (z. B. ",
+        "after": "), starte den Backend-Container neu — dann lädt diese Seite die letzten Strukturlog-Zeilen."
+      },
+      "noMatch": "Keine Treffer für „{search}\".",
+      "empty": "Noch keine Zeilen im Log-File.",
+      "copied": "{count} Zeilen kopiert.",
+      "copyFailed": "Kopieren fehlgeschlagen."
+    },
+    "insights": {
+      "title": "Insights",
+      "periodAria": "Zeitraum",
+      "periods": {
+        "24h": "24h",
+        "7d": "7 Tage",
+        "30d": "30 Tage"
+      },
+      "tiles": {
+        "runs": "Runs",
+        "tokens": "Tokens (in / out)",
+        "errors": "Errors",
+        "cost": "Kosten (geschätzt)"
+      },
+      "chart": {
+        "title": "Tägliche Token-Nutzung",
+        "subtitle": "UTC-Tage, Bars summieren Input + Output.",
+        "aria": "Token-Nutzung pro Tag"
+      },
+      "byModel": {
+        "title": "Pro Modell",
+        "model": "Modell",
+        "runs": "Runs",
+        "in": "In",
+        "out": "Out",
+        "errors": "Errors"
+      },
+      "status": {
+        "title": "Run-Status",
+        "success": "Success:",
+        "error": "Error:",
+        "cancelled": "Cancelled:",
+        "running": "Running:"
+      },
+      "empty": "Noch keine Runs im gewählten Zeitraum."
+    },
+    "memory": {
+      "sidebarTitle": "Persönliches Gedächtnis",
+      "newNote": "Neue Notiz",
+      "searchPlaceholder": "Suchen…",
+      "searchAria": "Memory durchsuchen",
+      "noMatch": "Keine Treffer für „{query}\".",
+      "empty": "Noch keine Notizen.",
+      "detailEmptyTitle": "Memory",
+      "emptyTitle": "Wähle eine Notiz",
+      "emptyHint": "Eine Notiz aus der Liste auswählen oder eine neue anlegen.",
+      "deleteConfirm": {
+        "title": "Notiz löschen?",
+        "description": "\"{key}\" wird endgültig gelöscht."
+      },
+      "form": {
+        "key": "Key",
+        "keyPlaceholder": "z. B. project.holzi.status",
+        "content": "Inhalt (Markdown)",
+        "tags": "Tags (kommagetrennt)",
+        "tagsPlaceholder": "z. B. hermes, status",
+        "contentRequired": "Inhalt darf nicht leer sein.",
+        "keyRequired": "Key ist erforderlich."
+      },
+      "errors": {
+        "load": "Fehler beim Laden.",
+        "save": "Fehler beim Speichern.",
+        "delete": "Fehler beim Löschen."
+      }
+    },
+    "workspaces": {
+      "title": "Workspaces",
+      "createAria": "Workspace anlegen",
+      "emptyList": "Noch keine Workspaces. Lege einen neuen an, um Sandbox-Operationen und Workspace-Browser nutzen zu können.",
+      "detailEmptyTitle": "Workspace",
+      "emptyTitle": "Wähle einen Workspace",
+      "emptyHint": "Einen Workspace aus der Liste auswählen oder einen neuen anlegen.",
+      "restartAria": "Sandbox neu starten",
+      "renameAria": "Umbenennen",
+      "archiveAria": "Archivieren",
+      "displayName": "Anzeigename",
+      "displayNamePlaceholder": "z. B. Notizen",
+      "list": {
+        "dirty": "dirty"
+      },
+      "create": {
+        "slugTitle": "Workspace anlegen",
+        "slugDescription": "Slug = Verzeichnisname im Sandbox-Volume. Klein, kebab-case, 2–64 Zeichen.",
+        "slugPlaceholder": "z. B. notes oder my-project",
+        "slugConfirm": "Weiter",
+        "nameTitle": "Anzeigename",
+        "nameDescription": "Label für die Liste — kann später umbenannt werden.",
+        "namePlaceholder": "z. B. Notizen",
+        "nameConfirm": "Anlegen",
+        "success": "Workspace „{name}\" angelegt.",
+        "error": "Fehler beim Anlegen."
+      },
+      "rename": {
+        "empty": "Anzeigename darf nicht leer sein.",
+        "success": "Workspace umbenannt.",
+        "error": "Fehler beim Umbenennen."
+      },
+      "archive": {
+        "title": "Workspace archivieren?",
+        "description": "\"{name}\" wird aus der Liste entfernt. Die Daten im Sandbox-Volume bleiben — Wiederherstellung erfordert einen direkten DB-Eingriff.",
+        "success": "Workspace archiviert.",
+        "error": "Fehler beim Archivieren."
+      },
+      "restart": {
+        "success": "Sandbox „{name}\" neugestartet.",
+        "error": "Sandbox-Restart fehlgeschlagen."
+      },
+      "errors": {
+        "load": "Fehler beim Laden."
+      },
+      "sandbox": {
+        "heading": "Sandbox",
+        "exit": "· Exit {code}",
+        "hint": "Sandbox startet automatisch beim ersten Tool-Call. Der Restart-Knopf oben rechts wirft den Container weg und legt einen neuen an (Daten im Volume bleiben).",
+        "states": {
+          "absent": "Kein Sandbox-Handle",
+          "running": "Sandbox läuft",
+          "exited": "Sandbox beendet",
+          "crashed": "Sandbox abgestürzt",
+          "oom": "Sandbox OOM",
+          "removed": "Sandbox entfernt"
+        }
+      },
+      "disk": {
+        "heading": "Disk",
+        "used": "benutzt",
+        "quota": "· Quota {value}",
+        "noQuota": "· keine Quota gesetzt"
+      },
+      "git": {
+        "heading": "Git",
+        "notRepo": "Workspace ist (noch) kein Git-Repo. Erste Schreiboperation aus dem Chat initialisiert nichts automatisch — `git init` wird manuell im Sandbox-Tool gemacht.",
+        "dirty": "Änderungen",
+        "clean": "clean"
+      },
+      "meta": {
+        "created": "Angelegt: {timestamp}",
+        "archived": "Archiviert: {timestamp}"
       }
     }
   }

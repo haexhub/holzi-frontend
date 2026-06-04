@@ -19,6 +19,7 @@ const {
   setTail,
 } = useLogs()
 const toast = useToast()
+const { t } = useI18n()
 
 const LEVEL_OPTIONS: { value: LogLevelFilter; label: string }[] = [
   { value: 'info', label: 'Info' },
@@ -117,9 +118,9 @@ async function copyAll(): Promise<void> {
       .map((r) => JSON.stringify(r))
       .join('\n')
     await navigator.clipboard.writeText(payload)
-    toast.success(`${filtered.value.length} Zeilen kopiert.`)
+    toast.success(t('pages.logs.copied', { count: filtered.value.length }))
   } catch {
-    toast.error('Kopieren fehlgeschlagen.')
+    toast.error(t('pages.logs.copyFailed'))
   }
 }
 </script>
@@ -130,41 +131,41 @@ async function copyAll(): Promise<void> {
     <header class="flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-center gap-2">
         <FileText class="size-5 text-muted-foreground" />
-        <h2 class="text-base font-semibold">Logs</h2>
+        <h2 class="text-base font-semibold">{{ $t('pages.logs.title') }}</h2>
       </div>
       <div class="flex items-center gap-2">
         <UiButton
           size="sm"
           variant="outline"
           :disabled="loading || filtered.length === 0"
-          aria-label="Alle kopieren"
+          :aria-label="$t('pages.logs.copyAria')"
           data-testid="logs-copy"
           @click="copyAll"
         >
           <Copy class="mr-1 size-4" />
-          Kopieren
+          {{ $t('pages.logs.copy') }}
         </UiButton>
         <UiButton
           size="sm"
           variant="outline"
           :aria-pressed="wrap"
-          :title="wrap ? 'Zeilenumbruch aus' : 'Zeilenumbruch an'"
+          :title="wrap ? $t('pages.logs.wrapOff') : $t('pages.logs.wrapOn')"
           data-testid="logs-wrap"
           @click="wrap = !wrap"
         >
           <WrapText class="mr-1 size-4" />
-          Wrap
+          {{ $t('pages.logs.wrap') }}
         </UiButton>
         <UiButton
           size="sm"
           variant="outline"
           :disabled="loading"
-          aria-label="Neu laden"
+          :aria-label="$t('common.reload')"
           data-testid="logs-refresh"
           @click="load"
         >
           <RefreshCcw class="mr-1 size-4" />
-          Neu laden
+          {{ $t('common.reload') }}
         </UiButton>
       </div>
     </header>
@@ -174,7 +175,7 @@ async function copyAll(): Promise<void> {
       <div
         class="inline-flex rounded-md border bg-background p-0.5"
         role="group"
-        aria-label="Schweregrad"
+        :aria-label="$t('pages.logs.severityAria')"
         data-testid="logs-level"
       >
         <button
@@ -198,7 +199,7 @@ async function copyAll(): Promise<void> {
       <div
         class="inline-flex rounded-md border bg-background p-0.5"
         role="group"
-        aria-label="Anzahl Zeilen"
+        :aria-label="$t('pages.logs.lineCountAria')"
         data-testid="logs-tail"
       >
         <button
@@ -223,8 +224,8 @@ async function copyAll(): Promise<void> {
         v-model="search"
         type="search"
         class="h-8 flex-1 min-w-48 rounded-md border bg-background px-3 text-xs"
-        placeholder="Suche (Substring)…"
-        aria-label="Logs durchsuchen"
+        :placeholder="$t('pages.logs.searchPlaceholder')"
+        :aria-label="$t('pages.logs.searchAria')"
         data-testid="logs-search"
       />
     </div>
@@ -235,9 +236,7 @@ async function copyAll(): Promise<void> {
       class="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-400"
       data-testid="logs-disabled"
     >
-      Log-Tailing ist nicht aktiv. Setze <code class="font-mono">HERMES_LOG_FILE</code>
-      (z. B. <code class="font-mono">/var/log/hermes/agent.log</code>), starte den
-      Backend-Container neu — dann lädt diese Seite die letzten Strukturlog-Zeilen.
+      {{ $t('pages.logs.disabled.before') }}<code class="font-mono">HERMES_LOG_FILE</code>{{ $t('pages.logs.disabled.middle') }}<code class="font-mono">/var/log/hermes/agent.log</code>{{ $t('pages.logs.disabled.after') }}
     </p>
 
     <p
@@ -252,7 +251,7 @@ async function copyAll(): Promise<void> {
       v-else-if="loading && rows.length === 0"
       class="text-xs text-muted-foreground"
     >
-      Lädt…
+      {{ $t('common.loading') }}
     </p>
 
     <p
@@ -260,7 +259,7 @@ async function copyAll(): Promise<void> {
       class="text-xs text-muted-foreground"
       data-testid="logs-no-match"
     >
-      Keine Treffer für „{{ search }}".
+      {{ $t('pages.logs.noMatch', { search }) }}
     </p>
 
     <p
@@ -268,7 +267,7 @@ async function copyAll(): Promise<void> {
       class="text-xs text-muted-foreground"
       data-testid="logs-empty"
     >
-      Noch keine Zeilen im Log-File.
+      {{ $t('pages.logs.empty') }}
     </p>
 
     <!-- ── Tail ────────────────────────────────────────────────── -->

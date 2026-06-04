@@ -19,6 +19,7 @@ import type { Note, NoteCreate, NoteUpdate } from '~/types/api'
 
 const api = useApi()
 const { confirm } = useConfirm()
+const { t } = useI18n()
 
 type Mode = 'empty' | 'read' | 'edit'
 
@@ -65,7 +66,7 @@ async function load() {
     }
   } catch (err: unknown) {
     loadError.value =
-      err instanceof Error ? err.message : 'Fehler beim Laden.'
+      err instanceof Error ? err.message : t('pages.memory.errors.load')
   } finally {
     loading.value = false
   }
@@ -141,7 +142,7 @@ function cancelEdit() {
 async function save() {
   const content = formContent.value
   if (!content.trim()) {
-    formError.value = 'Inhalt darf nicht leer sein.'
+    formError.value = t('pages.memory.form.contentRequired')
     return
   }
   saving.value = true
@@ -150,7 +151,7 @@ async function save() {
     if (isCreating.value) {
       const key = formKey.value.trim()
       if (!key) {
-        formError.value = 'Key ist erforderlich.'
+        formError.value = t('pages.memory.form.keyRequired')
         return
       }
       const body: NoteCreate = {
@@ -174,7 +175,7 @@ async function save() {
     mode.value = 'read'
   } catch (err: unknown) {
     formError.value =
-      err instanceof Error ? err.message : 'Fehler beim Speichern.'
+      err instanceof Error ? err.message : t('pages.memory.errors.save')
   } finally {
     saving.value = false
   }
@@ -184,8 +185,8 @@ async function remove() {
   const note = selectedNote.value
   if (!note) return
   const ok = await confirm({
-    title: 'Notiz löschen?',
-    description: `"${note.key}" wird endgültig gelöscht.`,
+    title: t('pages.memory.deleteConfirm.title'),
+    description: t('pages.memory.deleteConfirm.description', { key: note.key }),
     destructive: true,
   })
   if (!ok) return
@@ -196,7 +197,7 @@ async function remove() {
     await load()
   } catch (err: unknown) {
     loadError.value =
-      err instanceof Error ? err.message : 'Fehler beim Löschen.'
+      err instanceof Error ? err.message : t('pages.memory.errors.delete')
   }
 }
 
@@ -224,12 +225,12 @@ onMounted(load)
       <header class="flex items-center justify-between gap-2 border-b p-3">
         <div class="flex items-center gap-2">
           <Brain class="size-4 text-muted-foreground" />
-          <h2 class="text-sm font-semibold">Personal memory</h2>
+          <h2 class="text-sm font-semibold">{{ $t('pages.memory.sidebarTitle') }}</h2>
         </div>
         <UiButton
           size="sm"
           variant="ghost"
-          aria-label="Neue Notiz"
+          :aria-label="$t('pages.memory.newNote')"
           @click="openCreate"
         >
           <Plus class="size-4" />
@@ -242,9 +243,9 @@ onMounted(load)
         />
         <UiInput
           v-model="search"
-          placeholder="Suchen…"
+          :placeholder="$t('pages.memory.searchPlaceholder')"
           class="h-8 pl-7 text-sm"
-          aria-label="Memory durchsuchen"
+          :aria-label="$t('pages.memory.searchAria')"
         />
       </div>
 
@@ -253,7 +254,7 @@ onMounted(load)
           v-if="loading"
           class="p-3 text-xs text-muted-foreground"
         >
-          Lädt…
+          {{ $t('common.loading') }}
         </p>
         <p
           v-else-if="loadError"
@@ -266,10 +267,10 @@ onMounted(load)
           class="p-3 text-xs text-muted-foreground"
         >
           <template v-if="debouncedSearch.trim()">
-            Keine Treffer für „{{ debouncedSearch }}".
+            {{ $t('pages.memory.noMatch', { query: debouncedSearch }) }}
           </template>
           <template v-else>
-            Noch keine Notizen.
+            {{ $t('pages.memory.empty') }}
           </template>
         </p>
         <ul v-else class="flex flex-col">
@@ -323,11 +324,11 @@ onMounted(load)
         <div class="min-w-0 flex-1">
           <template v-if="mode === 'empty'">
             <h2 class="text-sm font-semibold text-muted-foreground">
-              Memory
+              {{ $t('pages.memory.detailEmptyTitle') }}
             </h2>
           </template>
           <template v-else-if="mode === 'edit' && isCreating">
-            <h2 class="text-sm font-semibold">Neue Notiz</h2>
+            <h2 class="text-sm font-semibold">{{ $t('pages.memory.newNote') }}</h2>
           </template>
           <template v-else-if="selectedNote">
             <code
@@ -344,7 +345,7 @@ onMounted(load)
             <UiButton
               size="sm"
               variant="ghost"
-              aria-label="Bearbeiten"
+              :aria-label="$t('common.edit')"
               @click="openEdit"
             >
               <Pencil class="size-4" />
@@ -352,7 +353,7 @@ onMounted(load)
             <UiButton
               size="sm"
               variant="ghost"
-              aria-label="Löschen"
+              :aria-label="$t('common.delete')"
               @click="remove"
             >
               <Trash2 class="size-4" />
@@ -362,14 +363,14 @@ onMounted(load)
             <UiButton
               size="sm"
               variant="ghost"
-              aria-label="Abbrechen"
+              :aria-label="$t('common.cancel')"
               @click="cancelEdit"
             >
               <X class="size-4" />
             </UiButton>
             <UiButton
               size="sm"
-              aria-label="Speichern"
+              :aria-label="$t('common.save')"
               :disabled="saving"
               @click="save"
             >
@@ -387,9 +388,9 @@ onMounted(load)
           class="flex h-full flex-col items-center justify-center text-center text-muted-foreground"
         >
           <Brain class="mb-3 size-12 stroke-[1.25]" />
-          <p class="text-sm font-medium">Wähle eine Notiz</p>
+          <p class="text-sm font-medium">{{ $t('pages.memory.emptyTitle') }}</p>
           <p class="mt-1 text-xs">
-            Eine Notiz aus der Liste auswählen oder eine neue anlegen.
+            {{ $t('pages.memory.emptyHint') }}
           </p>
         </div>
 
@@ -422,20 +423,20 @@ onMounted(load)
         >
           <div class="flex flex-col gap-1">
             <label for="memoryKey" class="text-xs font-medium text-muted-foreground">
-              Key
+              {{ $t('pages.memory.form.key') }}
             </label>
             <UiInput
               id="memoryKey"
               v-model="formKey"
               :readonly="!isCreating"
               :disabled="!isCreating"
-              placeholder="z. B. project.holzi.status"
+              :placeholder="$t('pages.memory.form.keyPlaceholder')"
               class="font-mono text-sm"
             />
           </div>
           <div class="flex flex-col gap-1">
             <label for="memoryContent" class="text-xs font-medium text-muted-foreground">
-              Inhalt (Markdown)
+              {{ $t('pages.memory.form.content') }}
             </label>
             <UiTextarea
               id="memoryContent"
@@ -446,12 +447,12 @@ onMounted(load)
           </div>
           <div class="flex flex-col gap-1">
             <label for="memoryTags" class="text-xs font-medium text-muted-foreground">
-              Tags (kommagetrennt)
+              {{ $t('pages.memory.form.tags') }}
             </label>
             <UiInput
               id="memoryTags"
               v-model="formTags"
-              placeholder="z. B. hermes, status"
+              :placeholder="$t('pages.memory.form.tagsPlaceholder')"
             />
           </div>
           <p v-if="formError" class="text-sm text-destructive">{{ formError }}</p>

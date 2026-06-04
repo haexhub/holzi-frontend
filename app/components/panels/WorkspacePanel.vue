@@ -33,6 +33,8 @@ const props = withDefaults(
 const api = useApi()
 const { confirm } = useConfirm()
 const { prompt } = usePromptDialog()
+const { t } = useI18n()
+const localePath = useLocalePath()
 
 const roots = ref<WorkspaceRoot[]>([])
 const selectedRoot = ref<string>('')
@@ -116,7 +118,7 @@ function commitConvId(): string {
 }
 
 function humanSize(bytes: number | null | undefined): string {
-  if (bytes == null) return 'Größe unbekannt'
+  if (bytes == null) return t('components.workspacePanel.sizeUnknown')
   if (bytes < 1024) return `${bytes} B`
   const units = ['KiB', 'MiB', 'GiB', 'TiB']
   let value = bytes / 1024
@@ -182,7 +184,7 @@ async function loadRoots() {
       void loadGit()
     }
   } catch (err: unknown) {
-    rootsError.value = errorMessage(err, 'Fehler beim Laden der Workspaces.')
+    rootsError.value = errorMessage(err, t('components.workspacePanel.errors.rootsLoad'))
   } finally {
     rootsLoading.value = false
   }
@@ -205,13 +207,13 @@ async function loadTree() {
     if (seq !== treeSeq) return
     const status = errorStatus(err)
     if (status === 503) {
-      treeError.value = 'Workspace nicht verfügbar — Sandbox läuft nicht oder ist nicht konfiguriert.'
+      treeError.value = t('components.workspacePanel.errors.unavailable')
     } else if (status === 404) {
-      treeError.value = 'Pfad nicht gefunden.'
+      treeError.value = t('components.workspacePanel.errors.pathNotFound')
     } else if (status === 400) {
-      treeError.value = errorDetail(err) ?? 'Ungültiger Pfad.'
+      treeError.value = errorDetail(err) ?? t('components.workspacePanel.errors.invalidPath')
     } else {
-      treeError.value = errorMessage(err, 'Fehler beim Laden des Verzeichnisses.')
+      treeError.value = errorMessage(err, t('components.workspacePanel.errors.treeLoad'))
     }
   } finally {
     if (seq === treeSeq) treeLoading.value = false
@@ -241,13 +243,13 @@ async function loadFile(name: string) {
     if (seq !== fileSeq) return
     const status = errorStatus(err)
     if (status === 503) {
-      fileError.value = 'Workspace nicht verfügbar — Sandbox läuft nicht oder ist nicht konfiguriert.'
+      fileError.value = t('components.workspacePanel.errors.unavailable')
     } else if (status === 404) {
-      fileError.value = 'Datei nicht gefunden.'
+      fileError.value = t('components.workspacePanel.errors.fileNotFound')
     } else if (status === 400) {
-      fileError.value = errorDetail(err) ?? 'Ungültiger Pfad.'
+      fileError.value = errorDetail(err) ?? t('components.workspacePanel.errors.invalidPath')
     } else {
-      fileError.value = errorMessage(err, 'Fehler beim Laden der Datei.')
+      fileError.value = errorMessage(err, t('components.workspacePanel.errors.fileLoad'))
     }
   } finally {
     if (seq === fileSeq) fileLoading.value = false
@@ -271,10 +273,10 @@ async function loadGit() {
     // tree + preview functioning.
     const status = errorStatus(err)
     if (status === 503) {
-      gitError.value = 'Sandbox nicht verfügbar.'
+      gitError.value = t('components.workspacePanel.errors.sandboxUnavailable')
     } else {
       gitError.value =
-        errorDetail(err) ?? errorMessage(err, 'Git-Status nicht verfügbar.')
+        errorDetail(err) ?? errorMessage(err, t('components.workspacePanel.errors.gitUnavailable'))
     }
     gitStatus.value = null
   }
@@ -383,19 +385,18 @@ async function saveEdit() {
     if (res.committed === false) {
       // Successful write, just without a commit (root isn't a git repo).
       // A neutral notice — not an error.
-      saveNotice.value = 'Gespeichert (kein Git-Repo, kein Commit erstellt).'
+      saveNotice.value = t('components.workspacePanel.notices.savedNoCommit')
     }
   } catch (err: unknown) {
     const status = errorStatus(err)
     if (status === 409) {
-      saveError.value =
-        'Konflikt: Datei wurde auf der Festplatte geändert. Bitte neu laden und erneut bearbeiten.'
+      saveError.value = t('components.workspacePanel.errors.saveConflict')
     } else if (status === 400) {
-      saveError.value = errorDetail(err) ?? 'Ungültiger Inhalt.'
+      saveError.value = errorDetail(err) ?? t('components.workspacePanel.errors.invalidContent')
     } else if (status === 503) {
-      saveError.value = 'Workspace nicht verfügbar.'
+      saveError.value = t('components.workspacePanel.errors.workspaceUnavailable')
     } else {
-      saveError.value = errorMessage(err, 'Speichern fehlgeschlagen.')
+      saveError.value = errorMessage(err, t('components.workspacePanel.errors.saveFailed'))
     }
   } finally {
     saving.value = false
@@ -419,7 +420,7 @@ async function submitCreate() {
   if (!canWrite.value) return
   const path = createPath.value.trim()
   if (!path) {
-    createError.value = 'Pfad darf nicht leer sein.'
+    createError.value = t('components.workspacePanel.errors.pathEmpty')
     return
   }
   createSaving.value = true
@@ -437,13 +438,13 @@ async function submitCreate() {
   } catch (err: unknown) {
     const status = errorStatus(err)
     if (status === 409) {
-      createError.value = 'Pfad existiert bereits.'
+      createError.value = t('components.workspacePanel.errors.pathExists')
     } else if (status === 400) {
-      createError.value = errorDetail(err) ?? 'Ungültiger Pfad.'
+      createError.value = errorDetail(err) ?? t('components.workspacePanel.errors.invalidPath')
     } else if (status === 503) {
-      createError.value = 'Workspace nicht verfügbar.'
+      createError.value = t('components.workspacePanel.errors.workspaceUnavailable')
     } else {
-      createError.value = errorMessage(err, 'Anlegen fehlgeschlagen.')
+      createError.value = errorMessage(err, t('components.workspacePanel.errors.createFailed'))
     }
   } finally {
     createSaving.value = false
@@ -454,10 +455,10 @@ async function renameCurrent() {
   const preview = filePreview.value
   if (!preview || !canWrite.value) return
   const next = await prompt({
-    title: 'Datei umbenennen',
-    description: 'Neuer Pfad (relativ zur Workspace-Wurzel):',
+    title: t('components.workspacePanel.rename.title'),
+    description: t('components.workspacePanel.rename.description'),
     defaultValue: preview.path,
-    confirmLabel: 'Umbenennen',
+    confirmLabel: t('components.workspacePanel.rename.confirm'),
   })
   if (next == null) return
   const target = next.trim()
@@ -484,15 +485,15 @@ async function renameCurrent() {
   } catch (err: unknown) {
     const status = errorStatus(err)
     if (status === 409) {
-      fileError.value = 'Zielpfad existiert bereits.'
+      fileError.value = t('components.workspacePanel.errors.destExists')
     } else if (status === 400) {
-      fileError.value = errorDetail(err) ?? 'Ungültiger Pfad.'
+      fileError.value = errorDetail(err) ?? t('components.workspacePanel.errors.invalidPath')
     } else if (status === 404) {
-      fileError.value = 'Datei nicht gefunden.'
+      fileError.value = t('components.workspacePanel.errors.fileNotFound')
     } else if (status === 503) {
-      fileError.value = 'Workspace nicht verfügbar.'
+      fileError.value = t('components.workspacePanel.errors.workspaceUnavailable')
     } else {
-      fileError.value = errorMessage(err, 'Umbenennen fehlgeschlagen.')
+      fileError.value = errorMessage(err, t('components.workspacePanel.errors.renameFailed'))
     }
   }
 }
@@ -503,8 +504,8 @@ async function deleteCurrent() {
   // Destructive — always confirm. Plan 13 explicitly calls out "Require
   // confirmations for destructive operations."
   const ok = await confirm({
-    title: 'Datei löschen?',
-    description: `"${preview.path}" wird endgültig gelöscht.`,
+    title: t('components.workspacePanel.delete.title'),
+    description: t('components.workspacePanel.delete.description', { path: preview.path }),
     destructive: true,
   })
   if (!ok) return
@@ -521,13 +522,13 @@ async function deleteCurrent() {
   } catch (err: unknown) {
     const status = errorStatus(err)
     if (status === 404) {
-      fileError.value = 'Datei nicht gefunden.'
+      fileError.value = t('components.workspacePanel.errors.fileNotFound')
     } else if (status === 400) {
-      fileError.value = errorDetail(err) ?? 'Ungültiger Pfad.'
+      fileError.value = errorDetail(err) ?? t('components.workspacePanel.errors.invalidPath')
     } else if (status === 503) {
-      fileError.value = 'Workspace nicht verfügbar.'
+      fileError.value = t('components.workspacePanel.errors.workspaceUnavailable')
     } else {
-      fileError.value = errorMessage(err, 'Löschen fehlgeschlagen.')
+      fileError.value = errorMessage(err, t('components.workspacePanel.errors.deleteFailed'))
     }
   }
 }
@@ -553,14 +554,14 @@ onMounted(loadRoots)
 <template>
   <div class="flex h-full flex-col">
     <div class="flex items-center justify-between border-b p-3">
-      <h3 class="text-sm font-semibold">Workspace</h3>
+      <h3 class="text-sm font-semibold">{{ $t('components.workspacePanel.title') }}</h3>
       <div class="flex items-center gap-1">
         <UiButton
           v-if="roots.length > 0 && canWrite"
           size="sm"
           variant="ghost"
           :disabled="treeLoading || creating"
-          aria-label="Neue Datei"
+          :aria-label="$t('components.workspacePanel.newFileAria')"
           @click="startCreating"
         >
           <Plus class="size-3.5" />
@@ -570,7 +571,7 @@ onMounted(loadRoots)
           size="sm"
           variant="ghost"
           :disabled="treeLoading || fileLoading"
-          aria-label="Aktualisieren"
+          :aria-label="$t('common.refresh')"
           @click="refresh"
         >
           <RefreshCw
@@ -581,18 +582,18 @@ onMounted(loadRoots)
       </div>
     </div>
 
-    <div v-if="rootsLoading" class="p-3 text-sm text-muted-foreground">Lädt…</div>
+    <div v-if="rootsLoading" class="p-3 text-sm text-muted-foreground">{{ $t('common.loading') }}</div>
     <div v-else-if="rootsError" class="p-3 text-sm text-destructive">{{ rootsError }}</div>
     <div
       v-else-if="roots.length === 0"
       class="p-3 text-sm text-muted-foreground"
     >
-      Keine Workspaces angelegt.
+      {{ $t('components.workspacePanel.noWorkspaces') }}
       <NuxtLink
-        to="/settings/workspaces"
+        :to="localePath('/settings/workspaces')"
         class="text-primary underline-offset-2 hover:underline"
       >
-        Im Control Center anlegen
+        {{ $t('components.workspacePanel.createInControlCenter') }}
       </NuxtLink>.
     </div>
 
@@ -615,10 +616,10 @@ onMounted(loadRoots)
             v-if="gitStatus.dirty"
             type="button"
             class="rounded bg-amber-500/15 px-1.5 py-0.5 font-medium text-amber-700 hover:bg-amber-500/25 dark:text-amber-300"
-            :title="`${gitStatus.entries.length} geänderte Datei(en) — Git-Tab öffnen`"
+            :title="$t('components.workspacePanel.dirtyTitle', { count: gitStatus.entries.length })"
             @click="activeTab = 'git'"
-          >dirty</button>
-          <span v-else class="text-emerald-700 dark:text-emerald-300">clean</span>
+          >{{ $t('components.workspacePanel.dirty') }}</button>
+          <span v-else class="text-emerald-700 dark:text-emerald-300">{{ $t('components.workspacePanel.clean') }}</span>
         </div>
         <div v-else-if="gitError" class="text-xs text-muted-foreground">
           {{ gitError }}
@@ -639,7 +640,7 @@ onMounted(loadRoots)
           "
           @click="activeTab = 'files'"
         >
-          Dateien
+          {{ $t('components.workspacePanel.tabs.files') }}
         </button>
         <button
           type="button"
@@ -653,7 +654,7 @@ onMounted(loadRoots)
           "
           @click="activeTab = 'git'"
         >
-          Git
+          {{ $t('components.workspacePanel.tabs.git') }}
         </button>
       </div>
 
@@ -683,12 +684,12 @@ onMounted(loadRoots)
           class="rounded-md border bg-muted/30 p-2 text-xs"
         >
           <label class="block">
-            <span class="text-muted-foreground">Neue Datei (relativer Pfad):</span>
+            <span class="text-muted-foreground">{{ $t('components.workspacePanel.createLabel') }}</span>
             <input
               v-model="createPath"
               type="text"
               class="mt-1 w-full rounded border bg-background px-2 py-1 font-mono"
-              placeholder="src/new.py"
+              :placeholder="$t('components.workspacePanel.createPlaceholder')"
               :disabled="createSaving"
               @keydown.enter.prevent="submitCreate"
               @keydown.esc.prevent="cancelCreating"
@@ -702,10 +703,10 @@ onMounted(loadRoots)
               :disabled="createSaving"
               @click="cancelCreating"
             >
-              Abbrechen
+              {{ $t('common.cancel') }}
             </UiButton>
             <UiButton size="sm" :disabled="createSaving" @click="submitCreate">
-              Anlegen
+              {{ $t('components.workspacePanel.createSubmit') }}
             </UiButton>
           </div>
         </div>
@@ -713,18 +714,18 @@ onMounted(loadRoots)
           v-if="!canWrite"
           class="text-xs text-muted-foreground"
         >
-          Wähle eine Konversation, um Dateien zu bearbeiten.
+          {{ $t('components.workspacePanel.noConversation') }}
         </p>
       </div>
 
       <div class="flex-1 overflow-y-auto border-b">
-        <p v-if="treeLoading" class="p-3 text-sm text-muted-foreground">Lädt…</p>
+        <p v-if="treeLoading" class="p-3 text-sm text-muted-foreground">{{ $t('common.loading') }}</p>
         <p v-else-if="treeError" class="p-3 text-sm text-destructive">{{ treeError }}</p>
         <p
           v-else-if="sortedEntries.length === 0"
           class="p-3 text-sm text-muted-foreground"
         >
-          Ordner ist leer.
+          {{ $t('components.workspacePanel.emptyFolder') }}
         </p>
         <ul v-else class="divide-y">
           <li
@@ -752,13 +753,13 @@ onMounted(loadRoots)
         class="flex h-1/2 min-h-[160px] flex-col overflow-hidden"
         aria-live="polite"
       >
-        <div v-if="fileLoading" class="p-3 text-sm text-muted-foreground">Lädt…</div>
+        <div v-if="fileLoading" class="p-3 text-sm text-muted-foreground">{{ $t('common.loading') }}</div>
         <div v-else-if="fileError" class="p-3 text-sm text-destructive">{{ fileError }}</div>
         <div
           v-else-if="!filePreview"
           class="p-3 text-sm text-muted-foreground"
         >
-          Datei auswählen…
+          {{ $t('components.workspacePanel.selectFile') }}
         </div>
         <template v-else>
           <div class="flex items-center justify-between gap-2 border-b px-3 py-2 text-xs text-muted-foreground">
@@ -769,7 +770,7 @@ onMounted(loadRoots)
                 v-if="canEditCurrent && !editing"
                 size="sm"
                 variant="ghost"
-                aria-label="Bearbeiten"
+                :aria-label="$t('common.edit')"
                 @click="startEditing"
               >
                 <Pencil class="size-3.5" />
@@ -778,7 +779,7 @@ onMounted(loadRoots)
                 v-if="canWrite && !editing"
                 size="sm"
                 variant="ghost"
-                aria-label="Umbenennen"
+                :aria-label="$t('components.workspacePanel.renameAria')"
                 @click="renameCurrent"
               >
                 <File class="size-3.5" />
@@ -787,7 +788,7 @@ onMounted(loadRoots)
                 v-if="canWrite && !editing"
                 size="sm"
                 variant="ghost"
-                aria-label="Löschen"
+                :aria-label="$t('common.delete')"
                 class="text-destructive hover:text-destructive"
                 @click="deleteCurrent"
               >
@@ -799,7 +800,7 @@ onMounted(loadRoots)
             v-if="filePreview.truncated && !editing"
             class="border-b bg-muted px-3 py-1 text-xs text-muted-foreground"
           >
-            Vorschau gekürzt — Datei ist größer als 256 KiB.
+            {{ $t('components.workspacePanel.truncated') }}
           </div>
           <div
             v-if="saveError"
@@ -827,10 +828,10 @@ onMounted(loadRoots)
                 :disabled="saving"
                 @click="cancelEditing"
               >
-                Abbrechen
+                {{ $t('common.cancel') }}
               </UiButton>
               <UiButton size="sm" :disabled="saving" @click="saveEdit">
-                {{ saving ? 'Speichert…' : 'Speichern' }}
+                {{ saving ? $t('components.workspacePanel.saving') : $t('common.save') }}
               </UiButton>
             </div>
           </div>
@@ -856,7 +857,7 @@ onMounted(loadRoots)
             <div v-else class="p-3 text-sm text-muted-foreground">
               <p class="font-mono">{{ filePreview.name }}</p>
               <p class="mt-1">{{ humanSize(filePreview.size) }}</p>
-              <p class="mt-2">Vorschau nicht verfügbar (Binärdatei).</p>
+              <p class="mt-2">{{ $t('components.workspacePanel.binaryPreview') }}</p>
             </div>
           </div>
         </template>

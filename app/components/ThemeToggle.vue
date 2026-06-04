@@ -6,6 +6,7 @@ import { Moon, Sun } from 'lucide-vue-next'
 // always reflects what's actually on screen.
 const colorMode = useColorMode()
 const isDark = computed(() => colorMode.state.value === 'dark')
+const { t } = useI18n()
 
 function toggle() {
   colorMode.value = isDark.value ? 'light' : 'dark'
@@ -16,7 +17,7 @@ function toggle() {
   <UiButton
     size="sm"
     variant="ghost"
-    :aria-label="isDark ? 'Light-Mode' : 'Dark-Mode'"
+    :aria-label="isDark ? t('components.themeToggle.toLight') : t('components.themeToggle.toDark')"
     :aria-pressed="isDark"
     @click="toggle"
   >

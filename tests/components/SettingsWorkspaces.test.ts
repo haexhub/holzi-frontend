@@ -1,5 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
+
+// workspaces.vue calls useI18n() in setup for prompt/confirm/toast copy and
+// the sandbox-state labels; the bare mount has no i18n plugin so useI18n
+// would throw without the importOriginal-preserving mock. t() passes the key
+// through (and interpolation params are dropped, which the assertions allow).
+vi.mock('vue-i18n', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('vue-i18n')>()
+  return {
+    ...orig,
+    useI18n: () => ({ t: (key: string) => key }),
+  }
+})
+
 import WorkspacesPage from '~/pages/settings/workspaces.vue'
 import type { Workspace } from '~/types/api'
 
@@ -77,8 +90,8 @@ describe('settings/workspaces.vue', () => {
     await flushPromises()
 
     expect(apiGet).toHaveBeenCalledWith('/api/workspaces', undefined)
-    expect(wrapper.text()).toContain('Wähle einen Workspace')
-    expect(wrapper.text()).toContain('Noch keine Workspaces')
+    expect(wrapper.text()).toContain('pages.workspaces.emptyTitle')
+    expect(wrapper.text()).toContain('pages.workspaces.emptyList')
   })
 
   it('lists workspaces with display name, slug, and dirty-git badge', async () => {
@@ -100,7 +113,7 @@ describe('settings/workspaces.vue', () => {
     expect(text).toContain('project-a')
     expect(text).toContain('42 MiB')
     expect(text).toContain('main')
-    expect(text).toContain('dirty')
+    expect(text).toContain('pages.workspaces.list.dirty')
   })
 
   it('opens the detail pane on click and shows sandbox status', async () => {
@@ -120,7 +133,7 @@ describe('settings/workspaces.vue', () => {
     expect(wrapper.get('[data-testid="workspace-detail-title"]').text()).toBe(
       'WS 1',
     )
-    expect(wrapper.text()).toContain('Sandbox läuft')
+    expect(wrapper.text()).toContain('pages.workspaces.sandbox.states.running')
   })
 
   it('creates a workspace via the prompt dialog and reloads the list', async () => {

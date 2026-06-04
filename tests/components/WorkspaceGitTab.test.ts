@@ -1,5 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
+
+// WorkspaceGitTab calls useI18n() in setup for toast/error/section copy; the
+// bare mount has no i18n plugin so useI18n would throw without the
+// importOriginal-preserving mock. t() passes the key through (interpolation
+// params are dropped, which the assertions allow).
+vi.mock('vue-i18n', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('vue-i18n')>()
+  return {
+    ...orig,
+    useI18n: () => ({ t: (key: string) => key }),
+  }
+})
+
 import WorkspaceGitTab from '~/components/panels/WorkspaceGitTab.vue'
 import type {
   GitBranchesResponse,
@@ -129,8 +142,8 @@ describe('WorkspaceGitTab.vue', () => {
     })
     await flushPromises()
     const text = wrapper.text()
-    expect(text).toContain('Unstaged')
-    expect(text).toContain('Staged')
+    expect(text).toContain('components.workspaceGitTab.sections.unstaged')
+    expect(text).toContain('components.workspaceGitTab.sections.staged')
     expect(text).toContain('src/x.py')   // unstaged modify
     expect(text).toContain('tmp.txt')    // untracked → unstaged
     expect(text).toContain('docs/new.md') // staged
@@ -146,7 +159,7 @@ describe('WorkspaceGitTab.vue', () => {
     await flushPromises()
     const stageBtn = wrapper
       .findAll('button')
-      .find((b) => b.attributes('aria-label') === 'Stage')
+      .find((b) => b.attributes('aria-label') === 'components.workspaceGitTab.stageAria')
     expect(stageBtn).toBeTruthy()
     await stageBtn!.trigger('click')
     await flushPromises()
@@ -166,7 +179,7 @@ describe('WorkspaceGitTab.vue', () => {
     await flushPromises()
     const unstageBtn = wrapper
       .findAll('button')
-      .find((b) => b.attributes('aria-label') === 'Unstage')
+      .find((b) => b.attributes('aria-label') === 'components.workspaceGitTab.unstageAria')
     expect(unstageBtn).toBeTruthy()
     await unstageBtn!.trigger('click')
     await flushPromises()
@@ -223,7 +236,7 @@ describe('WorkspaceGitTab.vue', () => {
     })
     await flushPromises()
 
-    const commitBtn = wrapper.findAll('button').find((b) => b.text().startsWith('Commit'))
+    const commitBtn = wrapper.findAll('button').find((b) => b.text().startsWith('components.workspaceGitTab.commit'))
     expect(commitBtn).toBeTruthy()
     // Message empty → disabled.
     expect(commitBtn!.attributes('disabled')).toBeDefined()
@@ -268,7 +281,7 @@ describe('WorkspaceGitTab.vue', () => {
     })
     expect(toastError).toHaveBeenCalled()
     const arg = toastError.mock.calls[0]![0] as string
-    expect(arg.toLowerCase()).toContain('ungesicherte')
+    expect(arg).toContain('components.workspaceGitTab.errors.checkoutConflict')
   })
 
   it('"Neuen Branch erstellen…" prompts and POSTs with create:true', async () => {
@@ -311,13 +324,13 @@ describe('WorkspaceGitTab.vue', () => {
     })
     await flushPromises()
 
-    const pullBtn = wrapper.findAll('button').find((b) => b.text().includes('Pull'))
+    const pullBtn = wrapper.findAll('button').find((b) => b.text().includes('components.workspaceGitTab.pull'))
     expect(pullBtn).toBeTruthy()
     await pullBtn!.trigger('click')
     await flushPromises()
 
     const text = wrapper.text()
-    expect(text).toContain('Konflikte manuell auflösen')
+    expect(text).toContain('components.workspaceGitTab.pullConflicts')
     expect(text).toContain('README.md')
     expect(text).toContain('src/x.py')
   })
@@ -418,12 +431,12 @@ describe('WorkspaceGitTab.vue', () => {
     // Stage the same file.
     const stageBtn = wrapper
       .findAll('button')
-      .find((b) => b.attributes('aria-label') === 'Stage')
+      .find((b) => b.attributes('aria-label') === 'components.workspaceGitTab.stageAria')
     await stageBtn!.trigger('click')
     await flushPromises()
 
     // Selection cleared, diff header reverts to the placeholder.
-    expect(wrapper.text()).toContain('Datei für Diff auswählen…')
+    expect(wrapper.text()).toContain('components.workspaceGitTab.diffSelectPrompt')
   })
 
   it('discard 403 surfaces the destructive-flag hint via toast.error', async () => {
@@ -445,13 +458,13 @@ describe('WorkspaceGitTab.vue', () => {
 
     const discardBtn = wrapper
       .findAll('button')
-      .find((b) => b.attributes('aria-label') === 'Verwerfen')
+      .find((b) => b.attributes('aria-label') === 'components.workspaceGitTab.discardAria')
     expect(discardBtn).toBeTruthy()
     await discardBtn!.trigger('click')
     await flushPromises()
 
     expect(toastError).toHaveBeenCalled()
     const arg = toastError.mock.calls[0]![0] as string
-    expect(arg).toContain('HERMES_WORKSPACE_GIT_DESTRUCTIVE')
+    expect(arg).toContain('components.workspaceGitTab.errors.discardDisabled')
   })
 })

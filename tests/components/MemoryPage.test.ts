@@ -1,5 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
+
+// memory.vue calls useI18n() in setup for confirm/error/validation copy;
+// the bare mount has no i18n plugin so useI18n would throw without the
+// importOriginal-preserving mock. t() is a passthrough on the key.
+vi.mock('vue-i18n', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('vue-i18n')>()
+  return {
+    ...orig,
+    useI18n: () => ({ t: (key: string) => key }),
+  }
+})
+
 import MemoryPage from '~/pages/settings/memory.vue'
 import type { Note } from '~/types/api'
 
@@ -66,8 +78,8 @@ describe('settings/memory.vue', () => {
     await flushPromises()
 
     expect(apiGet).toHaveBeenCalledWith('/api/notes', undefined)
-    expect(wrapper.text()).toContain('Wähle eine Notiz')
-    expect(wrapper.text()).toContain('Noch keine Notizen')
+    expect(wrapper.text()).toContain('pages.memory.emptyTitle')
+    expect(wrapper.text()).toContain('pages.memory.empty')
   })
 
   it('lists notes in the sidebar with key, preview, and tags', async () => {
@@ -107,7 +119,7 @@ describe('settings/memory.vue', () => {
     await flushPromises()
     apiGet.mockClear()
 
-    const search = wrapper.find('input[aria-label="Memory durchsuchen"]')
+    const search = wrapper.find('input[aria-label="pages.memory.searchAria"]')
     await search.setValue('stand')
     await search.setValue('standup')
     expect(apiGet).not.toHaveBeenCalled()
@@ -124,7 +136,7 @@ describe('settings/memory.vue', () => {
     const wrapper = mount(MemoryPage, { global: { stubs } })
     await flushPromises()
 
-    const search = wrapper.find('input[aria-label="Memory durchsuchen"]')
+    const search = wrapper.find('input[aria-label="pages.memory.searchAria"]')
     await search.setValue('foo')
     vi.advanceTimersByTime(250)
     await flushPromises()
@@ -145,13 +157,13 @@ describe('settings/memory.vue', () => {
     const wrapper = mount(MemoryPage, { global: { stubs } })
     await flushPromises()
 
-    await wrapper.get('button[aria-label="Neue Notiz"]').trigger('click')
+    await wrapper.get('button[aria-label="pages.memory.newNote"]').trigger('click')
 
     await wrapper.find('#memoryKey').setValue('k')
     await wrapper.find('#memoryContent').setValue('v')
     await wrapper.find('#memoryTags').setValue('t1, t2')
 
-    await wrapper.get('button[aria-label="Speichern"]').trigger('click')
+    await wrapper.get('button[aria-label="common.save"]').trigger('click')
     await flushPromises()
 
     expect(apiPost).toHaveBeenCalledWith('/api/notes', {
@@ -174,12 +186,12 @@ describe('settings/memory.vue', () => {
     await flushPromises()
 
     await wrapper.get('[data-testid="memory-item-k"]').trigger('click')
-    await wrapper.get('button[aria-label="Bearbeiten"]').trigger('click')
+    await wrapper.get('button[aria-label="common.edit"]').trigger('click')
 
     await wrapper.find('#memoryContent').setValue('new')
     await wrapper.find('#memoryTags').setValue('a, b')
 
-    await wrapper.get('button[aria-label="Speichern"]').trigger('click')
+    await wrapper.get('button[aria-label="common.save"]').trigger('click')
     await flushPromises()
 
     expect(apiPut).toHaveBeenCalledWith('/api/notes/k', {
@@ -195,7 +207,7 @@ describe('settings/memory.vue', () => {
     await flushPromises()
 
     await wrapper.get('[data-testid="memory-item-k"]').trigger('click')
-    await wrapper.get('button[aria-label="Bearbeiten"]').trigger('click')
+    await wrapper.get('button[aria-label="common.edit"]').trigger('click')
 
     const keyInput = wrapper.find<HTMLInputElement>('#memoryKey')
     expect(keyInput.element.readOnly).toBe(true)
@@ -208,10 +220,10 @@ describe('settings/memory.vue', () => {
     await flushPromises()
 
     await wrapper.get('[data-testid="memory-item-k"]').trigger('click')
-    await wrapper.get('button[aria-label="Bearbeiten"]').trigger('click')
+    await wrapper.get('button[aria-label="common.edit"]').trigger('click')
     await wrapper.find('#memoryContent').setValue('mutated')
 
-    await wrapper.get('button[aria-label="Abbrechen"]').trigger('click')
+    await wrapper.get('button[aria-label="common.cancel"]').trigger('click')
     await flushPromises()
 
     expect(apiPut).not.toHaveBeenCalled()
@@ -228,12 +240,12 @@ describe('settings/memory.vue', () => {
     await flushPromises()
 
     await wrapper.get('[data-testid="memory-item-foo bar"]').trigger('click')
-    await wrapper.get('button[aria-label="Löschen"]').trigger('click')
+    await wrapper.get('button[aria-label="common.delete"]').trigger('click')
     await flushPromises()
 
     expect(confirmFn).toHaveBeenCalled()
     expect(apiDelete.mock.calls[0]?.[0]).toBe('/api/notes/foo%20bar')
-    expect(wrapper.text()).toContain('Wähle eine Notiz')
+    expect(wrapper.text()).toContain('pages.memory.emptyTitle')
   })
 
   it('does not delete when the user cancels the confirm', async () => {
@@ -244,7 +256,7 @@ describe('settings/memory.vue', () => {
     await flushPromises()
 
     await wrapper.get('[data-testid="memory-item-k"]').trigger('click')
-    await wrapper.get('button[aria-label="Löschen"]').trigger('click')
+    await wrapper.get('button[aria-label="common.delete"]').trigger('click')
     await flushPromises()
 
     expect(confirmFn).toHaveBeenCalled()
@@ -257,22 +269,22 @@ describe('settings/memory.vue', () => {
     await flushPromises()
 
     await wrapper.get('[data-testid="memory-item-k"]').trigger('click')
-    await wrapper.get('button[aria-label="Bearbeiten"]').trigger('click')
+    await wrapper.get('button[aria-label="common.edit"]').trigger('click')
 
     // Simulate a search-triggered reload that drops the active selection
     // while the user is still in edit mode (the load() stale-guard only
     // resets when mode !== 'edit', so this state is reachable).
     apiGet.mockResolvedValueOnce([])
-    const search = wrapper.find('input[aria-label="Memory durchsuchen"]')
+    const search = wrapper.find('input[aria-label="pages.memory.searchAria"]')
     await search.setValue('nomatch')
     vi.advanceTimersByTime(250)
     await flushPromises()
 
-    await wrapper.get('button[aria-label="Abbrechen"]').trigger('click')
+    await wrapper.get('button[aria-label="common.cancel"]').trigger('click')
     await flushPromises()
 
     expect(wrapper.find('[data-testid="memory-detail-title"]').exists()).toBe(false)
-    expect(wrapper.text()).toContain('Wähle eine Notiz')
+    expect(wrapper.text()).toContain('pages.memory.emptyTitle')
   })
 
   it('falls back to empty-state when the selection is filtered out of the list', async () => {
@@ -288,13 +300,13 @@ describe('settings/memory.vue', () => {
     // doesn't contain the active selection, the detail pane should drop
     // back to the empty-state (no orphaned action buttons).
     apiGet.mockResolvedValueOnce([])
-    const search = wrapper.find('input[aria-label="Memory durchsuchen"]')
+    const search = wrapper.find('input[aria-label="pages.memory.searchAria"]')
     await search.setValue('nomatch')
     vi.advanceTimersByTime(250)
     await flushPromises()
 
     expect(wrapper.find('[data-testid="memory-detail-title"]').exists()).toBe(false)
-    expect(wrapper.text()).toContain('Wähle eine Notiz')
+    expect(wrapper.text()).toContain('pages.memory.emptyTitle')
   })
 
   it('surfaces load errors in the sidebar', async () => {
