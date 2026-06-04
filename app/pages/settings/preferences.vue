@@ -852,19 +852,19 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
               </div>
             </div>
             <div class="flex flex-col gap-2">
-              <div v-if="persona.soul.trim()" class="flex flex-col gap-0.5">
+              <div v-if="persona.soul" class="flex flex-col gap-0.5">
                 <span class="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                   {{ $t('pages.preferences.personas.fragments.soul.label') }}
                 </span>
                 <pre class="line-clamp-2 whitespace-pre-wrap font-mono text-xs text-muted-foreground">{{ persona.soul }}</pre>
               </div>
-              <div v-if="persona.identity.trim()" class="flex flex-col gap-0.5">
+              <div v-if="persona.identity" class="flex flex-col gap-0.5">
                 <span class="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                   {{ $t('pages.preferences.personas.fragments.identity.label') }}
                 </span>
                 <pre class="line-clamp-2 whitespace-pre-wrap font-mono text-xs text-muted-foreground">{{ persona.identity }}</pre>
               </div>
-              <div v-if="persona.agents.trim()" class="flex flex-col gap-0.5">
+              <div v-if="persona.agents" class="flex flex-col gap-0.5">
                 <span class="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                   {{ $t('pages.preferences.personas.fragments.agents.label') }}
                 </span>
