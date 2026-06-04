@@ -8,7 +8,8 @@
     "loading": "Lädt…",
     "error": "Fehler",
     "retry": "Erneut versuchen",
-    "confirm": "Bestätigen"
+    "confirm": "Bestätigen",
+    "back": "Zurück"
   },
   "nav": {
     "preferences": { "label": "Preferences" },
@@ -16,10 +17,14 @@
     "memory": { "label": "Memory" },
     "tasks": { "label": "Tasks" },
     "workspaces": { "label": "Workspaces" },
-    "skills": { "label": "Skills" },
+    "skills": { "label": "Skills & Tools" },
     "diagnostics": { "label": "Diagnose" },
     "insights": { "label": "Insights" },
-    "logs": { "label": "Logs" }
+    "logs": { "label": "Logs" },
+    "aria": {
+      "desktop": "Control Center (Desktop)",
+      "mobile": "Control Center (Mobil)"
+    }
   },
   "errors": {
     "GENERIC": "Etwas ist schiefgelaufen.",
@@ -27,6 +32,13 @@
     "UNKNOWN": "Unbekannter Fehler."
   },
   "pages": {
+    "settings": {
+      "title": "Control Center",
+      "subtitle": "Provider, Messenger und sonstige Konfiguration des Agents.",
+      "placeholder": {
+        "notImplemented": "Diese Sektion ist noch nicht implementiert."
+      }
+    },
     "preferences": {
       "language": {
         "title": "Sprache",
@@ -35,6 +47,66 @@
         "options": {
           "de": "Deutsch",
           "en": "Englisch"
+        }
+      },
+      "personas": {
+        "title": "Personas",
+        "subtitle": "Wer der Agent ist — Identität und Stil.",
+        "newButton": "Neue Persona",
+        "form": {
+          "name": "Name",
+          "namePlaceholder": "z. B. Hermes der Direkte",
+          "prompt": "Prompt (Identität + Stil)",
+          "promptShort": "Prompt",
+          "isDefault": "Als globale Default-Persona setzen",
+          "isDefaultShort": "Default-Persona"
+        },
+        "defaultBadge": "Default",
+        "editAria": "Bearbeiten",
+        "deleteAria": "Löschen",
+        "setDefault": "Als Default setzen",
+        "deleteConfirm": {
+          "title": "Persona löschen?",
+          "description": "„{name}\" wird endgültig gelöscht."
+        },
+        "errors": {
+          "nameRequired": "Name und Prompt sind erforderlich.",
+          "duplicate": "Name bereits vergeben.",
+          "invalidInput": "Eingabe ungültig.",
+          "generic": "Fehler.",
+          "load": "Fehler beim Laden.",
+          "skillUpdate": "Fehler beim Aktualisieren der Skills."
+        },
+        "skills": {
+          "heading": "Aktive Skills",
+          "empty": "keine Skills aktiv",
+          "addPlaceholder": "+ Skill hinzufügen…",
+          "allAttached": "Alle vorhandenen Skills sind bereits hinzugefügt.",
+          "noneExist": "Noch keine Skills angelegt —",
+          "createLink": "Skill anlegen",
+          "tooltips": {
+            "active": "Aktiv — fließt in den System-Prompt",
+            "disabled": "Deaktiviert — bleibt verknüpft, ohne in den Prompt zu fließen"
+          },
+          "aria": {
+            "up": "Nach oben verschieben",
+            "down": "Nach unten verschieben",
+            "remove": "Skill entfernen"
+          }
+        }
+      },
+      "channels": {
+        "title": "Channels",
+        "subtitle": "Wie der Kanal sich verhält — Format, Länge, Ton.",
+        "defaultPromptBadge": "Default-Prompt",
+        "customPromptBadge": "Eigener Prompt",
+        "personaLabel": "Default-Persona für diesen Channel",
+        "personaGlobalOption": "— Globaler Default (is_default-Persona) —",
+        "promptLabel": "Channel-Prompt",
+        "resetButton": "Prompt zurücksetzen",
+        "resetConfirm": {
+          "title": "Prompt zurücksetzen?",
+          "description": "Der Channel-Prompt für „{label}\" wird auf den Default zurückgesetzt."
         }
       }
     },

@@ -195,7 +195,7 @@ describe('settings/preferences.vue', () => {
     )
   })
 
-  it('renders 409 from create as a German duplicate-name message', async () => {
+  it('renders 409 from create as a duplicate-name i18n key', async () => {
     mockInitialLoad()
     apiPost.mockRejectedValueOnce({ statusCode: 409, message: 'conflict' })
 
@@ -219,7 +219,7 @@ describe('settings/preferences.vue', () => {
 
     expect(
       wrapper.get('[data-testid="personas-form-error"]').text(),
-    ).toContain('Name bereits vergeben')
+    ).toContain('pages.preferences.personas.errors.duplicate')
   })
 
   it('promotes a non-default persona via "Als Default setzen"', async () => {
@@ -251,7 +251,7 @@ describe('settings/preferences.vue', () => {
     await vi.waitFor(() => {
       // Default badge has moved to persona 2.
       const card2 = wrapper.get('[data-testid="persona-card-2"]')
-      expect(card2.html()).toContain('Default')
+      expect(card2.find('[data-testid="persona-default-badge"]').exists()).toBe(true)
     })
   })
 

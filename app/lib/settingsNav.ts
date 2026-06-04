@@ -12,20 +12,23 @@ import {
 
 export interface SettingsNavItem {
   to: string
-  label: string
+  /** i18n key (resolved via `$t(labelKey)` in the template). Plan 30
+   *  Wave 0 Task 4a — labels live in `nav.<section>.label`. */
+  labelKey: string
   icon: Component
-  /** undefined for shipped sections, otherwise a short hint for the placeholder. */
-  upcoming?: string
+  /** undefined for shipped sections, otherwise the i18n key for the
+   *  placeholder hint. */
+  upcomingKey?: string
 }
 
 export const settingsNav: readonly SettingsNavItem[] = [
-  { to: '/settings/llm', label: 'LLM', icon: Cpu },
-  { to: '/settings/preferences', label: 'Preferences', icon: SlidersHorizontal },
-  { to: '/settings/memory', label: 'Memory', icon: Database },
-  { to: '/settings/tasks', label: 'Tasks', icon: ListChecks },
-  { to: '/settings/skills', label: 'Skills & Tools', icon: Wrench },
-  { to: '/settings/workspaces', label: 'Workspaces', icon: FolderTree },
-  { to: '/settings/diagnostics', label: 'Diagnostics', icon: Activity },
-  { to: '/settings/insights', label: 'Insights', icon: BarChart3 },
-  { to: '/settings/logs', label: 'Logs', icon: FileText },
+  { to: '/settings/llm', labelKey: 'nav.llm.label', icon: Cpu },
+  { to: '/settings/preferences', labelKey: 'nav.preferences.label', icon: SlidersHorizontal },
+  { to: '/settings/memory', labelKey: 'nav.memory.label', icon: Database },
+  { to: '/settings/tasks', labelKey: 'nav.tasks.label', icon: ListChecks },
+  { to: '/settings/skills', labelKey: 'nav.skills.label', icon: Wrench },
+  { to: '/settings/workspaces', labelKey: 'nav.workspaces.label', icon: FolderTree },
+  { to: '/settings/diagnostics', labelKey: 'nav.diagnostics.label', icon: Activity },
+  { to: '/settings/insights', labelKey: 'nav.insights.label', icon: BarChart3 },
+  { to: '/settings/logs', labelKey: 'nav.logs.label', icon: FileText },
 ] as const

@@ -8,7 +8,8 @@
     "loading": "Loading…",
     "error": "Error",
     "retry": "Retry",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "back": "Back"
   },
   "nav": {
     "preferences": { "label": "Preferences" },
@@ -16,10 +17,14 @@
     "memory": { "label": "Memory" },
     "tasks": { "label": "Tasks" },
     "workspaces": { "label": "Workspaces" },
-    "skills": { "label": "Skills" },
+    "skills": { "label": "Skills & Tools" },
     "diagnostics": { "label": "Diagnostics" },
     "insights": { "label": "Insights" },
-    "logs": { "label": "Logs" }
+    "logs": { "label": "Logs" },
+    "aria": {
+      "desktop": "Control Center (desktop)",
+      "mobile": "Control Center (mobile)"
+    }
   },
   "errors": {
     "GENERIC": "Something went wrong.",
@@ -27,6 +32,13 @@
     "UNKNOWN": "Unknown error."
   },
   "pages": {
+    "settings": {
+      "title": "Control Center",
+      "subtitle": "Provider, messenger and other agent configuration.",
+      "placeholder": {
+        "notImplemented": "This section is not yet implemented."
+      }
+    },
     "preferences": {
       "language": {
         "title": "Language",
@@ -35,6 +47,66 @@
         "options": {
           "de": "German",
           "en": "English"
+        }
+      },
+      "personas": {
+        "title": "Personas",
+        "subtitle": "Who the agent is — identity and tone.",
+        "newButton": "New persona",
+        "form": {
+          "name": "Name",
+          "namePlaceholder": "e.g. Hermes the Direct",
+          "prompt": "Prompt (identity + tone)",
+          "promptShort": "Prompt",
+          "isDefault": "Set as global default persona",
+          "isDefaultShort": "Default persona"
+        },
+        "defaultBadge": "Default",
+        "editAria": "Edit",
+        "deleteAria": "Delete",
+        "setDefault": "Set as default",
+        "deleteConfirm": {
+          "title": "Delete persona?",
+          "description": "\"{name}\" will be permanently deleted."
+        },
+        "errors": {
+          "nameRequired": "Name and prompt are required.",
+          "duplicate": "Name already taken.",
+          "invalidInput": "Invalid input.",
+          "generic": "Error.",
+          "load": "Failed to load.",
+          "skillUpdate": "Failed to update skills."
+        },
+        "skills": {
+          "heading": "Active skills",
+          "empty": "no skills active",
+          "addPlaceholder": "+ Add skill…",
+          "allAttached": "All available skills are already attached.",
+          "noneExist": "No skills exist yet —",
+          "createLink": "create a skill",
+          "tooltips": {
+            "active": "Active — flows into the system prompt",
+            "disabled": "Disabled — stays attached without flowing into the prompt"
+          },
+          "aria": {
+            "up": "Move up",
+            "down": "Move down",
+            "remove": "Remove skill"
+          }
+        }
+      },
+      "channels": {
+        "title": "Channels",
+        "subtitle": "How the channel behaves — format, length, tone.",
+        "defaultPromptBadge": "Default prompt",
+        "customPromptBadge": "Custom prompt",
+        "personaLabel": "Default persona for this channel",
+        "personaGlobalOption": "— Global default (is_default persona) —",
+        "promptLabel": "Channel prompt",
+        "resetButton": "Reset prompt",
+        "resetConfirm": {
+          "title": "Reset prompt?",
+          "description": "The channel prompt for \"{label}\" will be reset to the default."
         }
       }
     },

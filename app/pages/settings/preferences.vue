@@ -40,7 +40,8 @@ const { confirm } = useConfirm()
 // augmented method (does router navigation + cookie persistence). The
 // composition-API default scope returns a *local* composer that has no
 // setLocale — calling it would silently noop.
-const { locale, setLocale } = useI18n({ useScope: 'global' })
+const { t, locale, setLocale } = useI18n({ useScope: 'global' })
+const localePath = useLocalePath()
 
 // Plan 30 Wave 0 — Sprach-Picker section. Locale is persisted via the
 // i18n-cookie (configured in nuxt.config); when Wave C (multi-user)
@@ -93,7 +94,7 @@ async function load() {
     allSkills.value = sk.skills
     await loadPersonaSkillLists(pers.personas)
   } catch (err: unknown) {
-    error.value = err instanceof Error ? err.message : 'Fehler beim Laden.'
+    error.value = err instanceof Error ? err.message : t('pages.preferences.personas.errors.load')
   } finally {
     loading.value = false
   }
@@ -145,22 +146,22 @@ function mapPersonaError(err: unknown): string {
   const status = (err as { statusCode?: number; status?: number })
     ?.statusCode
     ?? (err as { status?: number })?.status
-  if (status === 409) return 'Name bereits vergeben.'
+  if (status === 409) return t('pages.preferences.personas.errors.duplicate')
   if (status === 422) {
     const detail = (
       err as { data?: { detail?: unknown } }
     )?.data?.detail
     if (typeof detail === 'string') return detail
-    return 'Eingabe ungültig.'
+    return t('pages.preferences.personas.errors.invalidInput')
   }
-  return err instanceof Error ? err.message : 'Fehler.'
+  return err instanceof Error ? err.message : t('pages.preferences.personas.errors.generic')
 }
 
 async function submitPersonaForm() {
   const name = formName.value.trim()
   const prompt = formPrompt.value
   if (!name || !prompt.trim()) {
-    formError.value = 'Name und Prompt sind erforderlich.'
+    formError.value = t('pages.preferences.personas.errors.nameRequired')
     return
   }
   saving.value = true
@@ -205,8 +206,8 @@ async function setDefaultPersona(persona: Persona) {
 async function deletePersona(persona: Persona) {
   if (personaMutating.value) return
   const ok = await confirm({
-    title: 'Persona löschen?',
-    description: `"${persona.name}" wird endgültig gelöscht.`,
+    title: t('pages.preferences.personas.deleteConfirm.title'),
+    description: t('pages.preferences.personas.deleteConfirm.description', { name: persona.name }),
     destructive: true,
   })
   if (!ok) return
@@ -390,7 +391,7 @@ async function persistPersonaSkills(
     error.value =
       err instanceof Error
         ? err.message
-        : 'Fehler beim Aktualisieren der Skills.'
+        : t('pages.preferences.personas.errors.skillUpdate')
   } finally {
     personaSkillsMutating.value[personaId] = false
   }
@@ -443,8 +444,11 @@ async function moveSkill(
 
 async function resetChannelPrompt(channel: ChannelPrompt) {
   const ok = await confirm({
-    title: 'Prompt zurücksetzen?',
-    description: `Der Channel-Prompt für „${channel.label}" wird auf den Default zurückgesetzt.`,
+    title: t('pages.preferences.channels.resetConfirm.title'),
+    description: t(
+      'pages.preferences.channels.resetConfirm.description',
+      { label: channel.label },
+    ),
     destructive: false,
   })
   if (!ok) return
@@ -477,7 +481,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
       {{ error }}
     </p>
 
-    <p v-if="loading" class="text-sm text-muted-foreground">Lädt…</p>
+    <p v-if="loading" class="text-sm text-muted-foreground">{{ $t('common.loading') }}</p>
 
     <!-- ── Section 1: Sprache / Language (Plan 30) ─────────────────── -->
     <!-- Picker comes first so a user landing on `/settings/preferences`
@@ -527,9 +531,11 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
     >
       <div class="flex items-end justify-between gap-2">
         <div>
-          <h3 class="text-sm font-semibold">Personas</h3>
+          <h3 class="text-sm font-semibold">
+            {{ $t('pages.preferences.personas.title') }}
+          </h3>
           <p class="text-xs text-muted-foreground">
-            Wer der Agent ist — Identität und Stil.
+            {{ $t('pages.preferences.personas.subtitle') }}
           </p>
         </div>
         <UiButton
@@ -539,7 +545,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
           data-testid="personas-new-button"
           @click="openCreate"
         >
-          <Plus class="mr-1 size-3.5" /> Neue Persona
+          <Plus class="mr-1 size-3.5" /> {{ $t('pages.preferences.personas.newButton') }}
         </UiButton>
       </div>
 
@@ -551,19 +557,19 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
         @submit.prevent="submitPersonaForm"
       >
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-muted-foreground"
-            >Name</label
-          >
+          <label class="text-xs font-medium text-muted-foreground">
+            {{ $t('pages.preferences.personas.form.name') }}
+          </label>
           <UiInput
             v-model="formName"
-            placeholder="z. B. Hermes der Direkte"
+            :placeholder="$t('pages.preferences.personas.form.namePlaceholder')"
             data-testid="personas-form-name"
           />
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-muted-foreground"
-            >Prompt (Identität + Stil)</label
-          >
+          <label class="text-xs font-medium text-muted-foreground">
+            {{ $t('pages.preferences.personas.form.prompt') }}
+          </label>
           <UiTextarea
             v-model="formPrompt"
             class="min-h-32 font-mono text-sm"
@@ -577,7 +583,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
             type="checkbox"
             data-testid="personas-form-default"
           />
-          Als globale Default-Persona setzen
+          {{ $t('pages.preferences.personas.form.isDefault') }}
         </label>
         <p
           v-if="formError"
@@ -588,7 +594,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
         </p>
         <div class="flex gap-2">
           <UiButton size="sm" type="submit" :disabled="saving">
-            <Check class="mr-1 size-3.5" /> Speichern
+            <Check class="mr-1 size-3.5" /> {{ $t('common.save') }}
           </UiButton>
           <UiButton
             size="sm"
@@ -596,7 +602,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
             type="button"
             @click="cancelEdit"
           >
-            <X class="mr-1 size-3.5" /> Abbrechen
+            <X class="mr-1 size-3.5" /> {{ $t('common.cancel') }}
           </UiButton>
         </div>
       </form>
@@ -617,15 +623,15 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
             @submit.prevent="submitPersonaForm"
           >
             <div class="flex flex-col gap-1">
-              <label class="text-xs font-medium text-muted-foreground"
-                >Name</label
-              >
+              <label class="text-xs font-medium text-muted-foreground">
+                {{ $t('pages.preferences.personas.form.name') }}
+              </label>
               <UiInput v-model="formName" />
             </div>
             <div class="flex flex-col gap-1">
-              <label class="text-xs font-medium text-muted-foreground"
-                >Prompt</label
-              >
+              <label class="text-xs font-medium text-muted-foreground">
+                {{ $t('pages.preferences.personas.form.promptShort') }}
+              </label>
               <UiTextarea
                 v-model="formPrompt"
                 class="min-h-32 font-mono text-sm"
@@ -634,14 +640,14 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
             </div>
             <label class="flex items-center gap-2 text-xs">
               <input v-model="formIsDefault" type="checkbox" />
-              Default-Persona
+              {{ $t('pages.preferences.personas.form.isDefaultShort') }}
             </label>
             <p v-if="formError" class="text-sm text-destructive">
               {{ formError }}
             </p>
             <div class="flex gap-2">
               <UiButton size="sm" type="submit" :disabled="saving">
-                <Check class="mr-1 size-3.5" /> Speichern
+                <Check class="mr-1 size-3.5" /> {{ $t('common.save') }}
               </UiButton>
               <UiButton
                 size="sm"
@@ -649,7 +655,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                 type="button"
                 @click="cancelEdit"
               >
-                <X class="mr-1 size-3.5" /> Abbrechen
+                <X class="mr-1 size-3.5" /> {{ $t('common.cancel') }}
               </UiButton>
             </div>
           </form>
@@ -664,14 +670,15 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                   class="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
                   data-testid="persona-default-badge"
                 >
-                  <BadgeCheck class="size-3" /> Default
+                  <BadgeCheck class="size-3" />
+                  {{ $t('pages.preferences.personas.defaultBadge') }}
                 </span>
               </div>
               <div class="flex shrink-0 items-center gap-1">
                 <UiButton
                   size="sm"
                   variant="ghost"
-                  aria-label="Bearbeiten"
+                  :aria-label="$t('pages.preferences.personas.editAria')"
                   :data-testid="`persona-edit-${persona.id}`"
                   @click="openEdit(persona)"
                 >
@@ -685,12 +692,12 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                   :data-testid="`persona-set-default-${persona.id}`"
                   @click="setDefaultPersona(persona)"
                 >
-                  Als Default setzen
+                  {{ $t('pages.preferences.personas.setDefault') }}
                 </UiButton>
                 <UiButton
                   size="sm"
                   variant="ghost"
-                  aria-label="Löschen"
+                  :aria-label="$t('pages.preferences.personas.deleteAria')"
                   :disabled="persona.is_default || personaMutating"
                   :data-testid="`persona-delete-${persona.id}`"
                   @click="deletePersona(persona)"
@@ -710,14 +717,14 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
             >
               <div class="mb-2 flex items-center justify-between gap-2">
                 <h5 class="text-xs font-semibold text-muted-foreground">
-                  Aktive Skills
+                  {{ $t('pages.preferences.personas.skills.heading') }}
                 </h5>
                 <span
                   v-if="skillsForPersona(persona.id).length === 0"
                   class="text-xs text-muted-foreground"
                   :data-testid="`persona-skills-empty-${persona.id}`"
                 >
-                  keine Skills aktiv
+                  {{ $t('pages.preferences.personas.skills.empty') }}
                 </span>
               </div>
               <ul
@@ -734,8 +741,8 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                     class="flex items-center gap-1.5"
                     :title="
                       item.enabled
-                        ? 'Aktiv — fließt in den System-Prompt'
-                        : 'Deaktiviert — bleibt verknüpft, ohne in den Prompt zu fließen'
+                        ? $t('pages.preferences.personas.skills.tooltips.active')
+                        : $t('pages.preferences.personas.skills.tooltips.disabled')
                     "
                   >
                     <input
@@ -754,7 +761,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                     size="sm"
                     variant="ghost"
                     class="h-7 w-7 p-0"
-                    aria-label="Nach oben verschieben"
+                    :aria-label="$t('pages.preferences.personas.skills.aria.up')"
                     :disabled="idx === 0 || personaSkillsMutating[persona.id]"
                     :data-testid="`persona-skill-up-${persona.id}-${item.skill.slug}`"
                     @click="moveSkill(persona.id, item.skill.id, -1)"
@@ -765,7 +772,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                     size="sm"
                     variant="ghost"
                     class="h-7 w-7 p-0"
-                    aria-label="Nach unten verschieben"
+                    :aria-label="$t('pages.preferences.personas.skills.aria.down')"
                     :disabled="
                       idx === skillsForPersona(persona.id).length - 1
                         || personaSkillsMutating[persona.id]
@@ -779,7 +786,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                     size="sm"
                     variant="ghost"
                     class="h-7 w-7 p-0"
-                    aria-label="Skill entfernen"
+                    :aria-label="$t('pages.preferences.personas.skills.aria.remove')"
                     :disabled="personaSkillsMutating[persona.id]"
                     :data-testid="`persona-skill-remove-${persona.id}-${item.skill.slug}`"
                     @click="removeSkillFromPersona(persona.id, item.skill.id)"
@@ -804,7 +811,9 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                     ($event.target as HTMLSelectElement).value = ''
                   "
                 >
-                  <option value="">+ Skill hinzufügen…</option>
+                  <option value="">
+                    {{ $t('pages.preferences.personas.skills.addPlaceholder') }}
+                  </option>
                   <option
                     v-for="skill in availableSkillsFor(persona.id)"
                     :key="skill.id"
@@ -818,16 +827,16 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                 v-else-if="allSkills.length > 0"
                 class="text-xs text-muted-foreground"
               >
-                Alle vorhandenen Skills sind bereits hinzugefügt.
+                {{ $t('pages.preferences.personas.skills.allAttached') }}
               </p>
               <p
                 v-else
                 class="text-xs text-muted-foreground"
               >
-                Noch keine Skills angelegt —
-                <NuxtLink to="/settings/skills" class="underline"
-                  >Skill anlegen</NuxtLink
-                >.
+                {{ $t('pages.preferences.personas.skills.noneExist') }}
+                <NuxtLink :to="localePath('/settings/skills')" class="underline">
+                  {{ $t('pages.preferences.personas.skills.createLink') }}
+                </NuxtLink>.
               </p>
             </div>
           </div>
@@ -842,9 +851,11 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
       data-testid="channels-section"
     >
       <div>
-        <h3 class="text-sm font-semibold">Channels</h3>
+        <h3 class="text-sm font-semibold">
+          {{ $t('pages.preferences.channels.title') }}
+        </h3>
         <p class="text-xs text-muted-foreground">
-          Wie der Kanal sich verhält — Format, Länge, Ton.
+          {{ $t('pages.preferences.channels.subtitle') }}
         </p>
       </div>
 
@@ -865,22 +876,25 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
               <span
                 v-if="channel.is_default_prompt"
                 class="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
-                >Default-Prompt</span
               >
+                {{ $t('pages.preferences.channels.defaultPromptBadge') }}
+              </span>
               <span
                 v-else
                 class="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] text-amber-900 dark:bg-amber-950 dark:text-amber-200"
                 :data-testid="`channel-custom-badge-${channel.channel}`"
-                >Eigener Prompt</span
               >
+                {{ $t('pages.preferences.channels.customPromptBadge') }}
+              </span>
             </div>
 
             <div class="flex flex-col gap-1">
               <label
                 class="text-xs font-medium text-muted-foreground"
                 :for="`persona-select-${channel.channel}`"
-                >Default-Persona für diesen Channel</label
               >
+                {{ $t('pages.preferences.channels.personaLabel') }}
+              </label>
               <select
                 :id="`persona-select-${channel.channel}`"
                 v-model="draftFor(channel).defaultPersonaId"
@@ -888,7 +902,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                 :data-testid="`channel-persona-select-${channel.channel}`"
               >
                 <option value="">
-                  — Globaler Default (is_default-Persona) —
+                  {{ $t('pages.preferences.channels.personaGlobalOption') }}
                 </option>
                 <option
                   v-for="persona in personas"
@@ -904,8 +918,9 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
               <label
                 class="text-xs font-medium text-muted-foreground"
                 :for="`prompt-${channel.channel}`"
-                >Channel-Prompt</label
               >
+                {{ $t('pages.preferences.channels.promptLabel') }}
+              </label>
               <UiTextarea
                 :id="`prompt-${channel.channel}`"
                 v-model="draftFor(channel).prompt"
@@ -932,7 +947,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                 :data-testid="`channel-save-${channel.channel}`"
                 @click="saveChannel(channel)"
               >
-                <Check class="mr-1 size-3.5" /> Speichern
+                <Check class="mr-1 size-3.5" /> {{ $t('common.save') }}
               </UiButton>
               <UiButton
                 v-if="!channel.is_default_prompt"
@@ -941,7 +956,8 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                 :data-testid="`channel-reset-${channel.channel}`"
                 @click="resetChannelPrompt(channel)"
               >
-                <RotateCcw class="mr-1 size-3.5" /> Prompt zurücksetzen
+                <RotateCcw class="mr-1 size-3.5" />
+                {{ $t('pages.preferences.channels.resetButton') }}
               </UiButton>
             </div>
           </div>

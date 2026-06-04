@@ -45,8 +45,8 @@ describe('settingsNav model', () => {
     ])
   })
 
-  it('flags placeholder sections with an upcoming hint and shipped sections without', () => {
-    const shipped = settingsNav.filter((n) => !n.upcoming).map((n) => n.to)
+  it('flags placeholder sections with an upcomingKey and shipped sections without', () => {
+    const shipped = settingsNav.filter((n) => !n.upcomingKey).map((n) => n.to)
     expect(shipped).toEqual([
       '/settings/llm',
       '/settings/preferences',
@@ -60,7 +60,7 @@ describe('settingsNav model', () => {
     ])
     for (const item of settingsNav) {
       if (!shipped.includes(item.to)) {
-        expect(item.upcoming, `${item.to} should have an upcoming hint`).toBeTruthy()
+        expect(item.upcomingKey, `${item.to} should have an upcomingKey`).toBeTruthy()
       }
     }
   })
@@ -70,15 +70,17 @@ describe('PlaceholderSection', () => {
   it('renders the label + upcoming hint for the active placeholder route', () => {
     // Pick the first still-upcoming entry dynamically so this test doesn't
     // need touching every time another section ships.
-    const firstPlaceholder = settingsNav.find((n) => n.upcoming)
+    const firstPlaceholder = settingsNav.find((n) => n.upcomingKey)
     if (!firstPlaceholder) {
       // Once every section is shipped, the placeholder component has
       // nothing to render — drop this test then.
       return
     }
     const wrapper = mountAtRoute(firstPlaceholder.to)
-    expect(wrapper.text()).toContain(firstPlaceholder.label)
-    expect(wrapper.text()).toContain('noch nicht implementiert')
+    // `$t` in the test setup is a passthrough on the key, so we assert
+    // on the i18n keys rather than translated strings.
+    expect(wrapper.text()).toContain(firstPlaceholder.labelKey)
+    expect(wrapper.text()).toContain('pages.settings.placeholder.notImplemented')
   })
 
   it('renders nothing when the route is not in the nav model', () => {
