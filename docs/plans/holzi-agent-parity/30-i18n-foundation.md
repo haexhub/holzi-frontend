@@ -3,20 +3,22 @@
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans
 > to implement this plan task-by-task.
 
-Status: **Tasks 1 + 2 + 3 + 4 done.** Task 1 (foundation + picker +
-`llm.vue`), Task 4a (Settings shell + nav + preferences personas/
+Status: **Plan 30 complete — all tasks on `main`.** Task 1 (foundation +
+picker + `llm.vue`), Task 4a (Settings shell + nav + preferences personas/
 channels), Task 4b (all remaining `/settings/*` pages + ThemeToggle +
 WorkspacePanel/WorkspaceGitTab + SkillsSection/McpServersSection),
 Task 4c (chat-family: 4c1 chat/* components + chat pages, 4c2
-`ChatHub.vue`), **Task 2 (backend `ErrorCode` enum, 113 codes, all routes
-migrated + diagnostics shape on `{code, params}`)** and **Task 3
+`ChatHub.vue`), Task 2 (backend `ErrorCode` enum, 113 codes, all routes
+migrated + diagnostics shape on `{code, params}`), Task 3
 (FE `translateError` helper, eight composables migrated,
 `useChatStream.friendlyChatError(err, t)`, `/settings/diagnostics`
 rerendered against the new contract, `tests/i18n/error-codes.test.ts`
-pins FE↔BE coverage)** are on `main`. Remaining: Task 5
-(`no-raw-text` ESLint rule sweep).
+pins FE↔BE coverage) and **Task 5 (final raw-text sweep on `login.vue`
++ `NotesPanel` + `ModelSelect` + `AppConfirmHost` + `DialogContent` —
+done via grep audit since the project carries no ESLint stack)** are
+all on `main`.
 
-## Verification (Tasks 2 + 3, 2026-06-04)
+## Verification (Tasks 2 + 3 + 5, 2026-06-04)
 
 - Backend (`/home/haex/Projekte/Holzi`):
   - `uv run pytest` — 860 passed, 3 deselected.
@@ -28,11 +30,14 @@ pins FE↔BE coverage)** are on `main`. Remaining: Task 5
     (2), `tests/i18n/error-codes.test.ts` (114 — covers all 113
     `ErrorCode` values × 2 locales + structural guard).
   - `pnpm typecheck` — exit 0.
+  - `grep '[äöüÄÖÜß]'` über `app/` (Kommentare gefiltert) ist leer.
 - Commits:
   - Backend `feat(errors): introduce ErrorCode enum, migrate routes`
     (`893991d`).
   - Frontend `feat(i18n): error-code rendering helper + composable
     migration` (`5f9f042`).
+  - Frontend Task 5 sweep `feat(i18n): final sweep — login + NotesPanel
+    + ModelSelect + UI primitives` (`dc76475`).
 
 Cross-repo. Frontend-i18n + Backend-Error-Code-Refactor.
 
@@ -367,11 +372,42 @@ TDD-Philosophie: erst Test schreiben, dann Impl, dann commit.
 
 **Schritt-Größe:** Pro logischer Gruppe ein Commit.
 
-**Reihenfolge der verbleibenden Tasks (Empfehlung):** Task 5
-(`no-raw-text`-Lint als Abschluss-Sweep, fischt Übersehenes raus).
-Tasks 2 + 3 sind 2026-06-04 als Cross-Repo-Paar gelandet.
+**Reihenfolge der verbleibenden Tasks:** keine — Plan 30 ist 2026-06-04
+durch (Tasks 2 + 3 als Cross-Repo-Paar, Task 5 als grep-Sweep
+direkt im Anschluss).
 
-### Task 5: ESLint-Rule + Smoke-Verifikation
+### Task 5: ESLint-Rule + Smoke-Verifikation (done 2026-06-04, `dc76475`)
+
+**Tatsächlich umgesetzt:** grep-basierter Sweep statt ESLint-Rule. Die
+Codebasis hat zum Zeitpunkt von Plan 30 keine ESLint-Infrastruktur
+(weder `eslint.config.ts` noch `eslint`/`@nuxt/eslint` in den
+devDependencies), und das Aufsetzen wäre weit jenseits eines „Abschluss-
+Sweeps". Ein `grep '[äöüÄÖÜß]'` über `app/` (mit Filter auf Kommentare)
+findet exakt die gleiche Klasse von Übersehenem, ohne den ESLint-Stack
+einzuziehen. Findings:
+
+- `app/pages/login.vue` — komplette Migration (Title, Description,
+  Token-Label/-Placeholder, Submit/Submitting, vier Error-Branches).
+  Höchster Impact, da Eingangstür der App.
+- `app/components/panels/NotesPanel.vue` — Chat-Right-Rail Notes
+  (separat von `/settings/memory`); jetzt mit `translateError()` für
+  Fetch-Errors + Keys unter `components.notesPanel.*`.
+- `app/components/settings/ModelSelect.vue` — pro-Credential Modell-
+  Combobox; sieben neue Keys + `translateError()`.
+- `app/components/AppConfirmHost.vue` — Default-Labels (Abbrechen /
+  Löschen / Bestätigen / OK) jetzt über `common.*`.
+- `app/components/ui/dialog/DialogContent.vue` — sr-only Schließen-
+  Label via `common.close`.
+
+Plus neuer `common.ok`-Key für den Prompt-Default. `AppConfirmHost.test`
+bekommt den `vi.mock('vue-i18n')`-Stub, da der Setup jetzt `useI18n()`
+ruft.
+
+**Verifikation:** `pnpm vitest run` 448 grün; `pnpm typecheck` exit 0;
+`grep '[äöüÄÖÜß]'` über `app/` (gefiltert auf nicht-Kommentare) ist
+leer.
+
+**Original-Plan (ESLint-Rule, für Referenz):**
 
 **Files:**
 - Modify: `eslint.config.ts` (aktiviere `@nuxtjs/i18n/no-raw-text`-
