@@ -142,7 +142,13 @@ docs or visit `/settings/preferences` first.
 **Why second**: Highest user-facing impact per unit of work after
 i18n. Other waves all assume the user has gotten past first-launch.
 
-#### A1 — Persona-Fragments (DB-Spalten + History)
+#### A1 — Persona-Fragments (DB-Spalten + History) — **done 2026-06-05**
+
+Shipped as [Plan 36](./36-personas-fragments.md). Branch
+`wave-a1-personas-fragments` in both repos carries the cross-repo
+work (BE: 8 commits, FE: 6 commits). 884 backend pytest + 461
+frontend vitest + ruff + mypy + typecheck all clean. Pending PR
+review + merge.
 
 Replace `personas.prompt` (single text column) with three typed
 columns:

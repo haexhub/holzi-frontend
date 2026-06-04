@@ -3,10 +3,61 @@
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to
 > implement this plan task-by-task.
 
-Status: **Planned.** First implementation file of Wave A
-([Plan 35 §A1](./35-strategic-roadmap-2026h2.md#a1--persona-fragments-db-spalten--history)).
+Status: **Implemented + verified on `wave-a1-personas-fragments` branch
+in both repos (2026-06-05) — pending PR + merge.** First implementation
+file of Wave A ([Plan 35 §A1](./35-strategic-roadmap-2026h2.md#a1--persona-fragments-db-spalten--history)).
 Replaces the single `personas.prompt` column from [Plan 29-A](./29a-personas-and-channels.md)
 with three typed columns + a `persona_history` audit table.
+
+## Verification (2026-06-05)
+
+- Backend (`/home/haex/Projekte/Holzi`, branch `wave-a1-personas-fragments`):
+  - `uv run pytest` — **884 passed, 3 deselected** (was 860 pre-Plan-36;
+    +24 covers history-repo + history-routes + migration regression
+    + history_author kwarg).
+  - `uv run ruff check src/ tests/` — All checks passed.
+  - `uv run mypy src/` — Success: no issues found in 68 source files.
+  - Branch commits (BE):
+    - `af9e1b8` `feat(personas): split prompt into soul/identity/agents columns + migration helper` (Task 1)
+    - `fc87e31` `feat(personas): persona_history repo + auto-snapshot on create/update` (Task 2)
+    - `09ee44d` `fix(personas): migration adds fragment columns + writes baseline history row` (Task 1 fix — caught by code-quality reviewer; `metadata.create_all` does not alter existing tables, so the migration helper had to add the new columns itself + write a baseline `author='migration'` history row per migrated persona)
+    - `83e6876` `feat(personas): resolver composes soul/identity/agents with named headers` (Task 3)
+    - `bc0a6ef` `test(personas): rewrite resolver-with-skills tests for Plan 36 section headers` (Task 3 follow-up)
+    - `a7794d3` `feat(api): persona fragments + history endpoints` (Task 4)
+    - `6a0dcf7` `feat(personas): backfill writes initial history snapshot + green sweep` (Task 5)
+    - `1bcf282` `test(personas): cover history_author kwarg on repo.create` (Task 5 follow-up)
+- Frontend (`/home/haex/Projekte/holzi-frontend`, same branch):
+  - `pnpm vitest run` — **461 tests pass (41 files)**, including
+    `tests/i18n/keys.test.ts`, `tests/i18n/error-codes.test.ts`
+    (116 — covers the 3 new ErrorCode values × 2 locales),
+    `tests/components/PreferencesPage.test.ts` (28).
+  - `pnpm typecheck` — exit 0.
+  - Branch commits (FE):
+    - `606dc53` `docs(plans): add Plan 36 — Wave A1 persona fragments + history` (this doc)
+    - `caca3c1` `feat(api-types): regenerate for persona fragments + history` (Task 6)
+    - `61b4aa1` `feat(preferences): three-fragment persona editor + history subview` (Task 7)
+    - `9f9d019` `fix(preferences): use truthy v-if guards for persona fragments` (Task 7 fixup — `.trim()` crashed on undefined fragments)
+    - `d02593d` `feat(i18n): persona fragments + history locale keys` (Task 8)
+    - `c09805e` `test(preferences): persona fragments + history coverage` (Task 9)
+- Live-Smoke (`make up-local-full`) **not run** in this session — the
+  Plan 36 spec listed it as optional. The full pytest + vitest +
+  typecheck + 116-error-code i18n cross-coverage carries the
+  confidence. Live-smoke can be done at PR-review time.
+
+Notable implementation choices (more in Decision Log below):
+
+- Migration baseline `persona_history` row uses `author='migration'`
+  (third author tier alongside `'user'` for normal writes and
+  `'system'` for the seed-persona; see Task 5 + Task 2 work).
+- `personas_repo.create` gained a `history_author='user'` kwarg so
+  the seed/migration paths can write non-`'user'` audit rows in the
+  same transaction as the INSERT (Option A from Task 5).
+- Restore endpoint reuses `personas_repo.update` so the
+  auto-snapshot wiring from Task 2 handles the "restore writes a new
+  history row" requirement for free — no separate write path.
+- Resolver output is a hardcoded `[("## Soul", soul), ("## Identity",
+  identity), ("## Agents", agents)]` list (not dict iteration), so a
+  future field reorder shows up in diffs.
 
 Cross-repo. Backend ist die ganze Substanz (Schema-Bruch + Migration +
 Resolver-Output-Format + neue History-Endpoints); Frontend baut die
