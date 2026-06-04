@@ -12,6 +12,7 @@ import {
   ComboboxViewport,
 } from 'reka-ui'
 import { Check, ChevronsUpDown } from 'lucide-vue-next'
+import { translateError } from '~/lib/errorMessages'
 import type { LlmModelChoice } from '~/types/api'
 
 const props = defineProps<{
@@ -25,6 +26,7 @@ const emit = defineEmits<{
 }>()
 
 const llm = useLlmCredentials()
+const { t } = useI18n()
 const models = ref<LlmModelChoice[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -52,10 +54,7 @@ async function load(credentialId: number | null) {
     }
   } catch (err: unknown) {
     if (token !== fetchToken) return
-    error.value =
-      (err as { data?: { detail?: string }; statusMessage?: string })?.data
-        ?.detail ??
-      (err instanceof Error ? err.message : 'Konnte Models nicht laden.')
+    error.value = translateError(err, t)
   } finally {
     if (token === fetchToken) loading.value = false
   }
@@ -75,12 +74,12 @@ const selectedLabel = computed(() => {
 })
 
 const triggerLabel = computed(() => {
-  if (props.credentialId === null) return 'Erst Credential aktivieren'
-  if (loading.value) return 'Lade Modelle…'
-  if (error.value) return 'Fehler beim Laden'
+  if (props.credentialId === null) return t('components.modelSelect.needsCredential')
+  if (loading.value) return t('components.modelSelect.loading')
+  if (error.value) return t('components.modelSelect.error')
   if (selectedLabel.value) return selectedLabel.value
-  if (models.value.length === 0) return 'Keine Modelle verfügbar'
-  return 'Modell wählen'
+  if (models.value.length === 0) return t('components.modelSelect.empty')
+  return t('components.modelSelect.placeholder')
 })
 
 const isDisabled = computed(
@@ -132,7 +131,7 @@ function pick(id: string) {
         >
           <div class="flex items-center border-b px-3">
             <ComboboxInput
-              placeholder="Modell suchen…"
+              :placeholder="$t('components.modelSelect.searchPlaceholder')"
               class="flex h-9 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
@@ -141,7 +140,7 @@ function pick(id: string) {
               v-if="filtered.length === 0"
               class="py-6 text-center text-sm text-muted-foreground"
             >
-              Kein Treffer.
+              {{ $t('components.modelSelect.noMatch') }}
             </ComboboxEmpty>
             <ComboboxItem
               v-for="m in filtered"

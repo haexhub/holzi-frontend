@@ -11,7 +11,8 @@
     "confirm": "Confirm",
     "back": "Back",
     "reload": "Reload",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "ok": "OK"
   },
   "nav": {
     "preferences": { "label": "Preferences" },
@@ -405,6 +406,21 @@
         "unknown": "Unknown error."
       }
     },
+    "notesPanel": {
+      "title": "Notes",
+      "empty": "No notes yet.",
+      "keyPlaceholder": "key (e.g. project.holzi.status)",
+      "contentPlaceholder": "content"
+    },
+    "modelSelect": {
+      "needsCredential": "Activate a credential first",
+      "loading": "Loading models…",
+      "error": "Failed to load",
+      "empty": "No models available",
+      "placeholder": "Pick a model",
+      "searchPlaceholder": "Search model…",
+      "noMatch": "No matches."
+    },
     "chatHub": {
       "header": {
         "newChat": "New chat",
@@ -586,6 +602,20 @@
     }
   },
   "pages": {
+    "login": {
+      "title": "Hermes",
+      "description": "Enter your bearer token. It is stored only in this browser.",
+      "tokenLabel": "Token",
+      "tokenPlaceholder": "hex-string",
+      "submit": "Sign in",
+      "submitting": "Checking…",
+      "errors": {
+        "tokenRequired": "Token must not be empty.",
+        "tokenInvalid": "Token rejected (401).",
+        "serverError": "Server responded with {status}.",
+        "network": "Network error."
+      }
+    },
     "chat": {
       "notFound": "Conversation not found."
     },
