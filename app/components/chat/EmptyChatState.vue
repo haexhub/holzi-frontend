@@ -18,6 +18,7 @@ const props = defineProps<{
 // default = workspace/sandbox warning). The Credentials-CTA stays the
 // priority — banner only renders when hasCredentials === true.
 const { diagnostics, loadDiagnostics } = useDiagnostics()
+const localePath = useLocalePath()
 
 // One-shot: the `diagnostics.value === null` guard means we never re-fetch
 // after the first load. A `true → false → true` transition keeps the cached
@@ -57,18 +58,17 @@ const showBanner = computed(
         <KeyRound class="size-6" />
       </div>
       <div class="space-y-1">
-        <h2 class="text-base font-semibold">Willkommen bei Hermes</h2>
+        <h2 class="text-base font-semibold">{{ $t('components.emptyChatState.welcome.title') }}</h2>
         <p class="max-w-sm text-sm text-muted-foreground">
-          Bevor du chatten kannst, brauchst du LLM-Credentials. Füge einen
-          API-Key hinzu oder verbinde deinen Claude-Account per OAuth.
+          {{ $t('components.emptyChatState.welcome.body') }}
         </p>
       </div>
       <!-- Use as-child so the link is the interactive root — otherwise
            we end up with <a><button>, which is invalid HTML and breaks
            keyboard/screen-reader semantics. -->
       <UiButton as-child size="sm">
-        <NuxtLink to="/settings/llm">
-          Credentials einrichten
+        <NuxtLink :to="localePath('/settings/llm')">
+          {{ $t('components.emptyChatState.welcome.cta') }}
           <ArrowRight class="ml-1 size-4" />
         </NuxtLink>
       </UiButton>
@@ -79,11 +79,11 @@ const showBanner = computed(
         <MessageCircle class="size-6" />
       </div>
       <p class="text-sm text-muted-foreground">
-        Sag Hermes Hallo.
+        {{ $t('components.emptyChatState.hello') }}
       </p>
       <NuxtLink
         v-if="showBanner"
-        to="/settings/diagnostics"
+        :to="localePath('/settings/diagnostics')"
         data-testid="empty-state-diagnostics-banner"
         class="group mt-2 flex max-w-md items-center gap-3 rounded-md border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-left text-sm transition-colors hover:bg-amber-500/10"
       >
@@ -91,11 +91,13 @@ const showBanner = computed(
           class="size-5 shrink-0 text-amber-600 dark:text-amber-400"
         />
         <span class="flex-1">
-          <span class="font-medium">Setup unvollständig</span>
+          <span class="font-medium">{{ $t('components.emptyChatState.banner.title') }}</span>
           <span class="block text-muted-foreground">
             {{ findingCount }}
-            {{ findingCount === 1 ? 'Subsystem meldet' : 'Subsysteme melden' }}
-            Warnungen oder Fehler.
+            {{ findingCount === 1
+              ? $t('components.emptyChatState.banner.findingSingular')
+              : $t('components.emptyChatState.banner.findingPlural') }}
+            {{ $t('components.emptyChatState.banner.suffix') }}
           </span>
         </span>
         <ArrowRight

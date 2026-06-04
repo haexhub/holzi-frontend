@@ -12,6 +12,7 @@ import {
 import type { Conversation } from '~/types/api'
 
 const { confirm } = useConfirm()
+const { t } = useI18n({ useScope: 'global' })
 
 const props = defineProps<{
   conversations: Conversation[]
@@ -65,9 +66,9 @@ function expiresHint(c: Conversation): string | null {
   // sufficient for a 7-day window hint without a wall-clock timer.
   const remaining = c.expires_at - Math.floor(Date.now() / 1000)
   if (remaining > TTL_SOON_SECONDS) return null
-  if (remaining <= 0) return 'Läuft bald ab'
+  if (remaining <= 0) return t('components.conversationList.expiresSoon')
   const days = Math.max(1, Math.ceil(remaining / 86_400))
-  return `Läuft in ${days} Tag${days === 1 ? '' : 'en'} ab`
+  return t('components.conversationList.expiresInDays', { days })
 }
 
 function onBookmarkClick(event: MouseEvent, id: number) {
@@ -106,8 +107,10 @@ function submitRename(c: Conversation) {
 async function confirmDelete(event: MouseEvent, c: Conversation) {
   event.stopPropagation()
   const ok = await confirm({
-    title: 'Konversation löschen?',
-    description: `"${displayTitle(c)}" wird endgültig gelöscht.`,
+    title: t('components.conversationList.deleteConfirm.title'),
+    description: t('components.conversationList.deleteConfirm.description', {
+      title: displayTitle(c),
+    }),
     destructive: true,
   })
   if (!ok) return
@@ -121,10 +124,10 @@ async function confirmDelete(event: MouseEvent, c: Conversation) {
 <template>
   <div class="flex h-full flex-col">
     <div class="flex items-center justify-between border-b p-3">
-      <h2 class="text-sm font-semibold">Konversationen</h2>
+      <h2 class="text-sm font-semibold">{{ $t('components.conversationList.title') }}</h2>
       <UiButton size="sm" variant="ghost" @click="emit('new-chat')">
         <MessageSquarePlus class="mr-1 size-4" />
-        Neu
+        {{ $t('components.conversationList.new') }}
       </UiButton>
     </div>
     <div class="border-b p-2">
@@ -135,15 +138,15 @@ async function confirmDelete(event: MouseEvent, c: Conversation) {
         <UiInput
           v-model="searchQuery"
           type="search"
-          placeholder="Suchen…"
-          aria-label="Konversationen durchsuchen"
+          :placeholder="$t('components.conversationList.searchPlaceholder')"
+          :aria-label="$t('components.conversationList.searchAria')"
           class="h-8 pl-7 pr-7 text-sm"
         />
         <button
           v-if="searchQuery"
           type="button"
           class="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-foreground"
-          aria-label="Suche leeren"
+          :aria-label="$t('components.conversationList.clearSearch')"
           @click="clearSearch"
         >
           <X class="size-3.5" />
@@ -155,7 +158,7 @@ async function confirmDelete(event: MouseEvent, c: Conversation) {
         v-if="props.conversations.length === 0"
         class="px-2 py-4 text-center text-sm text-muted-foreground"
       >
-        {{ searchQuery ? 'Keine Treffer.' : 'Keine Konversationen.' }}
+        {{ searchQuery ? $t('components.conversationList.empty.noMatches') : $t('components.conversationList.empty.none') }}
       </p>
       <div
         v-for="c in props.conversations"
@@ -175,7 +178,7 @@ async function confirmDelete(event: MouseEvent, c: Conversation) {
           <UiInput
             v-model="editingTitle"
             class="h-8 flex-1"
-            aria-label="Konversationstitel"
+            :aria-label="$t('components.conversationList.rename.titleAria')"
             autofocus
             @keydown.esc.prevent="cancelRename"
           />
@@ -184,7 +187,7 @@ async function confirmDelete(event: MouseEvent, c: Conversation) {
             size="icon"
             variant="ghost"
             class="size-8"
-            aria-label="Titel speichern"
+            :aria-label="$t('components.conversationList.rename.saveAria')"
           >
             <Check class="size-3.5" />
           </UiButton>
@@ -193,7 +196,7 @@ async function confirmDelete(event: MouseEvent, c: Conversation) {
             size="icon"
             variant="ghost"
             class="size-8"
-            aria-label="Umbenennen abbrechen"
+            :aria-label="$t('components.conversationList.rename.cancelAria')"
             @click="cancelRename"
           >
             <X class="size-3.5" />
@@ -220,8 +223,8 @@ async function confirmDelete(event: MouseEvent, c: Conversation) {
               type="button"
               class="rounded p-0.5 transition-colors hover:bg-background hover:text-foreground"
               :class="c.bookmarked ? 'text-amber-500' : 'text-muted-foreground'"
-              :aria-label="c.bookmarked ? 'Lesezeichen entfernen' : 'Lesezeichen setzen'"
-              :title="c.bookmarked ? 'Lesezeichen entfernen' : 'Lesezeichen setzen'"
+              :aria-label="c.bookmarked ? $t('components.conversationList.bookmark.remove') : $t('components.conversationList.bookmark.add')"
+              :title="c.bookmarked ? $t('components.conversationList.bookmark.remove') : $t('components.conversationList.bookmark.add')"
               @click="onBookmarkClick($event, c.id)"
             >
               <Star
@@ -231,7 +234,7 @@ async function confirmDelete(event: MouseEvent, c: Conversation) {
             </button>
             <span class="rounded bg-secondary px-1.5 py-0.5">{{ c.channel }}</span>
             <span v-if="c.message_count !== undefined">
-              {{ c.message_count }} Msg
+              {{ c.message_count }} {{ $t('components.conversationList.msgSuffix') }}
             </span>
             <span
               v-if="expiresHint(c)"
@@ -245,7 +248,7 @@ async function confirmDelete(event: MouseEvent, c: Conversation) {
               <button
                 type="button"
                 class="rounded p-0.5 transition-colors hover:bg-background hover:text-foreground"
-                :aria-label="`${displayTitle(c)} umbenennen`"
+                :aria-label="$t('components.conversationList.row.renameAria', { title: displayTitle(c) })"
                 @click="startRename($event, c)"
               >
                 <Pencil class="size-3.5" />
@@ -253,7 +256,7 @@ async function confirmDelete(event: MouseEvent, c: Conversation) {
               <button
                 type="button"
                 class="rounded p-0.5 text-destructive transition-colors hover:bg-background hover:text-destructive"
-                :aria-label="`${displayTitle(c)} löschen`"
+                :aria-label="$t('components.conversationList.row.deleteAria', { title: displayTitle(c) })"
                 @click="confirmDelete($event, c)"
               >
                 <Trash2 class="size-3.5" />

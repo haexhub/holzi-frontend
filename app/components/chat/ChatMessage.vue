@@ -116,11 +116,11 @@ function confirmEdit() {
         v-model="draft"
         rows="3"
         class="w-full resize-y rounded-2xl border bg-background px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-        aria-label="Nachricht bearbeiten"
+        :aria-label="$t('components.chatMessage.edit.aria')"
         @keydown.escape="cancelEdit"
       />
       <p class="text-xs text-muted-foreground">
-        Spätere Nachrichten werden neu generiert.
+        {{ $t('components.chatMessage.edit.hint') }}
       </p>
       <div class="flex justify-end gap-2">
         <button
@@ -128,7 +128,7 @@ function confirmEdit() {
           class="rounded px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
           @click="cancelEdit"
         >
-          Abbrechen
+          {{ $t('common.cancel') }}
         </button>
         <button
           type="button"
@@ -136,7 +136,7 @@ function confirmEdit() {
           :disabled="!draft.trim()"
           @click="confirmEdit"
         >
-          Speichern &amp; neu generieren
+          {{ $t('components.chatMessage.edit.saveAndRegen') }}
         </button>
       </div>
     </div>
@@ -181,22 +181,22 @@ function confirmEdit() {
         type="button"
         class="mt-1 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
         :disabled="retryDisabled"
-        aria-label="Antwort neu generieren"
+        :aria-label="$t('components.chatMessage.retry.aria')"
         @click="emit('retry')"
       >
         <RotateCcw class="size-3" />
-        Neu generieren
+        {{ $t('components.chatMessage.retry.label') }}
       </button>
       <button
         v-if="canEdit"
         type="button"
         class="mt-1 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
         :disabled="editDisabled"
-        aria-label="Nachricht bearbeiten"
+        :aria-label="$t('components.chatMessage.edit.aria')"
         @click="startEdit"
       >
         <Pencil class="size-3" />
-        Bearbeiten
+        {{ $t('common.edit') }}
       </button>
     </template>
   </div>

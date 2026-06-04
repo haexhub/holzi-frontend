@@ -1,5 +1,16 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
+
+// Plan 30 Wave 0: ToolCallCard's script uses useI18n() for the status label;
+// stub it with a passthrough so tests assert on the i18n key.
+vi.mock('vue-i18n', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('vue-i18n')>()
+  return {
+    ...orig,
+    useI18n: () => ({ t: (key: string) => key }),
+  }
+})
+
 import ToolCallCard from '~/components/chat/ToolCallCard.vue'
 
 describe('ToolCallCard.vue', () => {
@@ -17,7 +28,7 @@ describe('ToolCallCard.vue', () => {
     })
     // Collapsed: name + status visible, details hidden.
     expect(wrapper.text()).toContain('notes.find')
-    expect(wrapper.text()).toContain('Erfolg')
+    expect(wrapper.text()).toContain('components.toolCallCard.status.success')
     expect(wrapper.text()).not.toContain('found 3 notes')
 
     await wrapper.find('button').trigger('click')
@@ -38,7 +49,7 @@ describe('ToolCallCard.vue', () => {
       },
     })
     expect(wrapper.text()).toContain('shell.run')
-    expect(wrapper.text()).toContain('Fehler')
+    expect(wrapper.text()).toContain('components.toolCallCard.status.error')
 
     await wrapper.find('button').trigger('click')
     expect(wrapper.text()).toContain('command not found')
@@ -57,7 +68,7 @@ describe('ToolCallCard.vue', () => {
       },
     })
     expect(wrapper.text()).toContain('web.search')
-    expect(wrapper.text()).toContain('Läuft')
+    expect(wrapper.text()).toContain('components.toolCallCard.status.running')
     const button = wrapper.find('button')
     expect(button.attributes('disabled')).toBeDefined()
     // Clicking a detail-less card does nothing.

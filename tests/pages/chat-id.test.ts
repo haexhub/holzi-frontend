@@ -1,6 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { ref } from 'vue'
+
+// Plan 30 Wave 0: the page uses useI18n() for the toast message; stub it
+// so the test asserts on the i18n key.
+vi.mock('vue-i18n', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('vue-i18n')>()
+  return {
+    ...orig,
+    useI18n: () => ({ t: (key: string) => key }),
+  }
+})
+
 import ChatIdPage from '~/pages/chat/[id].vue'
 
 // Plan 26: deep-link route `/chat/:id`. The page parses the param,
@@ -89,8 +100,9 @@ describe('pages/chat/[id].vue', () => {
     apiGet.mockRejectedValueOnce(err)
     const wrapper = mount(ChatIdPage)
     await flushPromises()
-    expect(toastError).toHaveBeenCalledWith('Konversation nicht gefunden.')
-    expect(navigateMock).toHaveBeenCalledWith('/', { replace: true })
+    expect(toastError).toHaveBeenCalledWith('pages.chat.notFound')
+    // useLocalePath() may return '/en' under the EN locale — match either.
+    expect(navigateMock).toHaveBeenLastCalledWith(expect.stringMatching(/^\/(en\/?)?$/), { replace: true })
     expect(localStorage.getItem('holzi.lastConversationId')).toBeNull()
     // No hub mounted while invalid.
     expect(wrapper.find('[data-testid="chathub-stub"]').exists()).toBe(false)
@@ -101,8 +113,9 @@ describe('pages/chat/[id].vue', () => {
     mount(ChatIdPage)
     await flushPromises()
     expect(apiGet).not.toHaveBeenCalled()
-    expect(toastError).toHaveBeenCalledWith('Konversation nicht gefunden.')
-    expect(navigateMock).toHaveBeenCalledWith('/', { replace: true })
+    expect(toastError).toHaveBeenCalledWith('pages.chat.notFound')
+    // useLocalePath() may return '/en' under the EN locale — match either.
+    expect(navigateMock).toHaveBeenLastCalledWith(expect.stringMatching(/^\/(en\/?)?$/), { replace: true })
   })
 
   it('does NOT redirect on 401 (auth middleware owns that path)', async () => {

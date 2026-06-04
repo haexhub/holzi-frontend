@@ -37,7 +37,7 @@ const humanSize = computed(() => {
       v-if="removable"
       type="button"
       class="shrink-0 rounded p-0.5 text-muted-foreground transition-colors hover:text-destructive"
-      :aria-label="`${filename} entfernen`"
+      :aria-label="`${filename} ${$t('components.attachmentChip.removeSuffix')}`"
       @click="emit('remove')"
     >
       <X class="size-3" />

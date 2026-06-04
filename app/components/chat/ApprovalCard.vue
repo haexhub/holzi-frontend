@@ -75,13 +75,13 @@ function decide(decision: ApprovalDecision) {
       }"
     >
       <ShieldAlert class="size-4 shrink-0" />
-      <span class="font-medium">Bestätigung erforderlich</span>
+      <span class="font-medium">{{ $t('components.approvalCard.title') }}</span>
       <span class="ml-auto inline-flex items-center gap-1 font-medium">
         <Loader2 v-if="status === 'submitting'" class="size-3.5 animate-spin" />
         <Check v-else-if="status === 'allowed'" class="size-3.5" />
         <X v-else-if="status === 'denied'" class="size-3.5" />
-        <span v-if="status === 'allowed'">Erlaubt</span>
-        <span v-else-if="status === 'denied'">Abgelehnt</span>
+        <span v-if="status === 'allowed'">{{ $t('components.approvalCard.verdict.allowed') }}</span>
+        <span v-else-if="status === 'denied'">{{ $t('components.approvalCard.verdict.denied') }}</span>
       </span>
     </div>
 
@@ -89,14 +89,14 @@ function decide(decision: ApprovalDecision) {
     <div class="space-y-2 border-t bg-background px-3 py-2">
       <p>{{ approval.reason }}</p>
       <p class="text-muted-foreground">
-        Tool: <span class="font-mono font-medium text-foreground">{{ approval.name }}</span>
+        {{ $t('components.approvalCard.toolLabel') }} <span class="font-mono font-medium text-foreground">{{ approval.name }}</span>
       </p>
       <div v-if="isMcpInstall">
-        <p class="mb-1 font-medium text-muted-foreground">Details</p>
+        <p class="mb-1 font-medium text-muted-foreground">{{ $t('components.approvalCard.details') }}</p>
         <ChatMcpInstallApprovalDetails :params="approval.arguments" />
       </div>
       <div v-else-if="hasArguments">
-        <p class="mb-1 font-medium text-muted-foreground">Argumente</p>
+        <p class="mb-1 font-medium text-muted-foreground">{{ $t('components.approvalCard.arguments') }}</p>
         <pre class="max-h-48 overflow-auto rounded bg-muted p-2 font-mono whitespace-pre-wrap break-words">{{ prettyArguments }}</pre>
       </div>
 
@@ -111,11 +111,11 @@ function decide(decision: ApprovalDecision) {
           :disabled="busy"
           @click="showReason = true"
         >
-          Mit Begründung
+          {{ $t('components.approvalCard.withReason') }}
         </button>
         <div v-else class="space-y-1">
           <label class="block font-medium text-muted-foreground" for="approval-reason-input">
-            Begründung (optional)
+            {{ $t('components.approvalCard.reasonLabel') }}
           </label>
           <textarea
             id="approval-reason-input"
@@ -124,7 +124,7 @@ function decide(decision: ApprovalDecision) {
             :disabled="busy"
             rows="2"
             class="w-full resize-y rounded border bg-background px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-            placeholder="Warum? (max. 500 Zeichen) — wird dem Modell auf Ablehnen mitgegeben"
+            :placeholder="$t('components.approvalCard.reasonPlaceholder')"
           />
         </div>
       </div>
@@ -139,7 +139,7 @@ function decide(decision: ApprovalDecision) {
           :disabled="busy"
           @click="decide('deny')"
         >
-          Ablehnen
+          {{ $t('components.approvalCard.actions.deny') }}
         </button>
         <button
           type="button"
@@ -147,7 +147,7 @@ function decide(decision: ApprovalDecision) {
           :disabled="busy"
           @click="decide('allow_once')"
         >
-          Einmal erlauben
+          {{ $t('components.approvalCard.actions.allowOnce') }}
         </button>
         <button
           type="button"
@@ -155,7 +155,7 @@ function decide(decision: ApprovalDecision) {
           :disabled="busy"
           @click="decide('allow_session')"
         >
-          In dieser Session
+          {{ $t('components.approvalCard.actions.allowSession') }}
         </button>
         <button
           type="button"
@@ -164,7 +164,7 @@ function decide(decision: ApprovalDecision) {
           @click="decide('allow_always')"
         >
           <AlertOctagon class="size-3.5" />
-          Immer erlauben
+          {{ $t('components.approvalCard.actions.allowAlways') }}
         </button>
       </div>
     </div>

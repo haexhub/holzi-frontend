@@ -1,5 +1,14 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
+
+vi.mock('vue-i18n', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('vue-i18n')>()
+  return {
+    ...orig,
+    useI18n: () => ({ t: (key: string) => key }),
+  }
+})
+
 import SandboxCrashCard from '~/components/chat/SandboxCrashCard.vue'
 import type { SandboxCrashedData } from '~/types/api'
 
@@ -15,9 +24,9 @@ describe('SandboxCrashCard.vue', () => {
     const wrapper = mount(SandboxCrashCard, {
       props: { crash: baseCrash, restarting: false },
     })
-    expect(wrapper.text()).toContain('Sandbox abgestürzt')
+    expect(wrapper.text()).toContain('components.sandboxCrashCard.title')
     expect(wrapper.text()).toContain('ws-abc-123')
-    expect(wrapper.text()).toContain('Abgestürzt')
+    expect(wrapper.text()).toContain('components.sandboxCrashCard.state.crashed')
     expect(wrapper.text()).toContain('137')
   })
 
@@ -25,7 +34,7 @@ describe('SandboxCrashCard.vue', () => {
     const wrapper = mount(SandboxCrashCard, {
       props: { crash: baseCrash, restarting: false },
     })
-    const restart = wrapper.findAll('button').find((b) => b.text().includes('Neustart'))
+    const restart = wrapper.findAll('button').find((b) => b.text().includes('components.sandboxCrashCard.restart'))
     expect(restart).toBeTruthy()
     await restart!.trigger('click')
     expect(wrapper.emitted('restart')).toEqual([[]])
@@ -35,7 +44,7 @@ describe('SandboxCrashCard.vue', () => {
     const wrapper = mount(SandboxCrashCard, {
       props: { crash: baseCrash, restarting: false },
     })
-    const dismiss = wrapper.findAll('button').find((b) => b.text().includes('Schließen'))
+    const dismiss = wrapper.findAll('button').find((b) => b.text().includes('common.close'))
     expect(dismiss).toBeTruthy()
     await dismiss!.trigger('click')
     expect(wrapper.emitted('dismiss')).toEqual([[]])
@@ -48,7 +57,7 @@ describe('SandboxCrashCard.vue', () => {
     for (const button of wrapper.findAll('button')) {
       expect(button.attributes('disabled')).toBeDefined()
     }
-    expect(wrapper.text()).toContain('Wird neu gestartet')
+    expect(wrapper.text()).toContain('components.sandboxCrashCard.restarting')
   })
 
   it('does not emit when buttons are clicked while restarting', async () => {
@@ -69,7 +78,7 @@ describe('SandboxCrashCard.vue', () => {
         restarting: false,
       },
     })
-    expect(wrapper.text()).toContain('Speicher erschöpft')
-    expect(wrapper.text()).not.toContain('Abgestürzt')
+    expect(wrapper.text()).toContain('components.sandboxCrashCard.state.oom')
+    expect(wrapper.text()).not.toContain('components.sandboxCrashCard.state.crashed')
   })
 })

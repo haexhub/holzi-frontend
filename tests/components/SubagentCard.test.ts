@@ -1,5 +1,14 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
+
+vi.mock('vue-i18n', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('vue-i18n')>()
+  return {
+    ...orig,
+    useI18n: () => ({ t: (key: string) => key }),
+  }
+})
+
 import SubagentCard from '~/components/chat/SubagentCard.vue'
 
 describe('SubagentCard.vue', () => {
@@ -17,7 +26,7 @@ describe('SubagentCard.vue', () => {
       },
     })
     expect(wrapper.text()).toContain('researcher')
-    expect(wrapper.text()).toContain('Läuft')
+    expect(wrapper.text()).toContain('components.subagentCard.status.running')
     // Collapsed: task hidden until expanded.
     expect(wrapper.text()).not.toContain('population of Berlin')
 
@@ -38,7 +47,7 @@ describe('SubagentCard.vue', () => {
         },
       },
     })
-    expect(wrapper.text()).toContain('Fertig')
+    expect(wrapper.text()).toContain('components.subagentCard.status.success')
     await wrapper.find('button').trigger('click')
     expect(wrapper.text()).toContain('3.7 million')
   })
@@ -56,7 +65,7 @@ describe('SubagentCard.vue', () => {
         },
       },
     })
-    expect(wrapper.text()).toContain('Fehler')
+    expect(wrapper.text()).toContain('components.subagentCard.status.error')
     await wrapper.find('button').trigger('click')
     expect(wrapper.text()).toContain('timed out')
   })

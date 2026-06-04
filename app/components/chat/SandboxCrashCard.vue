@@ -12,15 +12,17 @@ const emit = defineEmits<{
   dismiss: []
 }>()
 
+const { t } = useI18n({ useScope: 'global' })
+
 const stateLabel = computed(() => {
   switch (props.crash.state) {
     case 'oom':
-      return 'Speicher erschöpft (OOM)'
+      return t('components.sandboxCrashCard.state.oom')
     case 'removed':
-      return 'Sandbox entfernt'
+      return t('components.sandboxCrashCard.state.removed')
     case 'crashed':
     default:
-      return 'Abgestürzt'
+      return t('components.sandboxCrashCard.state.crashed')
   }
 })
 </script>
@@ -33,17 +35,17 @@ const stateLabel = computed(() => {
       class="flex items-center gap-2 bg-destructive/10 px-3 py-2 text-destructive"
     >
       <AlertOctagon class="size-4 shrink-0" />
-      <span class="font-medium">Sandbox abgestürzt</span>
+      <span class="font-medium">{{ $t('components.sandboxCrashCard.title') }}</span>
       <span class="ml-auto font-medium">{{ stateLabel }}</span>
     </div>
 
     <div class="space-y-2 border-t bg-background px-3 py-2">
       <p class="text-muted-foreground">
-        Workspace:
+        {{ $t('components.sandboxCrashCard.workspaceLabel') }}
         <span class="font-mono font-medium text-foreground">{{ crash.workspace_id }}</span>
       </p>
       <p v-if="crash.exit_code != null" class="text-muted-foreground">
-        Exit-Code:
+        {{ $t('components.sandboxCrashCard.exitCodeLabel') }}
         <span class="font-mono font-medium text-foreground">{{ crash.exit_code }}</span>
       </p>
 
@@ -54,7 +56,7 @@ const stateLabel = computed(() => {
           :disabled="restarting"
           @click="emit('dismiss')"
         >
-          Schließen
+          {{ $t('common.close') }}
         </button>
         <button
           type="button"
@@ -63,7 +65,7 @@ const stateLabel = computed(() => {
           @click="emit('restart')"
         >
           <Loader2 v-if="restarting" class="size-3.5 animate-spin" />
-          <span>{{ restarting ? 'Wird neu gestartet…' : 'Neustart' }}</span>
+          <span>{{ restarting ? $t('components.sandboxCrashCard.restarting') : $t('components.sandboxCrashCard.restart') }}</span>
         </button>
       </div>
     </div>

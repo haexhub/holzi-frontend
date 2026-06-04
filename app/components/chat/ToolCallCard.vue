@@ -21,6 +21,8 @@ const props = defineProps<{
   }
 }>()
 
+const { t } = useI18n({ useScope: 'global' })
+
 const expanded = ref(false)
 
 const hasArguments = computed(() => {
@@ -43,11 +45,11 @@ const hasDetails = computed(() => hasArguments.value || !!output.value)
 const statusLabel = computed(() => {
   switch (props.toolCall.status) {
     case 'running':
-      return 'Läuft…'
+      return t('components.toolCallCard.status.running')
     case 'success':
-      return 'Erfolg'
+      return t('components.toolCallCard.status.success')
     case 'error':
-      return 'Fehler'
+      return t('components.toolCallCard.status.error')
     default:
       return ''
   }
@@ -93,7 +95,7 @@ function toggle() {
     <!-- Expanded details: arguments + result/error. -->
     <div v-if="expanded && hasDetails" class="space-y-2 border-t bg-background px-3 py-2">
       <div v-if="hasArguments">
-        <p class="mb-1 font-medium text-muted-foreground">Argumente</p>
+        <p class="mb-1 font-medium text-muted-foreground">{{ $t('components.toolCallCard.arguments') }}</p>
         <pre class="max-h-48 overflow-auto rounded bg-muted p-2 font-mono whitespace-pre-wrap break-words">{{ prettyArguments }}</pre>
       </div>
       <div v-if="output">
@@ -101,7 +103,7 @@ function toggle() {
           class="mb-1 font-medium"
           :class="toolCall.status === 'error' ? 'text-destructive' : 'text-muted-foreground'"
         >
-          {{ toolCall.status === 'error' ? 'Fehler' : 'Ergebnis' }}
+          {{ toolCall.status === 'error' ? $t('components.toolCallCard.status.error') : $t('components.toolCallCard.result') }}
         </p>
         <pre
           class="max-h-64 overflow-auto rounded p-2 font-mono whitespace-pre-wrap break-words"

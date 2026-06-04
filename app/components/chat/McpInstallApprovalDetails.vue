@@ -66,7 +66,7 @@ const hasCredentials = computed(() => {
       class="text-xs text-muted-foreground"
       data-testid="mcp-install-env"
     >
-      env:
+      {{ $t('components.mcpInstallApprovalDetails.envLabel') }}
       <code
         v-for="key in envKeys"
         :key="key"
@@ -79,7 +79,7 @@ const hasCredentials = computed(() => {
       class="text-xs text-muted-foreground"
       data-testid="mcp-install-credentials"
     >
-      Zugangsdaten: <span class="font-mono">gesetzt (verborgen)</span>
+      {{ $t('components.mcpInstallApprovalDetails.credentialsLabel') }} <span class="font-mono">{{ $t('components.mcpInstallApprovalDetails.credentialsHidden') }}</span>
     </p>
   </div>
 </template>

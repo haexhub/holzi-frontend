@@ -19,7 +19,7 @@ describe('ApprovalCard.vue', () => {
     const wrapper = mount(ApprovalCard, {
       props: { approval: baseApproval, status: 'pending' },
     })
-    expect(wrapper.text()).toContain('Bestätigung erforderlich')
+    expect(wrapper.text()).toContain('components.approvalCard.title')
     expect(wrapper.text()).toContain('linked Signal account')
     expect(wrapper.text()).toContain('cross_channel_send')
     // Arguments are rendered.
@@ -34,10 +34,10 @@ describe('ApprovalCard.vue', () => {
     const labels = wrapper.findAll('button').map((b) => b.text())
     expect(labels).toEqual(
       expect.arrayContaining([
-        'Ablehnen',
-        'Einmal erlauben',
-        'In dieser Session',
-        expect.stringContaining('Immer erlauben'),
+        'components.approvalCard.actions.deny',
+        'components.approvalCard.actions.allowOnce',
+        'components.approvalCard.actions.allowSession',
+        expect.stringContaining('components.approvalCard.actions.allowAlways'),
       ]),
     )
   })
@@ -48,10 +48,10 @@ describe('ApprovalCard.vue', () => {
     })
     const buttons = wrapper.findAll('button')
 
-    await clickByLabel(buttons, 'Ablehnen').trigger('click')
-    await clickByLabel(buttons, 'Einmal erlauben').trigger('click')
-    await clickByLabel(buttons, 'In dieser Session').trigger('click')
-    await clickByLabel(buttons, 'Immer erlauben').trigger('click')
+    await clickByLabel(buttons, 'components.approvalCard.actions.deny').trigger('click')
+    await clickByLabel(buttons, 'components.approvalCard.actions.allowOnce').trigger('click')
+    await clickByLabel(buttons, 'components.approvalCard.actions.allowSession').trigger('click')
+    await clickByLabel(buttons, 'components.approvalCard.actions.allowAlways').trigger('click')
 
     expect(wrapper.emitted('decide')).toEqual([
       [{ decision: 'deny' }],
@@ -68,7 +68,7 @@ describe('ApprovalCard.vue', () => {
     // Textarea is collapsed by default — expand it via the "Mit Begründung" link.
     const expand = wrapper
       .findAll('button')
-      .find((b) => b.text().includes('Mit Begründung'))
+      .find((b) => b.text().includes('components.approvalCard.withReason'))
     expect(expand).toBeTruthy()
     await expand!.trigger('click')
 
@@ -76,7 +76,7 @@ describe('ApprovalCard.vue', () => {
     expect(textarea.exists()).toBe(true)
     await textarea.setValue('  this would page oncall  ')
 
-    await clickByLabel(wrapper.findAll('button'), 'Ablehnen').trigger('click')
+    await clickByLabel(wrapper.findAll('button'), 'components.approvalCard.actions.deny').trigger('click')
 
     // Reason is trimmed before emit.
     expect(wrapper.emitted('decide')).toEqual([
@@ -90,7 +90,7 @@ describe('ApprovalCard.vue', () => {
     })
     await wrapper
       .findAll('button')
-      .find((b) => b.text().includes('Mit Begründung'))!
+      .find((b) => b.text().includes('components.approvalCard.withReason'))!
       .trigger('click')
     const textarea = wrapper.find('textarea')
     expect(textarea.attributes('maxlength')).toBe('500')
@@ -102,7 +102,7 @@ describe('ApprovalCard.vue', () => {
     })
     const buttons = wrapper
       .findAll('button')
-      .filter((b) => !b.text().includes('Mit Begründung'))
+      .filter((b) => !b.text().includes('components.approvalCard.withReason'))
     expect(buttons.length).toBe(4)
     for (const button of buttons) {
       expect(button.attributes('disabled')).toBeDefined()
@@ -131,7 +131,7 @@ describe('ApprovalCard.vue', () => {
     expect(wrapper.text()).toContain('npx server-filesystem /tmp')
     // Buttons are still the four generic Plan-21 decisions.
     expect(
-      wrapper.findAll('button').filter((b) => !b.text().includes('Mit Begründung')),
+      wrapper.findAll('button').filter((b) => !b.text().includes('components.approvalCard.withReason')),
     ).toHaveLength(4)
   })
 
@@ -148,12 +148,12 @@ describe('ApprovalCard.vue', () => {
       props: { approval: baseApproval, status: 'allowed' },
     })
     expect(allowed.findAll('button')).toHaveLength(0)
-    expect(allowed.text()).toContain('Erlaubt')
+    expect(allowed.text()).toContain('components.approvalCard.verdict.allowed')
 
     const denied = mount(ApprovalCard, {
       props: { approval: baseApproval, status: 'denied' },
     })
     expect(denied.findAll('button')).toHaveLength(0)
-    expect(denied.text()).toContain('Abgelehnt')
+    expect(denied.text()).toContain('components.approvalCard.verdict.denied')
   })
 })

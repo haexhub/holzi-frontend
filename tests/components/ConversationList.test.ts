@@ -1,5 +1,17 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
+
+vi.mock('vue-i18n', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('vue-i18n')>()
+  return {
+    ...orig,
+    useI18n: () => ({
+      t: (key: string, params?: Record<string, unknown>) =>
+        params ? `${key}:${JSON.stringify(params)}` : key,
+    }),
+  }
+})
+
 import ConversationList from '~/components/chat/ConversationList.vue'
 import type { Conversation } from '~/types/api'
 
@@ -56,13 +68,13 @@ describe('ConversationList', () => {
     expect(emitted![0]).toEqual([5])
   })
 
-  it('emits new-chat from the "Neu" button (used by Plan 26 to route back to /)', async () => {
+  it('emits new-chat from the "new" button (used by Plan 26 to route back to /)', async () => {
     const wrapper = mount(ConversationList, {
       props: { conversations: [], activeId: null },
     })
-    // The header has the "Neu" button — find it by text.
+    // The header has the new-chat button — find it by i18n key.
     const buttons = wrapper.findAll('button')
-    const neu = buttons.find((b) => b.text().includes('Neu'))
+    const neu = buttons.find((b) => b.text().includes('components.conversationList.new'))
     expect(neu).toBeTruthy()
     await neu!.trigger('click')
     expect(wrapper.emitted('new-chat')).toBeTruthy()

@@ -70,7 +70,7 @@ describe('McpInstallApprovalDetails.vue', () => {
       },
     })
     const creds = wrapper.get('[data-testid="mcp-install-credentials"]')
-    expect(creds.text().toLowerCase()).toContain('gesetzt')
+    expect(creds.text()).toContain('components.mcpInstallApprovalDetails.credentialsHidden')
   })
 
   it('omits env and credentials rows when absent', () => {

@@ -23,6 +23,8 @@ const props = defineProps<{
   }
 }>()
 
+const { t } = useI18n({ useScope: 'global' })
+
 const expanded = ref(false)
 
 // Final output on success, error text on failure; falls back to the streamed
@@ -40,11 +42,11 @@ const hasDetails = computed(
 const statusLabel = computed(() => {
   switch (props.subagent.status) {
     case 'running':
-      return 'Läuft…'
+      return t('components.subagentCard.status.running')
     case 'success':
-      return 'Fertig'
+      return t('components.subagentCard.status.success')
     case 'error':
-      return 'Fehler'
+      return t('components.subagentCard.status.error')
     default:
       return ''
   }
@@ -72,7 +74,7 @@ function toggle() {
       @click="toggle"
     >
       <Bot class="size-3.5 shrink-0" />
-      <span class="font-medium">Subagent</span>
+      <span class="font-medium">{{ $t('components.subagentCard.label') }}</span>
       <span class="font-mono">{{ subagent.name }}</span>
       <span class="ml-auto inline-flex items-center gap-1">
         <Loader2 v-if="subagent.status === 'running'" class="size-3.5 animate-spin" />
@@ -89,7 +91,7 @@ function toggle() {
 
     <div v-if="expanded && hasDetails" class="space-y-2 border-t bg-background px-3 py-2">
       <div v-if="subagent.prompt">
-        <p class="mb-1 font-medium text-muted-foreground">Aufgabe</p>
+        <p class="mb-1 font-medium text-muted-foreground">{{ $t('components.subagentCard.task') }}</p>
         <pre class="max-h-32 overflow-auto rounded bg-muted p-2 whitespace-pre-wrap break-words font-sans">{{ subagent.prompt }}</pre>
       </div>
       <div v-if="output">
@@ -97,7 +99,7 @@ function toggle() {
           class="mb-1 font-medium"
           :class="subagent.status === 'error' ? 'text-destructive' : 'text-muted-foreground'"
         >
-          {{ subagent.status === 'error' ? 'Fehler' : 'Ausgabe' }}
+          {{ subagent.status === 'error' ? $t('components.subagentCard.status.error') : $t('components.subagentCard.output') }}
         </p>
         <pre
           class="max-h-64 overflow-auto rounded p-2 whitespace-pre-wrap break-words font-sans"

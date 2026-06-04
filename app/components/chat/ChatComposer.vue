@@ -115,7 +115,7 @@ const isDragOver = computed(() => !props.streaming && isOverDropZone.value)
       data-testid="composer-dropzone"
       class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-md border-2 border-dashed border-primary/70 bg-primary/10 text-sm font-medium text-primary"
     >
-      Dateien hier ablegen
+      {{ $t('components.chatComposer.dropHere') }}
     </div>
     <!-- Selected-but-not-yet-sent attachments. Removable until send. -->
     <div v-if="files.length" class="flex flex-wrap gap-1.5">
@@ -143,8 +143,8 @@ const isDragOver = computed(() => !props.streaming && isOverDropZone.value)
         type="button"
         size="icon"
         variant="ghost"
-        title="Datei anhängen"
-        aria-label="Datei anhängen"
+        :title="$t('components.chatComposer.attachAria')"
+        :aria-label="$t('components.chatComposer.attachAria')"
         @click="fileInput?.click()"
       >
         <Paperclip class="size-4" />
@@ -154,8 +154,8 @@ const isDragOver = computed(() => !props.streaming && isOverDropZone.value)
         v-model="draft"
         :rows="1"
         :placeholder="streaming
-          ? 'Nächste Nachricht eingeben…  (wird nach der Antwort gesendet)'
-          : 'Nachricht an Hermes…  (Enter = senden, Shift+Enter = Zeilenumbruch)'"
+          ? $t('components.chatComposer.placeholder.queue')
+          : $t('components.chatComposer.placeholder.default')"
         class="min-h-[44px] flex-1 resize-none overflow-hidden"
         @keydown="onKeydown"
       />
@@ -167,8 +167,8 @@ const isDragOver = computed(() => !props.streaming && isOverDropZone.value)
         size="icon"
         variant="destructive"
         :disabled="!canStop"
-        :title="canStop ? 'Antwort abbrechen' : 'Antwort wird vorbereitet…'"
-        aria-label="Antwort abbrechen"
+        :title="canStop ? $t('components.chatComposer.stop.ready') : $t('components.chatComposer.stop.preparing')"
+        :aria-label="$t('components.chatComposer.stop.ready')"
         @click="emit('stop')"
       >
         <Square class="size-4 fill-current" />
@@ -177,7 +177,7 @@ const isDragOver = computed(() => !props.streaming && isOverDropZone.value)
         type="submit"
         size="icon"
         :disabled="!draft.trim()"
-        :title="streaming ? 'In Warteschlange einreihen' : 'Senden'"
+        :title="streaming ? $t('components.chatComposer.send.queue') : $t('components.chatComposer.send.now')"
       >
         <Send class="size-4" />
       </UiButton>

@@ -34,10 +34,10 @@ function toggle() {
       @click="toggle"
     >
       <Brain class="size-3.5 shrink-0" />
-      <span class="font-medium">Gedankengang</span>
+      <span class="font-medium">{{ $t('components.reasoningCard.title') }}</span>
       <span class="ml-auto inline-flex items-center gap-1">
         <Loader2 v-if="streaming" class="size-3.5 animate-spin" />
-        <span v-if="streaming">Denkt nach…</span>
+        <span v-if="streaming">{{ $t('components.reasoningCard.thinking') }}</span>
         <component :is="expanded ? ChevronDown : ChevronRight" class="size-3.5" />
       </span>
     </button>

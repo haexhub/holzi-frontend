@@ -10,6 +10,7 @@ import { useLastConversationStore } from '~/stores/lastConversation'
 
 const api = useApi()
 const lastConv = useLastConversationStore()
+const localePath = useLocalePath()
 
 const ready = ref(false)
 
@@ -21,7 +22,7 @@ onMounted(async () => {
   }
   try {
     await api.get(`/api/conversations/${lastId}`)
-    await navigateTo(`/chat/${lastId}`, { replace: true })
+    await navigateTo(localePath(`/chat/${lastId}`), { replace: true })
   }
   catch {
     // 404 / 401 / network — drop the stale pointer, render the empty hub.

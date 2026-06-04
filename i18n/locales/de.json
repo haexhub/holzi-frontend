@@ -33,6 +33,140 @@
       "toLight": "Light-Mode",
       "toDark": "Dark-Mode"
     },
+    "reasoningCard": {
+      "title": "Gedankengang",
+      "thinking": "Denkt nach…"
+    },
+    "emptyChatState": {
+      "welcome": {
+        "title": "Willkommen bei Hermes",
+        "body": "Bevor du chatten kannst, brauchst du LLM-Credentials. Füge einen API-Key hinzu oder verbinde deinen Claude-Account per OAuth.",
+        "cta": "Credentials einrichten"
+      },
+      "hello": "Sag Hermes Hallo.",
+      "banner": {
+        "title": "Setup unvollständig",
+        "findingSingular": "Subsystem meldet",
+        "findingPlural": "Subsysteme melden",
+        "suffix": "Warnungen oder Fehler."
+      }
+    },
+    "toolCallCard": {
+      "status": {
+        "running": "Läuft…",
+        "success": "Erfolg",
+        "error": "Fehler"
+      },
+      "arguments": "Argumente",
+      "result": "Ergebnis"
+    },
+    "subagentCard": {
+      "label": "Subagent",
+      "status": {
+        "running": "Läuft…",
+        "success": "Fertig",
+        "error": "Fehler"
+      },
+      "task": "Aufgabe",
+      "output": "Ausgabe"
+    },
+    "attachmentChip": {
+      "removeSuffix": "entfernen"
+    },
+    "chatComposer": {
+      "dropHere": "Dateien hier ablegen",
+      "attachAria": "Datei anhängen",
+      "placeholder": {
+        "default": "Nachricht an Hermes…  (Enter = senden, Shift+Enter = Zeilenumbruch)",
+        "queue": "Nächste Nachricht eingeben…  (wird nach der Antwort gesendet)"
+      },
+      "stop": {
+        "ready": "Antwort abbrechen",
+        "preparing": "Antwort wird vorbereitet…"
+      },
+      "send": {
+        "now": "Senden",
+        "queue": "In Warteschlange einreihen"
+      }
+    },
+    "conversationList": {
+      "title": "Konversationen",
+      "new": "Neu",
+      "searchPlaceholder": "Suchen…",
+      "searchAria": "Konversationen durchsuchen",
+      "clearSearch": "Suche leeren",
+      "empty": {
+        "noMatches": "Keine Treffer.",
+        "none": "Keine Konversationen."
+      },
+      "msgSuffix": "Msg",
+      "expiresSoon": "Läuft bald ab",
+      "expiresInDays": "Läuft in {days} Tag(en) ab",
+      "bookmark": {
+        "add": "Lesezeichen setzen",
+        "remove": "Lesezeichen entfernen"
+      },
+      "rename": {
+        "titleAria": "Konversationstitel",
+        "saveAria": "Titel speichern",
+        "cancelAria": "Umbenennen abbrechen"
+      },
+      "row": {
+        "renameAria": "{title} umbenennen",
+        "deleteAria": "{title} löschen"
+      },
+      "deleteConfirm": {
+        "title": "Konversation löschen?",
+        "description": "\"{title}\" wird endgültig gelöscht."
+      }
+    },
+    "sandboxCrashCard": {
+      "title": "Sandbox abgestürzt",
+      "workspaceLabel": "Workspace:",
+      "exitCodeLabel": "Exit-Code:",
+      "restart": "Neustart",
+      "restarting": "Wird neu gestartet…",
+      "state": {
+        "oom": "Speicher erschöpft (OOM)",
+        "removed": "Sandbox entfernt",
+        "crashed": "Abgestürzt"
+      }
+    },
+    "chatMessage": {
+      "edit": {
+        "aria": "Nachricht bearbeiten",
+        "hint": "Spätere Nachrichten werden neu generiert.",
+        "saveAndRegen": "Speichern & neu generieren"
+      },
+      "retry": {
+        "aria": "Antwort neu generieren",
+        "label": "Neu generieren"
+      }
+    },
+    "mcpInstallApprovalDetails": {
+      "envLabel": "env:",
+      "credentialsLabel": "Zugangsdaten:",
+      "credentialsHidden": "gesetzt (verborgen)"
+    },
+    "approvalCard": {
+      "title": "Bestätigung erforderlich",
+      "toolLabel": "Tool:",
+      "details": "Details",
+      "arguments": "Argumente",
+      "withReason": "Mit Begründung",
+      "reasonLabel": "Begründung (optional)",
+      "reasonPlaceholder": "Warum? (max. 500 Zeichen) — wird dem Modell auf Ablehnen mitgegeben",
+      "verdict": {
+        "allowed": "Erlaubt",
+        "denied": "Abgelehnt"
+      },
+      "actions": {
+        "deny": "Ablehnen",
+        "allowOnce": "Einmal erlauben",
+        "allowSession": "In dieser Session",
+        "allowAlways": "Immer erlauben"
+      }
+    },
     "workspacePanel": {
       "title": "Workspace",
       "newFileAria": "Neue Datei",
@@ -278,6 +412,9 @@
     "UNKNOWN": "Unbekannter Fehler."
   },
   "pages": {
+    "chat": {
+      "notFound": "Konversation nicht gefunden."
+    },
     "settings": {
       "title": "Control Center",
       "subtitle": "Provider, Messenger und sonstige Konfiguration des Agents.",

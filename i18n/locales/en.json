@@ -33,6 +33,140 @@
       "toLight": "Light mode",
       "toDark": "Dark mode"
     },
+    "reasoningCard": {
+      "title": "Reasoning",
+      "thinking": "Thinking…"
+    },
+    "emptyChatState": {
+      "welcome": {
+        "title": "Welcome to Hermes",
+        "body": "Before you can chat, you need LLM credentials. Add an API key or connect your Claude account via OAuth.",
+        "cta": "Set up credentials"
+      },
+      "hello": "Say hi to Hermes.",
+      "banner": {
+        "title": "Setup incomplete",
+        "findingSingular": "subsystem reports",
+        "findingPlural": "subsystems report",
+        "suffix": "warnings or errors."
+      }
+    },
+    "toolCallCard": {
+      "status": {
+        "running": "Running…",
+        "success": "Success",
+        "error": "Error"
+      },
+      "arguments": "Arguments",
+      "result": "Result"
+    },
+    "subagentCard": {
+      "label": "Subagent",
+      "status": {
+        "running": "Running…",
+        "success": "Done",
+        "error": "Error"
+      },
+      "task": "Task",
+      "output": "Output"
+    },
+    "attachmentChip": {
+      "removeSuffix": "remove"
+    },
+    "chatComposer": {
+      "dropHere": "Drop files here",
+      "attachAria": "Attach file",
+      "placeholder": {
+        "default": "Message Hermes…  (Enter = send, Shift+Enter = newline)",
+        "queue": "Type the next message…  (sent after the current reply)"
+      },
+      "stop": {
+        "ready": "Cancel response",
+        "preparing": "Response is starting up…"
+      },
+      "send": {
+        "now": "Send",
+        "queue": "Queue"
+      }
+    },
+    "conversationList": {
+      "title": "Conversations",
+      "new": "New",
+      "searchPlaceholder": "Search…",
+      "searchAria": "Search conversations",
+      "clearSearch": "Clear search",
+      "empty": {
+        "noMatches": "No matches.",
+        "none": "No conversations."
+      },
+      "msgSuffix": "msgs",
+      "expiresSoon": "Expiring soon",
+      "expiresInDays": "Expires in {days} day(s)",
+      "bookmark": {
+        "add": "Add bookmark",
+        "remove": "Remove bookmark"
+      },
+      "rename": {
+        "titleAria": "Conversation title",
+        "saveAria": "Save title",
+        "cancelAria": "Cancel rename"
+      },
+      "row": {
+        "renameAria": "Rename {title}",
+        "deleteAria": "Delete {title}"
+      },
+      "deleteConfirm": {
+        "title": "Delete conversation?",
+        "description": "\"{title}\" will be permanently deleted."
+      }
+    },
+    "sandboxCrashCard": {
+      "title": "Sandbox crashed",
+      "workspaceLabel": "Workspace:",
+      "exitCodeLabel": "Exit code:",
+      "restart": "Restart",
+      "restarting": "Restarting…",
+      "state": {
+        "oom": "Out of memory (OOM)",
+        "removed": "Sandbox removed",
+        "crashed": "Crashed"
+      }
+    },
+    "chatMessage": {
+      "edit": {
+        "aria": "Edit message",
+        "hint": "Later messages will be regenerated.",
+        "saveAndRegen": "Save & regenerate"
+      },
+      "retry": {
+        "aria": "Regenerate response",
+        "label": "Regenerate"
+      }
+    },
+    "mcpInstallApprovalDetails": {
+      "envLabel": "env:",
+      "credentialsLabel": "Credentials:",
+      "credentialsHidden": "set (hidden)"
+    },
+    "approvalCard": {
+      "title": "Approval required",
+      "toolLabel": "Tool:",
+      "details": "Details",
+      "arguments": "Arguments",
+      "withReason": "Add a reason",
+      "reasonLabel": "Reason (optional)",
+      "reasonPlaceholder": "Why? (max. 500 chars) — passed to the model on deny",
+      "verdict": {
+        "allowed": "Allowed",
+        "denied": "Denied"
+      },
+      "actions": {
+        "deny": "Deny",
+        "allowOnce": "Allow once",
+        "allowSession": "Allow this session",
+        "allowAlways": "Always allow"
+      }
+    },
     "workspacePanel": {
       "title": "Workspace",
       "newFileAria": "New file",
@@ -278,6 +412,9 @@
     "UNKNOWN": "Unknown error."
   },
   "pages": {
+    "chat": {
+      "notFound": "Conversation not found."
+    },
     "settings": {
       "title": "Control Center",
       "subtitle": "Provider, messenger and other agent configuration.",

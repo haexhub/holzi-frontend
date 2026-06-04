@@ -15,7 +15,7 @@ describe('ReasoningCard.vue', () => {
       props: { content: 'first I considered the options' },
     })
     // Header label always visible; the reasoning text hidden while collapsed.
-    expect(wrapper.text()).toContain('Gedankengang')
+    expect(wrapper.text()).toContain('components.reasoningCard.title')
     expect(wrapper.text()).not.toContain('first I considered')
 
     await wrapper.find('button').trigger('click')
@@ -34,6 +34,6 @@ describe('ReasoningCard.vue', () => {
     const wrapper = mount(ReasoningCard, {
       props: { content: 'partial', streaming: true },
     })
-    expect(wrapper.text()).toContain('Denkt nach')
+    expect(wrapper.text()).toContain('components.reasoningCard.thinking')
   })
 })

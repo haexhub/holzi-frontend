@@ -102,8 +102,8 @@ describe('EmptyChatState', () => {
       props: { hasCredentials: false },
       global: { stubs },
     })
-    expect(wrapper.text()).toContain('Willkommen bei Hermes')
-    expect(wrapper.text()).toContain('Credentials einrichten')
+    expect(wrapper.text()).toContain('components.emptyChatState.welcome.title')
+    expect(wrapper.text()).toContain('components.emptyChatState.welcome.cta')
     expect(wrapper.find('[data-testid="empty-state-diagnostics-banner"]').exists()).toBe(false)
     expect(apiGet).not.toHaveBeenCalled()
   })
@@ -116,7 +116,7 @@ describe('EmptyChatState', () => {
     })
     await flushPromises()
     expect(apiGet).toHaveBeenCalledWith('/api/diagnostics', undefined)
-    expect(wrapper.text()).toContain('Sag Hermes Hallo.')
+    expect(wrapper.text()).toContain('components.emptyChatState.hello')
     expect(wrapper.find('[data-testid="empty-state-diagnostics-banner"]').exists()).toBe(false)
   })
 
@@ -129,8 +129,9 @@ describe('EmptyChatState', () => {
     await flushPromises()
     const banner = wrapper.find('[data-testid="empty-state-diagnostics-banner"]')
     expect(banner.exists()).toBe(true)
-    expect(banner.text()).toContain('Setup unvollständig')
-    expect(banner.text()).toContain('2 Subsysteme melden')
+    expect(banner.text()).toContain('components.emptyChatState.banner.title')
+    expect(banner.text()).toContain('2')
+    expect(banner.text()).toContain('components.emptyChatState.banner.findingPlural')
     expect(banner.attributes('href')).toBe('/settings/diagnostics')
   })
 
@@ -143,7 +144,8 @@ describe('EmptyChatState', () => {
     await flushPromises()
     const banner = wrapper.find('[data-testid="empty-state-diagnostics-banner"]')
     expect(banner.exists()).toBe(true)
-    expect(banner.text()).toContain('1 Subsystem meldet')
+    expect(banner.text()).toContain('1')
+    expect(banner.text()).toContain('components.emptyChatState.banner.findingSingular')
   })
 
   it('falls through silently when /api/diagnostics rejects', async () => {
@@ -153,7 +155,7 @@ describe('EmptyChatState', () => {
       global: { stubs },
     })
     await flushPromises()
-    expect(wrapper.text()).toContain('Sag Hermes Hallo.')
+    expect(wrapper.text()).toContain('components.emptyChatState.hello')
     expect(wrapper.find('[data-testid="empty-state-diagnostics-banner"]').exists()).toBe(false)
   })
 })

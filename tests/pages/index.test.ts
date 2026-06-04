@@ -60,7 +60,12 @@ describe('pages/index.vue', () => {
     const wrapper = mount(IndexPage)
     await flushPromises()
     expect(apiGet).toHaveBeenCalledWith('/api/conversations/7', undefined)
-    expect(navigateMock).toHaveBeenCalledWith('/chat/7', { replace: true })
+    // useLocalePath() can return a prefixed path (/en/chat/7) under EN —
+    // assert the chat-route suffix instead of pinning the locale prefix.
+    expect(navigateMock).toHaveBeenCalledTimes(1)
+    const [target, opts] = navigateMock.mock.calls[0]!
+    expect(target).toMatch(/\/chat\/7$/)
+    expect(opts).toEqual({ replace: true })
     // The hub never mounts during a pending redirect.
     expect(wrapper.find('[data-testid="chathub-stub"]').exists()).toBe(false)
   })

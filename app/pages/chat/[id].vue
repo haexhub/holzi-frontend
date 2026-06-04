@@ -10,6 +10,8 @@ const route = useRoute()
 const api = useApi()
 const toast = useToast()
 const lastConv = useLastConversationStore()
+const localePath = useLocalePath()
+const { t } = useI18n({ useScope: 'global' })
 
 // Route param is always a string. Bookmarks and copy-paste can land
 // here with garbage; reject anything that isn't a positive integer so
@@ -33,8 +35,8 @@ useHead({
 
 async function validate(id: number | null) {
   if (id === null) {
-    toast.error('Konversation nicht gefunden.')
-    await navigateTo('/', { replace: true })
+    toast.error(t('pages.chat.notFound'))
+    await navigateTo(localePath('/'), { replace: true })
     return
   }
   try {
@@ -49,11 +51,11 @@ async function validate(id: number | null) {
       ?? (err as { status?: number })?.status
     if (status === 401) return
     valid.value = false
-    toast.error('Konversation nicht gefunden.')
+    toast.error(t('pages.chat.notFound'))
     // Drop the last-active pointer too — if it was pointing here we
     // don't want `/` to bounce straight back.
     lastConv.clear()
-    await navigateTo('/', { replace: true })
+    await navigateTo(localePath('/'), { replace: true })
   }
 }
 
