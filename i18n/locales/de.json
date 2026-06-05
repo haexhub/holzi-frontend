@@ -1023,7 +1023,6 @@
           "descriptionDisabled": "Versteckt"
         },
         "tokenBudget": {
-          "label": "Token-Budget",
           "summary": "~{tokens} Tokens · {enabled}/{total} aktiv"
         }
       },
