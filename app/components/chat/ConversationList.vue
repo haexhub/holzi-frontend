@@ -189,7 +189,7 @@ async function confirmDelete(event: MouseEvent, c: Conversation) {
             class="size-8"
             :aria-label="$t('components.conversationList.rename.saveAria')"
           >
-            <Check class="size-3.5" />
+            <Check class="size-4" />
           </UiButton>
           <UiButton
             type="button"
@@ -199,7 +199,7 @@ async function confirmDelete(event: MouseEvent, c: Conversation) {
             :aria-label="$t('components.conversationList.rename.cancelAria')"
             @click="cancelRename"
           >
-            <X class="size-3.5" />
+            <X class="size-4" />
           </UiButton>
         </form>
         <div
@@ -245,22 +245,23 @@ async function confirmDelete(event: MouseEvent, c: Conversation) {
             <div
               class="ml-auto flex items-center opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
             >
-              <button
-                type="button"
-                class="rounded p-0.5 transition-colors hover:bg-background hover:text-foreground"
+              <UiButton
+                variant="ghost"
+                size="icon"
                 :aria-label="$t('components.conversationList.row.renameAria', { title: displayTitle(c) })"
                 @click="startRename($event, c)"
               >
-                <Pencil class="size-3.5" />
-              </button>
-              <button
-                type="button"
-                class="rounded p-0.5 text-destructive transition-colors hover:bg-background hover:text-destructive"
+                <Pencil class="size-4" />
+              </UiButton>
+              <UiButton
+                variant="ghost"
+                size="icon"
+                class="text-destructive hover:text-destructive"
                 :aria-label="$t('components.conversationList.row.deleteAria', { title: displayTitle(c) })"
                 @click="confirmDelete($event, c)"
               >
-                <Trash2 class="size-3.5" />
-              </button>
+                <Trash2 class="size-4" />
+              </UiButton>
             </div>
           </div>
         </div>
