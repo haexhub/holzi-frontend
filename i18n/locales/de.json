@@ -650,7 +650,12 @@
           "name": "Name",
           "namePlaceholder": "z. B. Hermes der Direkte",
           "isDefault": "Als globale Default-Persona setzen",
-          "isDefaultShort": "Default-Persona"
+          "isDefaultShort": "Default-Persona",
+          "credential": "LLM-Credential",
+          "credentialGlobalOption": "— Globale Default-Credential —",
+          "model": "Modell",
+          "modelDefaultOption": "— Default-Modell der Credential —",
+          "modelHintNoCredential": "verwendet das Modell der aktiven Credential"
         },
         "fragments": {
           "soul": {

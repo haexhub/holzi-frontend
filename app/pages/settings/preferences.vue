@@ -14,6 +14,7 @@ import {
 import { translateError } from '~/lib/errorMessages'
 import type {
   ChannelPrompt,
+  LlmCredential,
   Persona,
   PersonaHistoryItem,
 } from '~/types/api'
@@ -32,6 +33,7 @@ import type {
 
 const personasApi = usePersonas()
 const channelsApi = useChannels()
+const credentialsApi = useLlmCredentials()
 const { confirm } = useConfirm()
 // useScope: 'global' is required so `setLocale` is the @nuxtjs/i18n-
 // augmented method (does router navigation + cookie persistence). The
@@ -55,6 +57,7 @@ async function onLocaleChange(event: Event) {
 
 const personas = ref<Persona[]>([])
 const channels = ref<ChannelPrompt[]>([])
+const credentials = ref<LlmCredential[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 
@@ -62,12 +65,14 @@ async function load() {
   loading.value = true
   error.value = null
   try {
-    const [pers, chans] = await Promise.all([
+    const [pers, chans, creds] = await Promise.all([
       personasApi.list(),
       channelsApi.list(),
+      credentialsApi.list(),
     ])
     personas.value = pers.personas
     channels.value = chans.channels
+    credentials.value = creds
   } catch (err: unknown) {
     error.value = err instanceof Error ? err.message : t('pages.preferences.personas.errors.load')
   } finally {
@@ -93,6 +98,11 @@ const formSoul = ref('')
 const formIdentity = ref('')
 const formAgents = ref('')
 const formIsDefault = ref(false)
+// Plan 29-D (Wave B1): per-persona LLM credential + model override.
+const formCredentialId = ref<number | null>(null)
+const formModel = ref<string | null>(null)
+const formModels = ref<{ id: string; label: string }[]>([])
+const modelsLoading = ref(false)
 const formError = ref<string | null>(null)
 const saving = ref(false)
 // Guards the "Als Default setzen" + "Löschen" buttons against double-
@@ -125,12 +135,38 @@ function openEdit(persona: Persona) {
   formIdentity.value = persona.identity
   formAgents.value = persona.agents
   formIsDefault.value = persona.is_default
+  formCredentialId.value = persona.llm_credential_id ?? null
+  formModel.value = persona.model ?? null
+  formModels.value = []
   formError.value = null
+  if (persona.llm_credential_id !== null && persona.llm_credential_id !== undefined) {
+    void loadModelsForCredential(persona.llm_credential_id)
+  }
 }
 
 function cancelEdit() {
   editing.value = null
   formError.value = null
+}
+
+async function loadModelsForCredential(credId: number) {
+  modelsLoading.value = true
+  try {
+    const resp = await credentialsApi.listModels(credId)
+    formModels.value = resp.models
+  } catch {
+    formModels.value = []
+  } finally {
+    modelsLoading.value = false
+  }
+}
+
+async function onFormCredentialChange() {
+  formModel.value = null
+  formModels.value = []
+  if (formCredentialId.value !== null) {
+    await loadModelsForCredential(formCredentialId.value)
+  }
 }
 
 async function submitPersonaForm() {
@@ -169,6 +205,8 @@ async function submitPersonaForm() {
         identity,
         agents,
         is_default: formIsDefault.value,
+        llm_credential_id: formCredentialId.value,
+        model: formModel.value,
       })
     }
     await load()
@@ -692,6 +730,49 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                 :placeholder="$t('pages.preferences.personas.fragments.agents.placeholder')"
                 data-testid="personas-form-agents"
               />
+            </div>
+            <!-- Credential dropdown (Plan 29-D) -->
+            <div class="flex flex-col gap-1">
+              <label
+                :for="`persona-cred-${persona.id}`"
+                class="text-xs font-medium text-muted-foreground"
+              >
+                {{ $t('pages.preferences.personas.form.credential') }}
+              </label>
+              <select
+                :id="`persona-cred-${persona.id}`"
+                v-model="formCredentialId"
+                class="h-9 rounded-md border bg-background px-2 text-sm"
+                data-testid="personas-form-credential"
+                @change="onFormCredentialChange"
+              >
+                <option :value="null">{{ $t('pages.preferences.personas.form.credentialGlobalOption') }}</option>
+                <option v-for="cred in credentials" :key="cred.id" :value="cred.id">
+                  {{ cred.display_name }}
+                </option>
+              </select>
+            </div>
+            <!-- Model dropdown (Plan 29-D) -->
+            <div class="flex flex-col gap-1">
+              <label
+                :for="`persona-model-${persona.id}`"
+                class="text-xs font-medium text-muted-foreground"
+              >
+                {{ $t('pages.preferences.personas.form.model') }}
+              </label>
+              <select
+                :id="`persona-model-${persona.id}`"
+                v-model="formModel"
+                :disabled="formCredentialId === null || modelsLoading"
+                class="h-9 rounded-md border bg-background px-2 text-sm"
+                data-testid="personas-form-model"
+              >
+                <option :value="null">{{ $t('pages.preferences.personas.form.modelDefaultOption') }}</option>
+                <option v-for="m in formModels" :key="m.id" :value="m.id">{{ m.label }}</option>
+              </select>
+              <p v-if="formCredentialId === null" class="text-[11px] text-muted-foreground">
+                {{ $t('pages.preferences.personas.form.modelHintNoCredential') }}
+              </p>
             </div>
             <label class="flex items-center gap-2 text-xs">
               <input v-model="formIsDefault" type="checkbox" />
