@@ -1141,7 +1141,7 @@ describe('settings/preferences.vue', () => {
     await vi.waitFor(() =>
       expect(apiPut).toHaveBeenCalledWith(
         '/api/personas/1',
-        expect.objectContaining({ model: null }),
+        expect.objectContaining({ llm_credential_id: 10, model: null }),
       ),
     )
   })
