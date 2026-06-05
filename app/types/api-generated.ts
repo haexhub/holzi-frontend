@@ -2163,10 +2163,7 @@ export interface components {
             persona_id: number;
             /** Author */
             author: string;
-            /** Snapshot */
-            snapshot: {
-                [key: string]: string;
-            };
+            snapshot: components["schemas"]["PersonaHistorySnapshot"];
             /** Created At */
             created_at: number;
         };
@@ -2174,6 +2171,27 @@ export interface components {
         PersonaHistoryListResponse: {
             /** History */
             history: components["schemas"]["PersonaHistoryItem"][];
+        };
+        /**
+         * PersonaHistorySnapshot
+         * @description The parsed `persona_history.snapshot_json` body — exactly the four
+         *     fields written by `personas_repo.create`/`update` (and the lifespan
+         *     migration). `is_default` is deliberately excluded; it's a sort flag
+         *     on the live `personas` row, not a persona-version property.
+         *
+         *     Typed as a named model so `gen:api` emits a TypeScript interface
+         *     with named fields instead of an opaque index signature — a typo in
+         *     `entry.snapshot.<field>` on the FE is then caught by tsc.
+         */
+        PersonaHistorySnapshot: {
+            /** Name */
+            name: string;
+            /** Soul */
+            soul: string;
+            /** Identity */
+            identity: string;
+            /** Agents */
+            agents: string;
         };
         /** PersonaListResponse */
         PersonaListResponse: {
