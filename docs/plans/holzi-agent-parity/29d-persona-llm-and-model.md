@@ -2,7 +2,13 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-Status: **In Progress.** BE PR #76 + FE PR #96 open for CodeRabbit review.
+Status: **Done.** BE [Holzi#76](https://github.com/haexhub/Holzi/pull/76)
+merged 2026-06-05; FE [#96](https://github.com/haexhub/holzi-frontend/pull/96)
+merged 2026-06-05. Follow-up refactor [#97](https://github.com/haexhub/holzi-frontend/pull/97)
+(Plan 29-D-A: persona-card reuses `SettingsModelSelect`) merged 2026-06-05,
+and review-fix [#98](https://github.com/haexhub/holzi-frontend/pull/98)
+(a11y label `for`/`id` + clearable "use credential default" entry) merged
+2026-06-05. See [29-D-A](./29da-modelselect-reuse.md).
 
 Cross-repo. Persona-Tabelle bekommt zwei neue Spalten, Resolver liefert
 zusätzlich zur System-Prompt-Composition auch das gewählte LLM, Frontend
