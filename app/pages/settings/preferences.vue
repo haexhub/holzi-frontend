@@ -793,7 +793,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
               {{ formError }}
             </p>
             <div class="flex gap-2">
-              <UiButton size="sm" type="submit" :disabled="saving">
+              <UiButton size="sm" type="submit" :disabled="saving" :data-testid="`persona-save-${persona.id}`">
                 <Check class="mr-1 size-3.5" /> {{ $t('common.save') }}
               </UiButton>
               <UiButton
