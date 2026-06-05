@@ -189,7 +189,7 @@ async function confirmDelete(event: MouseEvent, c: Conversation) {
             class="size-8"
             :aria-label="$t('components.conversationList.rename.saveAria')"
           >
-            <Check class="size-3.5" />
+            <Check class="size-4" />
           </UiButton>
           <UiButton
             type="button"
@@ -199,7 +199,7 @@ async function confirmDelete(event: MouseEvent, c: Conversation) {
             :aria-label="$t('components.conversationList.rename.cancelAria')"
             @click="cancelRename"
           >
-            <X class="size-3.5" />
+            <X class="size-4" />
           </UiButton>
         </form>
         <div
