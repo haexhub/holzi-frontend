@@ -147,17 +147,28 @@ function openEdit(persona: Persona) {
 function cancelEdit() {
   editing.value = null
   formError.value = null
+  formCredentialId.value = null
+  formModel.value = null
+  formModels.value = []
+  modelsLoading.value = false
 }
 
 async function loadModelsForCredential(credId: number) {
+  const currentEditing = editing.value
   modelsLoading.value = true
   try {
     const resp = await credentialsApi.listModels(credId)
-    formModels.value = resp.models
+    if (editing.value === currentEditing) {
+      formModels.value = resp.models
+    }
   } catch {
-    formModels.value = []
+    if (editing.value === currentEditing) {
+      formModels.value = []
+    }
   } finally {
-    modelsLoading.value = false
+    if (editing.value === currentEditing) {
+      modelsLoading.value = false
+    }
   }
 }
 
@@ -743,7 +754,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                 :id="`persona-cred-${persona.id}`"
                 v-model="formCredentialId"
                 class="h-9 rounded-md border bg-background px-2 text-sm"
-                data-testid="personas-form-credential"
+                :data-testid="`persona-cred-select-${persona.id}`"
                 @change="onFormCredentialChange"
               >
                 <option :value="null">{{ $t('pages.preferences.personas.form.credentialGlobalOption') }}</option>
@@ -765,7 +776,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                 v-model="formModel"
                 :disabled="formCredentialId === null || modelsLoading"
                 class="h-9 rounded-md border bg-background px-2 text-sm"
-                data-testid="personas-form-model"
+                :data-testid="`persona-model-select-${persona.id}`"
               >
                 <option :value="null">{{ $t('pages.preferences.personas.form.modelDefaultOption') }}</option>
                 <option v-for="m in formModels" :key="m.id" :value="m.id">{{ m.label }}</option>
