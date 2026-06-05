@@ -143,6 +143,7 @@ async function save() {
         description,
         when_to_use: whenToUse || null,
         body_markdown: body,
+        enabled: true,
       }
       const created = await skillsApi.create(payload)
       selectedId.value = created.id
@@ -198,6 +199,35 @@ const bodyLength = computed(() => formBody.value.length)
 const bodyAtSoftWarning = computed(
   () => bodyLength.value > BODY_SOFT_WARN,
 )
+
+// ── Plan 37: enabled-toggle + token-budget counter ────────────────────
+// Token cost per enabled skill in the catalog index:
+// Math.ceil((slug + description + when_to_use + 32) / 4)
+function tokenCostForSkill(s: Skill): number {
+  return Math.ceil((s.slug.length + s.description.length + (s.when_to_use?.length ?? 0) + 32) / 4)
+}
+
+const enabledSkills = computed<Skill[]>(() => {
+  return (skillsApi.data.value?.skills ?? []).filter((s) => s.enabled)
+})
+
+const totalTokens = computed<number>(() =>
+  enabledSkills.value.reduce((acc, s) => acc + tokenCostForSkill(s), 0),
+)
+
+const totalSkills = computed<number>(() =>
+  (skillsApi.data.value?.skills ?? []).length,
+)
+
+async function toggleEnabled(skill: Skill) {
+  try {
+    await skillsApi.update(skill.id, { enabled: !skill.enabled })
+  } catch (err: unknown) {
+    toast.error(
+      err instanceof Error ? err.message : t('components.skillsSection.errors.save'),
+    )
+  }
+}
 
 onMounted(() => {
   void skillsApi.list()
@@ -256,6 +286,14 @@ onMounted(() => {
           </UiButton>
         </div>
 
+        <!-- Token-budget counter (Plan 37) -->
+        <p
+          class="border-b px-3 py-1.5 text-xs text-muted-foreground"
+          data-testid="skill-token-budget"
+        >
+          {{ $t('pages.skills.list.tokenBudget.summary', { tokens: totalTokens, enabled: enabledSkills.length, total: totalSkills }) }}
+        </p>
+
         <div class="min-h-0 flex-1 overflow-y-auto">
           <p
             v-if="skillsApi.loading.value && !skillsApi.data.value"
@@ -282,11 +320,24 @@ onMounted(() => {
             </template>
           </p>
           <ul v-else class="flex flex-col">
-            <li v-for="skill in filteredSkills" :key="skill.id">
+            <li v-for="skill in filteredSkills" :key="skill.id" class="flex items-center border-b">
+              <!-- enabled-toggle (Plan 37) -->
+              <label
+                class="flex shrink-0 cursor-pointer items-center px-2 py-2.5"
+                :title="skill.enabled ? $t('pages.skills.list.enabledToggle.descriptionEnabled') : $t('pages.skills.list.enabledToggle.descriptionDisabled')"
+              >
+                <input
+                  type="checkbox"
+                  :checked="skill.enabled"
+                  :data-testid="`skill-enabled-${skill.slug}`"
+                  :aria-label="$t('pages.skills.list.enabledToggle.label')"
+                  @change="toggleEnabled(skill)"
+                />
+              </label>
               <button
                 type="button"
                 :data-testid="`skill-item-${skill.slug}`"
-                class="w-full border-b px-3 py-2.5 text-left transition-colors hover:bg-muted/50"
+                class="min-w-0 flex-1 py-2.5 pr-3 text-left transition-colors hover:bg-muted/50"
                 :class="
                   selectedId === skill.id && mode !== 'edit' ? 'bg-muted' : ''
                 "
