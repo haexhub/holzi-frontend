@@ -1090,6 +1090,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/personas/{persona_id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Persona History */
+        get: operations["list_persona_history_api_personas__persona_id__history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/personas/{persona_id}/history/{snapshot_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore Persona History */
+        post: operations["restore_persona_history_api_personas__persona_id__history__snapshot_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/personas/{persona_id}/skills": {
         parameters: {
             query?: never;
@@ -1569,15 +1603,20 @@ export interface components {
         DiagnosticsCheck: {
             /** Id */
             id: string;
-            /** Label */
-            label: string;
             /**
              * Status
              * @enum {string}
              */
             status: "ok" | "warning" | "error";
-            /** Message */
-            message: string;
+            /** Code */
+            code: string;
+            /**
+             * Params
+             * @default {}
+             */
+            params: {
+                [key: string]: string | number | string[];
+            };
         };
         /** DiagnosticsResponse */
         DiagnosticsResponse: {
@@ -2095,13 +2134,46 @@ export interface components {
         PersonaCreate: {
             /** Name */
             name: string;
-            /** Prompt */
-            prompt: string;
+            /**
+             * Soul
+             * @default
+             */
+            soul: string;
+            /**
+             * Identity
+             * @default
+             */
+            identity: string;
+            /**
+             * Agents
+             * @default
+             */
+            agents: string;
             /**
              * Is Default
              * @default false
              */
             is_default: boolean;
+        };
+        /** PersonaHistoryItem */
+        PersonaHistoryItem: {
+            /** Id */
+            id: number;
+            /** Persona Id */
+            persona_id: number;
+            /** Author */
+            author: string;
+            /** Snapshot */
+            snapshot: {
+                [key: string]: string;
+            };
+            /** Created At */
+            created_at: number;
+        };
+        /** PersonaHistoryListResponse */
+        PersonaHistoryListResponse: {
+            /** History */
+            history: components["schemas"]["PersonaHistoryItem"][];
         };
         /** PersonaListResponse */
         PersonaListResponse: {
@@ -2114,8 +2186,12 @@ export interface components {
             id: number;
             /** Name */
             name: string;
-            /** Prompt */
-            prompt: string;
+            /** Soul */
+            soul: string;
+            /** Identity */
+            identity: string;
+            /** Agents */
+            agents: string;
             /** Is Default */
             is_default: boolean;
             /** Created At */
@@ -2162,8 +2238,12 @@ export interface components {
         PersonaUpdate: {
             /** Name */
             name?: string | null;
-            /** Prompt */
-            prompt?: string | null;
+            /** Soul */
+            soul?: string | null;
+            /** Identity */
+            identity?: string | null;
+            /** Agents */
+            agents?: string | null;
             /** Is Default */
             is_default?: boolean | null;
         };
@@ -5122,6 +5202,69 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_persona_history_api_personas__persona_id__history_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                persona_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonaHistoryListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_persona_history_api_personas__persona_id__history__snapshot_id__restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                persona_id: number;
+                snapshot_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonaResponse"];
+                };
             };
             /** @description Validation Error */
             422: {

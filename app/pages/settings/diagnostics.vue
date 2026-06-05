@@ -10,6 +10,7 @@ import {
 } from 'lucide-vue-next'
 import type {
   AgentRun,
+  DiagnosticsCheck,
   DiagnosticsStatus,
   SandboxCrash,
   SandboxCrashState,
@@ -65,6 +66,29 @@ function statusLabel(status: DiagnosticsStatus): string {
 
 function statusBadgeClass(status: DiagnosticsStatus): string {
   return STATUS_BADGE_CLASS[status]
+}
+
+// Plan 30: each subsystem id has a localized label under
+// pages.diagnostics.subsystems.labels.<id>. The id itself is a stable
+// backend identifier (database / llm / scheduler / workspace / sandbox)
+// — never user-facing.
+function subsystemLabel(id: string): string {
+  return t(`pages.diagnostics.subsystems.labels.${id}`)
+}
+
+// Plan 30 contract: each check carries `code` + `params`; the locale
+// file owns the full message template (`errors.<CODE>`). The backend
+// is locale-agnostic from here on.
+function checkMessage(check: DiagnosticsCheck): string {
+  // `params.names` (from DIAG_WORKSPACE_CONFIGURED) comes through as
+  // an array; the i18n template expects a single string, so we join
+  // here once with the user's preferred locale's separator (", "
+  // works for both DE and EN — no need to split per-locale).
+  const params: Record<string, string | number> = {}
+  for (const [k, v] of Object.entries(check.params ?? {})) {
+    params[k] = Array.isArray(v) ? v.join(', ') : (v as string | number)
+  }
+  return t(`errors.${check.code}`, params)
 }
 
 function formatTimestamp(epoch: number | null): string {
@@ -172,7 +196,7 @@ onMounted(loadAll)
           </span>
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-2">
-              <p class="text-sm font-medium">{{ check.label }}</p>
+              <p class="text-sm font-medium">{{ subsystemLabel(check.id) }}</p>
               <span
                 class="rounded-full px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide"
                 :class="statusBadgeClass(check.status)"
@@ -181,7 +205,7 @@ onMounted(loadAll)
               </span>
             </div>
             <p class="mt-0.5 wrap-break-word text-xs text-muted-foreground">
-              {{ check.message }}
+              {{ checkMessage(check) }}
             </p>
           </div>
         </li>

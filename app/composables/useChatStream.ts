@@ -435,33 +435,43 @@ export async function resolveApproval(
 }
 
 /**
- * Render a ChatStreamError as user-facing copy. Generic Errors fall
- * through to their own `.message`; unknown future codes fall back to
- * a neutral "Chat-Fehler" so the UI never shows a raw stack trace.
+ * Render a ChatStreamError via the i18n `errors.chat.<code>` namespace.
+ *
+ * ChatStreamError codes are a different domain from the backend's
+ * `ErrorCode` enum (these are client-side stream-protocol failures, not
+ * HTTPException details), so they live under their own sub-tree to keep
+ * the two namespaces decoupled. Pass the `$t` function in so the caller
+ * controls the i18n context — composables can use `useI18n()`, plain
+ * helpers can not. Anything that isn't a ChatStreamError is treated as
+ * a generic chat error (we deliberately don't leak `err.message` because
+ * it can carry raw upstream text).
  */
-export function friendlyChatError(err: unknown): string {
-  if (!(err instanceof ChatStreamError)) {
-    return err instanceof Error ? err.message : 'Chat-Fehler.'
+export type ChatErrorTranslateFn = (
+  key: string,
+  params?: Record<string, unknown>,
+) => string
+
+const KNOWN_CHAT_CODES = new Set([
+  'upstream_unreachable',
+  'upstream_timeout',
+  'upstream_http_error',
+  'agent_error',
+  'unauthorized',
+  'request_failed',
+])
+
+export function friendlyChatError(
+  err: unknown,
+  t: ChatErrorTranslateFn,
+): string {
+  if (!(err instanceof ChatStreamError) || !KNOWN_CHAT_CODES.has(err.code)) {
+    return t('errors.chat.unknown')
   }
-  switch (err.code) {
-    case 'upstream_unreachable':
-      return 'LLM-Provider nicht erreichbar. Prüfe deine Credentials in den Settings.'
-    case 'upstream_timeout':
-      return 'LLM-Provider hat zu lange gebraucht. Versuch es nochmal.'
-    case 'upstream_http_error':
-      return `LLM-Provider hat einen Fehler zurückgegeben${err.statusCode ? ` (${err.statusCode})` : ''}. Versuch es gleich nochmal.`
-    case 'agent_error':
-      return `Interner Fehler: ${err.message}`
-    case 'unauthorized':
-      return 'Session abgelaufen — bitte neu einloggen.'
-    case 'request_failed':
-      return `Chat-Request fehlgeschlagen${err.statusCode ? ` (${err.statusCode})` : ''}.`
-    default:
-      // Don't leak backend `err.message` for codes we haven't mapped —
-      // they could carry raw upstream text. New codes should be added
-      // to this switch deliberately.
-      return 'Chat-Fehler.'
-  }
+  const statusSuffix = err.statusCode ? ` (${err.statusCode})` : ''
+  return t(`errors.chat.${err.code}`, {
+    message: err.message,
+    statusSuffix,
+  })
 }
 
 function parseSseBlock(block: string): { event: string | null; data: unknown } {

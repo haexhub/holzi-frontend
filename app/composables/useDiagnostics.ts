@@ -1,3 +1,4 @@
+import { translateError } from '~/lib/errorMessages'
 import type {
   AgentRun,
   DiagnosticsResponse,
@@ -13,6 +14,7 @@ import type {
  */
 export function useDiagnostics() {
   const api = useApi()
+  const { t } = useI18n()
 
   const diagnostics = ref<DiagnosticsResponse | null>(null)
   const diagnosticsLoading = ref(false)
@@ -32,8 +34,7 @@ export function useDiagnostics() {
     try {
       diagnostics.value = await api.get<DiagnosticsResponse>('/api/diagnostics')
     } catch (err: unknown) {
-      diagnosticsError.value =
-        err instanceof Error ? err.message : 'Fehler beim Laden.'
+      diagnosticsError.value = translateError(err, t)
     } finally {
       diagnosticsLoading.value = false
     }
@@ -48,8 +49,7 @@ export function useDiagnostics() {
         limit,
       })
     } catch (err: unknown) {
-      failuresError.value =
-        err instanceof Error ? err.message : 'Fehler beim Laden.'
+      failuresError.value = translateError(err, t)
     } finally {
       failuresLoading.value = false
     }
@@ -63,8 +63,7 @@ export function useDiagnostics() {
         limit,
       })
     } catch (err: unknown) {
-      crashesError.value =
-        err instanceof Error ? err.message : 'Fehler beim Laden.'
+      crashesError.value = translateError(err, t)
     } finally {
       crashesLoading.value = false
     }

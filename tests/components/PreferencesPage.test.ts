@@ -5,6 +5,8 @@ import type {
   ChannelPrompt,
   ChannelPromptListResponse,
   Persona,
+  PersonaHistoryItem,
+  PersonaHistoryListResponse,
   PersonaListResponse,
 } from '~/types/api'
 
@@ -56,10 +58,32 @@ function persona(over: Partial<Persona> & { id: number; name: string }): Persona
   return {
     id: over.id,
     name: over.name,
-    prompt: over.prompt ?? 'p',
+    // Plan 36 (Wave A1): single `prompt` was split into three fragments.
+    soul: over.soul ?? 'soul body',
+    identity: over.identity ?? 'identity body',
+    agents: over.agents ?? 'agents body',
     is_default: over.is_default ?? false,
     created_at: over.created_at ?? 1_700_000_000,
     updated_at: over.updated_at ?? 1_700_000_000,
+  }
+}
+
+function historyEntry(
+  over: Partial<PersonaHistoryItem> & {
+    id: number
+    persona_id: number
+  },
+): PersonaHistoryItem {
+  return {
+    id: over.id,
+    persona_id: over.persona_id,
+    author: over.author ?? 'user',
+    snapshot: over.snapshot ?? {
+      soul: 'old soul',
+      identity: 'old identity',
+      agents: 'old agents',
+    },
+    created_at: over.created_at ?? 1_700_000_000,
   }
 }
 
@@ -83,7 +107,9 @@ function channel(
 const defaultPersona = persona({
   id: 1,
   name: 'Hermes',
-  prompt: 'Default Hermes prompt',
+  soul: 'Default Hermes soul',
+  identity: 'Default Hermes identity',
+  agents: 'Default Hermes agents',
   is_default: true,
 })
 
@@ -156,7 +182,13 @@ describe('settings/preferences.vue', () => {
   it('creates a new persona via the inline form and reloads', async () => {
     mockInitialLoad()
     apiPost.mockResolvedValueOnce(
-      persona({ id: 2, name: 'Reviewer', prompt: 'Be picky' }),
+      persona({
+        id: 2,
+        name: 'Reviewer',
+        soul: 'Be picky',
+        identity: 'A reviewer.',
+        agents: 'review code',
+      }),
     )
 
     const wrapper = mount(PreferencesPage)
@@ -171,13 +203,25 @@ describe('settings/preferences.vue', () => {
       .get('[data-testid="personas-form-name"]')
       .setValue('Reviewer')
     await wrapper
-      .get('[data-testid="personas-form-prompt"]')
+      .get('[data-testid="personas-form-soul"]')
       .setValue('Be picky')
+    await wrapper
+      .get('[data-testid="personas-form-identity"]')
+      .setValue('A reviewer.')
+    await wrapper
+      .get('[data-testid="personas-form-agents"]')
+      .setValue('review code')
 
     // Second load returns both personas now.
     mockInitialLoad([
       defaultPersona,
-      persona({ id: 2, name: 'Reviewer', prompt: 'Be picky' }),
+      persona({
+        id: 2,
+        name: 'Reviewer',
+        soul: 'Be picky',
+        identity: 'A reviewer.',
+        agents: 'review code',
+      }),
     ])
 
     await wrapper.get('[data-testid="personas-create-form"]').trigger('submit')
@@ -185,7 +229,9 @@ describe('settings/preferences.vue', () => {
 
     expect(apiPost).toHaveBeenCalledWith('/api/personas', {
       name: 'Reviewer',
-      prompt: 'Be picky',
+      soul: 'Be picky',
+      identity: 'A reviewer.',
+      agents: 'review code',
       is_default: false,
     })
     await vi.waitFor(() =>
@@ -195,9 +241,75 @@ describe('settings/preferences.vue', () => {
     )
   })
 
-  it('renders 409 from create as a duplicate-name i18n key', async () => {
+  it('submits with only one fragment filled — the empty ones go through as ""', async () => {
+    // Plan 36: backend accepts a payload as long as *one* of the three
+    // fragments is non-blank. The FE must NOT block this case — it only
+    // blocks the all-empty case (separate test below).
     mockInitialLoad()
-    apiPost.mockRejectedValueOnce({ statusCode: 409, message: 'conflict' })
+    apiPost.mockResolvedValueOnce(
+      persona({ id: 2, name: 'Soul-only', soul: 'X', identity: '', agents: '' }),
+    )
+    const wrapper = mount(PreferencesPage)
+    await vi.waitFor(() =>
+      expect(
+        wrapper.find('[data-testid="persona-card-1"]').exists(),
+      ).toBe(true),
+    )
+    await wrapper.get('[data-testid="personas-new-button"]').trigger('click')
+    await wrapper
+      .get('[data-testid="personas-form-name"]')
+      .setValue('Soul-only')
+    await wrapper.get('[data-testid="personas-form-soul"]').setValue('X')
+
+    await wrapper.get('[data-testid="personas-create-form"]').trigger('submit')
+    await flushPromises()
+
+    expect(apiPost).toHaveBeenCalledWith('/api/personas', {
+      name: 'Soul-only',
+      soul: 'X',
+      identity: '',
+      agents: '',
+      is_default: false,
+    })
+  })
+
+  it('blocks submit + shows PERSONA_FRAGMENTS_ALL_EMPTY when all three fragments are blank', async () => {
+    mockInitialLoad()
+    const wrapper = mount(PreferencesPage)
+    await vi.waitFor(() =>
+      expect(
+        wrapper.find('[data-testid="persona-card-1"]').exists(),
+      ).toBe(true),
+    )
+
+    await wrapper.get('[data-testid="personas-new-button"]').trigger('click')
+    await wrapper
+      .get('[data-testid="personas-form-name"]')
+      .setValue('Empty')
+    // intentionally do NOT fill soul/identity/agents
+
+    await wrapper.get('[data-testid="personas-create-form"]').trigger('submit')
+    await flushPromises()
+
+    expect(apiPost).not.toHaveBeenCalled()
+    expect(
+      wrapper.get('[data-testid="personas-form-error"]').text(),
+    ).toContain('errors.PERSONA_FRAGMENTS_ALL_EMPTY')
+  })
+
+  it('renders 409 from create as a PERSONA_NAME_CONFLICT i18n key', async () => {
+    mockInitialLoad()
+    // Plan 30/36: backend emits `{ detail: { code, params } }` for
+    // structured errors. translateError(err, t) walks this envelope and
+    // renders `errors.<CODE>`. With the passthrough `t` mock the page
+    // falls back to `errors.UNKNOWN (CODE)`, so we just assert the code
+    // string is present somewhere in the form-error block.
+    apiPost.mockRejectedValueOnce({
+      status: 409,
+      data: {
+        detail: { code: 'PERSONA_NAME_CONFLICT', params: { name: 'Hermes' } },
+      },
+    })
 
     const wrapper = mount(PreferencesPage)
     await vi.waitFor(() =>
@@ -211,7 +323,7 @@ describe('settings/preferences.vue', () => {
       .get('[data-testid="personas-form-name"]')
       .setValue('Hermes')
     await wrapper
-      .get('[data-testid="personas-form-prompt"]')
+      .get('[data-testid="personas-form-soul"]')
       .setValue('x')
 
     await wrapper.get('[data-testid="personas-create-form"]').trigger('submit')
@@ -219,7 +331,369 @@ describe('settings/preferences.vue', () => {
 
     expect(
       wrapper.get('[data-testid="personas-form-error"]').text(),
-    ).toContain('pages.preferences.personas.errors.duplicate')
+    ).toContain('PERSONA_NAME_CONFLICT')
+  })
+
+  it('opens the edit form prefilled with the persona fragments', async () => {
+    const target = persona({
+      id: 1,
+      name: 'Hermes',
+      soul: 'soul X',
+      identity: 'identity Y',
+      agents: 'agents Z',
+      is_default: true,
+    })
+    mockInitialLoad([target])
+    const wrapper = mount(PreferencesPage)
+    await vi.waitFor(() =>
+      expect(
+        wrapper.find('[data-testid="persona-card-1"]').exists(),
+      ).toBe(true),
+    )
+
+    await wrapper.get('[data-testid="persona-edit-1"]').trigger('click')
+
+    // Edit-form should now be visible, prefilled with the persona's
+    // current fragments.
+    expect(
+      wrapper.find('[data-testid="personas-edit-form"]').exists(),
+    ).toBe(true)
+    const soul = wrapper.get(
+      '[data-testid="personas-form-soul"]',
+    ).element as HTMLTextAreaElement
+    const identity = wrapper.get(
+      '[data-testid="personas-form-identity"]',
+    ).element as HTMLTextAreaElement
+    const agents = wrapper.get(
+      '[data-testid="personas-form-agents"]',
+    ).element as HTMLTextAreaElement
+    expect(soul.value).toBe('soul X')
+    expect(identity.value).toBe('identity Y')
+    expect(agents.value).toBe('agents Z')
+  })
+
+  it('updates a persona via the edit form with all three fragments', async () => {
+    const target = persona({
+      id: 1,
+      name: 'Hermes',
+      soul: 'soul old',
+      identity: 'identity old',
+      agents: 'agents old',
+      is_default: true,
+    })
+    mockInitialLoad([target])
+    apiPut.mockResolvedValueOnce({
+      ...target,
+      soul: 'soul new',
+      identity: 'identity new',
+      agents: 'agents new',
+    })
+    const wrapper = mount(PreferencesPage)
+    await vi.waitFor(() =>
+      expect(
+        wrapper.find('[data-testid="persona-card-1"]').exists(),
+      ).toBe(true),
+    )
+
+    await wrapper.get('[data-testid="persona-edit-1"]').trigger('click')
+    await wrapper
+      .get('[data-testid="personas-form-soul"]')
+      .setValue('soul new')
+    await wrapper
+      .get('[data-testid="personas-form-identity"]')
+      .setValue('identity new')
+    await wrapper
+      .get('[data-testid="personas-form-agents"]')
+      .setValue('agents new')
+
+    mockInitialLoad([
+      {
+        ...target,
+        soul: 'soul new',
+        identity: 'identity new',
+        agents: 'agents new',
+      },
+    ])
+    await wrapper.get('[data-testid="personas-edit-form"]').trigger('submit')
+    await flushPromises()
+
+    expect(apiPut).toHaveBeenCalledWith('/api/personas/1', {
+      name: 'Hermes',
+      soul: 'soul new',
+      identity: 'identity new',
+      agents: 'agents new',
+      is_default: true,
+    })
+  })
+
+  // ── Plan 36 (Wave A1): persona-history subview ─────────────────────
+
+  it('does not call /history before the user opens the toggle', async () => {
+    mockInitialLoad()
+    const wrapper = mount(PreferencesPage)
+    await vi.waitFor(() =>
+      expect(
+        wrapper.find('[data-testid="persona-card-1"]').exists(),
+      ).toBe(true),
+    )
+
+    // Block exists but it's a closed <details>.
+    expect(
+      wrapper.find('[data-testid="persona-history-block-1"]').exists(),
+    ).toBe(true)
+    expect(apiGet).not.toHaveBeenCalledWith('/api/personas/1/history', undefined)
+  })
+
+  it('loads + renders the per-persona history list on toggle open', async () => {
+    mockInitialLoad()
+    const entries = [
+      historyEntry({
+        id: 11,
+        persona_id: 1,
+        author: 'user',
+        snapshot: { soul: 's1', identity: 'i1', agents: 'a1' },
+      }),
+      historyEntry({
+        id: 12,
+        persona_id: 1,
+        author: 'agent',
+        snapshot: { soul: 's0', identity: 'i0', agents: 'a0' },
+      }),
+    ]
+    const historyResp: PersonaHistoryListResponse = { history: entries }
+    // Layer the history GET on top of the initial mock.
+    const prev = apiGet.getMockImplementation()
+    apiGet.mockImplementation((path: string, query?: unknown) => {
+      if (path === '/api/personas/1/history') {
+        return Promise.resolve(historyResp)
+      }
+      return prev!(path, query)
+    })
+
+    const wrapper = mount(PreferencesPage)
+    await vi.waitFor(() =>
+      expect(
+        wrapper.find('[data-testid="persona-card-1"]').exists(),
+      ).toBe(true),
+    )
+
+    // Native <details> doesn't toggle on click in jsdom — flip `open`
+    // imperatively, then dispatch `toggle` so the @toggle handler fires.
+    const details = wrapper.get(
+      '[data-testid="persona-history-block-1"]',
+    ).element as HTMLDetailsElement
+    details.open = true
+    details.dispatchEvent(new Event('toggle'))
+    await flushPromises()
+
+    expect(apiGet).toHaveBeenCalledWith('/api/personas/1/history', undefined)
+    await vi.waitFor(() => {
+      expect(
+        wrapper.find('[data-testid="persona-history-entry-1-11"]').exists(),
+      ).toBe(true)
+      expect(
+        wrapper.find('[data-testid="persona-history-entry-1-12"]').exists(),
+      ).toBe(true)
+    })
+    const row = wrapper.get('[data-testid="persona-history-entry-1-11"]')
+    expect(row.text()).toContain('user')
+    expect(row.text()).toContain('s1')
+    expect(row.text()).toContain('i1')
+    expect(row.text()).toContain('a1')
+  })
+
+  it('shows the history empty-state when the list is empty', async () => {
+    mockInitialLoad()
+    const prev = apiGet.getMockImplementation()
+    apiGet.mockImplementation((path: string, query?: unknown) => {
+      if (path === '/api/personas/1/history') {
+        return Promise.resolve({ history: [] } satisfies PersonaHistoryListResponse)
+      }
+      return prev!(path, query)
+    })
+
+    const wrapper = mount(PreferencesPage)
+    await vi.waitFor(() =>
+      expect(
+        wrapper.find('[data-testid="persona-card-1"]').exists(),
+      ).toBe(true),
+    )
+    const details = wrapper.get(
+      '[data-testid="persona-history-block-1"]',
+    ).element as HTMLDetailsElement
+    details.open = true
+    details.dispatchEvent(new Event('toggle'))
+    await flushPromises()
+
+    await vi.waitFor(() => {
+      expect(
+        wrapper.find('[data-testid="persona-history-empty-1"]').exists(),
+      ).toBe(true)
+    })
+  })
+
+  it('caches the history list across re-opens of the same <details>', async () => {
+    mockInitialLoad()
+    const entry = historyEntry({ id: 21, persona_id: 1 })
+    const prev = apiGet.getMockImplementation()
+    apiGet.mockImplementation((path: string, query?: unknown) => {
+      if (path === '/api/personas/1/history') {
+        return Promise.resolve({
+          history: [entry],
+        } satisfies PersonaHistoryListResponse)
+      }
+      return prev!(path, query)
+    })
+
+    const wrapper = mount(PreferencesPage)
+    await vi.waitFor(() =>
+      expect(
+        wrapper.find('[data-testid="persona-card-1"]').exists(),
+      ).toBe(true),
+    )
+
+    const details = wrapper.get(
+      '[data-testid="persona-history-block-1"]',
+    ).element as HTMLDetailsElement
+    details.open = true
+    details.dispatchEvent(new Event('toggle'))
+    await flushPromises()
+    await vi.waitFor(() =>
+      expect(
+        wrapper.find('[data-testid="persona-history-entry-1-21"]').exists(),
+      ).toBe(true),
+    )
+
+    const historyCalls = () =>
+      apiGet.mock.calls.filter((c) => c[0] === '/api/personas/1/history')
+        .length
+    expect(historyCalls()).toBe(1)
+
+    // Close + re-open. The cached list keeps rendering and we do NOT
+    // re-fetch.
+    details.open = false
+    details.dispatchEvent(new Event('toggle'))
+    await flushPromises()
+    details.open = true
+    details.dispatchEvent(new Event('toggle'))
+    await flushPromises()
+    expect(historyCalls()).toBe(1)
+  })
+
+  it('restores a snapshot: confirm → POST → reload + history refetch', async () => {
+    mockInitialLoad()
+    const entry = historyEntry({
+      id: 31,
+      persona_id: 1,
+      author: 'user',
+      snapshot: { soul: 'old', identity: 'old', agents: 'old' },
+    })
+    let historyCallCount = 0
+    const prev = apiGet.getMockImplementation()
+    apiGet.mockImplementation((path: string, query?: unknown) => {
+      if (path === '/api/personas/1/history') {
+        historyCallCount += 1
+        return Promise.resolve({
+          history: [entry],
+        } satisfies PersonaHistoryListResponse)
+      }
+      return prev!(path, query)
+    })
+    apiPost.mockResolvedValueOnce({
+      ...defaultPersona,
+      soul: 'old',
+      identity: 'old',
+      agents: 'old',
+    })
+
+    const wrapper = mount(PreferencesPage)
+    await vi.waitFor(() =>
+      expect(
+        wrapper.find('[data-testid="persona-card-1"]').exists(),
+      ).toBe(true),
+    )
+
+    const details = wrapper.get(
+      '[data-testid="persona-history-block-1"]',
+    ).element as HTMLDetailsElement
+    details.open = true
+    details.dispatchEvent(new Event('toggle'))
+    await flushPromises()
+    await vi.waitFor(() =>
+      expect(
+        wrapper.find('[data-testid="persona-history-restore-1-31"]').exists(),
+      ).toBe(true),
+    )
+    expect(historyCallCount).toBe(1)
+
+    // confirmFn.mockResolvedValue(true) is set in beforeEach.
+    const personaCallsBefore = apiGet.mock.calls.filter(
+      (c) => c[0] === '/api/personas',
+    ).length
+
+    await wrapper
+      .get('[data-testid="persona-history-restore-1-31"]')
+      .trigger('click')
+    await flushPromises()
+
+    expect(confirmFn).toHaveBeenCalledTimes(1)
+    expect(apiPost).toHaveBeenCalledWith(
+      '/api/personas/1/history/31/restore',
+      undefined,
+    )
+    // Reload happened: load() re-fetched /api/personas.
+    const personaCallsAfter = apiGet.mock.calls.filter(
+      (c) => c[0] === '/api/personas',
+    ).length
+    expect(personaCallsAfter).toBeGreaterThan(personaCallsBefore)
+    // History was also refreshed after the restore (the restore itself
+    // appends a new snapshot row, so the cached list is stale).
+    expect(historyCallCount).toBe(2)
+  })
+
+  it('does not POST when the restore-confirm dialog is cancelled', async () => {
+    mockInitialLoad()
+    const entry = historyEntry({ id: 41, persona_id: 1 })
+    const prev = apiGet.getMockImplementation()
+    apiGet.mockImplementation((path: string, query?: unknown) => {
+      if (path === '/api/personas/1/history') {
+        return Promise.resolve({
+          history: [entry],
+        } satisfies PersonaHistoryListResponse)
+      }
+      return prev!(path, query)
+    })
+    confirmFn.mockReset()
+    confirmFn.mockResolvedValue(false)
+
+    const wrapper = mount(PreferencesPage)
+    await vi.waitFor(() =>
+      expect(
+        wrapper.find('[data-testid="persona-card-1"]').exists(),
+      ).toBe(true),
+    )
+    const details = wrapper.get(
+      '[data-testid="persona-history-block-1"]',
+    ).element as HTMLDetailsElement
+    details.open = true
+    details.dispatchEvent(new Event('toggle'))
+    await flushPromises()
+    await vi.waitFor(() =>
+      expect(
+        wrapper.find('[data-testid="persona-history-restore-1-41"]').exists(),
+      ).toBe(true),
+    )
+
+    await wrapper
+      .get('[data-testid="persona-history-restore-1-41"]')
+      .trigger('click')
+    await flushPromises()
+
+    expect(confirmFn).toHaveBeenCalledTimes(1)
+    expect(apiPost).not.toHaveBeenCalledWith(
+      '/api/personas/1/history/41/restore',
+      undefined,
+    )
   })
 
   it('promotes a non-default persona via "Als Default setzen"', async () => {

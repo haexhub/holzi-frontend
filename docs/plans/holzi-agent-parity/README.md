@@ -127,7 +127,10 @@ Triggered by the `/settings/preferences` placeholder needing real content
   `personas.tool_allowlist` (JSON), `filter_catalog`-Helper,
   `GET /api/tools` für den Multi-Select-Picker.
 - [30 — i18n-Foundation (DE/EN)](./30-i18n-foundation.md) — `@nuxtjs/i18n`,
-  String-Extraktion, Sprach-Picker in Preferences. Multi-Session-Refactor.
+  String-Extraktion, Sprach-Picker in Preferences, Backend-`ErrorCode`-
+  Enum + FE-`translateError`-Helper. **Komplett auf `main` 2026-06-04**
+  (Tasks 1+2+3+4+5; final commits `893991d` BE + `5f9f042`/`dc76475` FE).
+  Wave 0 von [Plan 35](./35-strategic-roadmap-2026h2.md).
 
 ### Skills & Tools Family (Plans 31–33)
 
@@ -174,7 +177,7 @@ biggest "you-see-it-immediately" parity gaps. They are roughly ordered by
 Strategic-judgement plans (not part of this push, separate decisions):
 
 - **Skills / System-Prompts in DB** — system-prompt half is closed by [29-A](./29a-personas-and-channels.md); the skills half is [Plan 33](./33-skills-as-db-artifacts.md) in the [Skills & Tools family](#skills--tools-family-plans-3133) below.
-- **i18n foundation** (`@nuxtjs/i18n` + string extraction) — pure FE but a multi-day refactor; do when localisation actually has a user.
+- ~~**i18n foundation**~~ — done 2026-06-04, siehe [Plan 30](./30-i18n-foundation.md). Wurde 2026 zur Wave-0-Foundation des [strategischen Roadmap-Refactors (Plan 35)](./35-strategic-roadmap-2026h2.md), weil OSS-Reach ohne EN-UI nicht skaliert.
 - **Kanban / Voice / Embedded Terminal / Plugins / Passkeys / Self-Update** — hermes-webui ships these; whether Holzi *should* is a product call, not an automatic parity goal.
 
 ## Recommended Order

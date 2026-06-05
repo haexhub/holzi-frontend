@@ -1,3 +1,4 @@
+import { translateError } from '~/lib/errorMessages'
 import type {
   McpServer,
   McpServerCreate,
@@ -20,6 +21,7 @@ import type {
  */
 export function useMcpServers() {
   const api = useApi()
+  const { t } = useI18n()
 
   const data = ref<McpServerList | null>(null)
   const loading = ref(false)
@@ -31,7 +33,7 @@ export function useMcpServers() {
     try {
       data.value = await api.get<McpServerList>('/api/mcp/servers')
     } catch (err: unknown) {
-      error.value = err instanceof Error ? err.message : 'Fehler beim Laden.'
+      error.value = translateError(err, t)
     } finally {
       loading.value = false
     }

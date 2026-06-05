@@ -299,7 +299,10 @@ describe('settings/tasks.vue', () => {
     const wrapper = mount(TasksPage)
     await flushPromises()
 
-    expect(wrapper.text()).toContain('boom')
+    // Plan 30: composables route fetch failures through translateError(),
+    // which falls back to `errors.GENERIC` for an Error with no backend
+    // ErrorCode. The passthrough `$t` stub returns the key verbatim.
+    expect(wrapper.text()).toContain('errors.GENERIC')
   })
 
   it('surfaces a run-now failure as an action error in the detail header', async () => {

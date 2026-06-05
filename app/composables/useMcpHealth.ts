@@ -1,3 +1,4 @@
+import { translateError } from '~/lib/errorMessages'
 import type { McpHealthResponse } from '~/types/api'
 
 /**
@@ -8,6 +9,7 @@ import type { McpHealthResponse } from '~/types/api'
  */
 export function useMcpHealth() {
   const api = useApi()
+  const { t } = useI18n()
 
   const data = ref<McpHealthResponse | null>(null)
   const loading = ref(false)
@@ -21,7 +23,7 @@ export function useMcpHealth() {
       data.value = await api.get<McpHealthResponse>('/api/mcp/health')
       lastCheckedAt.value = Date.now()
     } catch (err: unknown) {
-      error.value = err instanceof Error ? err.message : 'Fehler beim Laden.'
+      error.value = translateError(err, t)
     } finally {
       loading.value = false
     }

@@ -35,34 +35,35 @@ vi.mock('~/composables/useApi', () => ({
 function diagnostics(
   overrides: Partial<DiagnosticsResponse> = {},
 ): DiagnosticsResponse {
+  // Plan 30 shape: id / status / code / params — the locale file owns
+  // labels and messages, the API just emits the code + interpolation values.
   return {
     overall: overrides.overall ?? 'ok',
     checks: overrides.checks ?? [
-      { id: 'database', label: 'Database', status: 'ok', message: 'reachable' },
+      { id: 'database', status: 'ok', code: 'DIAG_DB_REACHABLE', params: {} },
       {
         id: 'llm',
-        label: 'LLM',
         status: 'warning',
-        message: 'no active credential',
+        code: 'DIAG_LLM_NO_CREDENTIAL',
+        params: {},
       },
       {
-        id: 'messenger',
-        label: 'Messenger',
+        id: 'scheduler',
         status: 'ok',
-        message: 'no messenger accounts configured (optional)',
+        code: 'DIAG_SCHEDULER_RUNNING',
+        params: {},
       },
-      { id: 'scheduler', label: 'Scheduler', status: 'ok', message: 'running' },
       {
         id: 'workspace',
-        label: 'Workspaces',
         status: 'warning',
-        message: 'no roots',
+        code: 'DIAG_WORKSPACE_NONE',
+        params: {},
       },
       {
         id: 'sandbox',
-        label: 'Sandbox runtime',
         status: 'warning',
-        message: 'not configured',
+        code: 'DIAG_SANDBOX_SOCKET_MISSING',
+        params: {},
       },
     ],
   }
@@ -143,10 +144,11 @@ describe('settings/diagnostics.vue', () => {
       limit: 20,
     })
 
+    // Plan 34 dropped the `messenger` subsystem; Plan 30 didn't add it
+    // back, so the diagnostics list is back to five rows.
     for (const id of [
       'database',
       'llm',
-      'messenger',
       'scheduler',
       'workspace',
       'sandbox',
@@ -198,9 +200,12 @@ describe('settings/diagnostics.vue', () => {
     const wrapper = mount(DiagnosticsPage)
     await flushPromises()
 
+    // Plan 30: composables route fetch failures through translateError(),
+    // which falls back to `errors.GENERIC` for an Error with no backend
+    // ErrorCode.
     expect(
       wrapper.get('[data-testid="diagnostics-checks-error"]').text(),
-    ).toContain('boom')
+    ).toContain('errors.GENERIC')
     // Failures section still renders its empty state independently.
     expect(
       wrapper.find('[data-testid="diagnostics-failures-empty"]').exists(),
@@ -233,7 +238,7 @@ describe('settings/diagnostics.vue', () => {
 
     expect(
       wrapper.get('[data-testid="diagnostics-failures-error"]').text(),
-    ).toContain('runs boom')
+    ).toContain('errors.GENERIC')
     // Subsystem check list keeps rendering — the failures-load failure
     // shouldn't collapse the rest of the page.
     expect(
@@ -312,17 +317,11 @@ describe('settings/diagnostics.vue', () => {
       diagnostics({
         overall: 'ok',
         checks: [
-          { id: 'database', label: 'Database', status: 'ok', message: 'reachable' },
-          { id: 'llm', label: 'LLM', status: 'ok', message: 'active' },
-          { id: 'messenger', label: 'Messenger', status: 'ok', message: 'active' },
-          { id: 'scheduler', label: 'Scheduler', status: 'ok', message: 'running' },
-          { id: 'workspace', label: 'Workspaces', status: 'ok', message: '1 root' },
-          {
-            id: 'sandbox',
-            label: 'Sandbox runtime',
-            status: 'ok',
-            message: 'configured',
-          },
+          { id: 'database', status: 'ok', code: 'DIAG_DB_REACHABLE', params: {} },
+          { id: 'llm', status: 'ok', code: 'DIAG_LLM_ACTIVE', params: {} },
+          { id: 'scheduler', status: 'ok', code: 'DIAG_SCHEDULER_RUNNING', params: {} },
+          { id: 'workspace', status: 'ok', code: 'DIAG_WORKSPACE_CONFIGURED', params: {} },
+          { id: 'sandbox', status: 'ok', code: 'DIAG_SANDBOX_CONFIGURED', params: {} },
         ],
       }),
       [],
@@ -346,7 +345,7 @@ describe('settings/diagnostics.vue', () => {
 
     expect(
       wrapper.get('[data-testid="diagnostics-crashes-error"]').text(),
-    ).toContain('crashes boom')
+    ).toContain('errors.GENERIC')
     // The other two sections still render — one failing endpoint must
     // not collapse the rest.
     expect(

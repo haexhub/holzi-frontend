@@ -1,5 +1,17 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
+
+// Plan 30 Task 5: AppConfirmHost now uses useI18n() in its script for the
+// default Cancel / Delete / Confirm / OK labels, so the bare mount needs
+// the i18n composable stubbed before the static import resolves.
+vi.mock('vue-i18n', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('vue-i18n')>()
+  return {
+    ...orig,
+    useI18n: () => ({ t: (key: string) => key }),
+  }
+})
+
 import AppConfirmHost from '~/components/AppConfirmHost.vue'
 import { useConfirm } from '~/composables/useConfirm'
 import { usePromptDialog } from '~/composables/usePromptDialog'

@@ -1,3 +1,4 @@
+import { translateError } from '~/lib/errorMessages'
 import type { LogRow, LogsResponse } from '~/types/api'
 
 export type LogLevelFilter = 'info' | 'warning' | 'error'
@@ -10,6 +11,7 @@ export type LogTailSize = 100 | 500 | 1000
  */
 export function useLogs() {
   const api = useApi()
+  const { t } = useI18n()
 
   const rows = ref<LogRow[]>([])
   const loading = ref(false)
@@ -38,7 +40,7 @@ export function useLogs() {
         disabled.value = true
         rows.value = []
       } else {
-        error.value = err instanceof Error ? err.message : 'Fehler beim Laden.'
+        error.value = translateError(err, t)
       }
     } finally {
       loading.value = false

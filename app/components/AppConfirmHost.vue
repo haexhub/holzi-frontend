@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { t } = useI18n()
 const confirmQueue = useConfirmQueue()
 const promptQueue = usePromptQueue()
 
@@ -64,7 +65,7 @@ function cancelPrompt() {
           data-testid="confirm-cancel"
           @click="onCancelConfirm"
         >
-          {{ currentConfirm.cancelLabel ?? 'Abbrechen' }}
+          {{ currentConfirm.cancelLabel ?? t('common.cancel') }}
         </UiButton>
         <UiButton
           type="button"
@@ -72,7 +73,7 @@ function cancelPrompt() {
           data-testid="confirm-action"
           @click="onConfirm"
         >
-          {{ currentConfirm.confirmLabel ?? (currentConfirm.destructive ? 'Löschen' : 'Bestätigen') }}
+          {{ currentConfirm.confirmLabel ?? (currentConfirm.destructive ? t('common.delete') : t('common.confirm')) }}
         </UiButton>
       </UiAlertDialogFooter>
     </UiAlertDialogContent>
@@ -102,10 +103,10 @@ function cancelPrompt() {
             data-testid="prompt-cancel"
             @click="cancelPrompt"
           >
-            {{ currentPrompt.cancelLabel ?? 'Abbrechen' }}
+            {{ currentPrompt.cancelLabel ?? t('common.cancel') }}
           </UiButton>
           <UiButton type="submit" data-testid="prompt-confirm">
-            {{ currentPrompt.confirmLabel ?? 'OK' }}
+            {{ currentPrompt.confirmLabel ?? t('common.ok') }}
           </UiButton>
         </UiDialogFooter>
       </form>

@@ -4,6 +4,7 @@ import {
   ArrowUp,
   BadgeCheck,
   Check,
+  History,
   Languages,
   Pencil,
   Plus,
@@ -12,9 +13,11 @@ import {
   Trash2,
   X,
 } from 'lucide-vue-next'
+import { translateError } from '~/lib/errorMessages'
 import type {
   ChannelPrompt,
   Persona,
+  PersonaHistoryItem,
   PersonaSkillItem,
   Skill,
   SkillListResponse,
@@ -111,7 +114,12 @@ onMounted(load)
 type EditTarget = number | 'new' | null
 const editing = ref<EditTarget>(null)
 const formName = ref('')
-const formPrompt = ref('')
+// Plan 36 (Wave A1): the single `prompt` column was split into three
+// fragments (soul / identity / agents). The form binds to one ref per
+// fragment; the submit payload concatenates them into the API body.
+const formSoul = ref('')
+const formIdentity = ref('')
+const formAgents = ref('')
 const formIsDefault = ref(false)
 const formError = ref<string | null>(null)
 const saving = ref(false)
@@ -121,10 +129,19 @@ const saving = ref(false)
 // its trailing `load()`.
 const personaMutating = ref(false)
 
+// Plan 36 / Wave A1 — per-persona history-subview state. Loaded lazily
+// when the `<details>` toggles open; `restoring` is a per-persona latch
+// for the restore-button so two cards can restore independently.
+const personaHistory = ref<Record<number, PersonaHistoryItem[]>>({})
+const historyLoading = ref<Record<number, boolean>>({})
+const restoring = ref<Record<number, boolean>>({})
+
 function openCreate() {
   editing.value = 'new'
   formName.value = ''
-  formPrompt.value = ''
+  formSoul.value = ''
+  formIdentity.value = ''
+  formAgents.value = ''
   formIsDefault.value = false
   formError.value = null
 }
@@ -132,7 +149,9 @@ function openCreate() {
 function openEdit(persona: Persona) {
   editing.value = persona.id
   formName.value = persona.name
-  formPrompt.value = persona.prompt
+  formSoul.value = persona.soul
+  formIdentity.value = persona.identity
+  formAgents.value = persona.agents
   formIsDefault.value = persona.is_default
   formError.value = null
 }
@@ -142,26 +161,22 @@ function cancelEdit() {
   formError.value = null
 }
 
-function mapPersonaError(err: unknown): string {
-  const status = (err as { statusCode?: number; status?: number })
-    ?.statusCode
-    ?? (err as { status?: number })?.status
-  if (status === 409) return t('pages.preferences.personas.errors.duplicate')
-  if (status === 422) {
-    const detail = (
-      err as { data?: { detail?: unknown } }
-    )?.data?.detail
-    if (typeof detail === 'string') return detail
-    return t('pages.preferences.personas.errors.invalidInput')
-  }
-  return err instanceof Error ? err.message : t('pages.preferences.personas.errors.generic')
-}
-
 async function submitPersonaForm() {
   const name = formName.value.trim()
-  const prompt = formPrompt.value
-  if (!name || !prompt.trim()) {
+  // Send trimmed fragments so save-and-reload doesn't visually shift
+  // content if the backend strips on its side.
+  const soul = formSoul.value.trim()
+  const identity = formIdentity.value.trim()
+  const agents = formAgents.value.trim()
+  if (!name) {
     formError.value = t('pages.preferences.personas.errors.nameRequired')
+    return
+  }
+  // Backend rejects with PERSONA_FRAGMENTS_ALL_EMPTY when all three are
+  // blank; mirror the check on the FE so we don't round-trip the form
+  // just to surface that.
+  if (!soul && !identity && !agents) {
+    formError.value = t('errors.PERSONA_FRAGMENTS_ALL_EMPTY')
     return
   }
   saving.value = true
@@ -170,20 +185,24 @@ async function submitPersonaForm() {
     if (editing.value === 'new') {
       await personasApi.create({
         name,
-        prompt,
+        soul,
+        identity,
+        agents,
         is_default: formIsDefault.value,
       })
     } else if (typeof editing.value === 'number') {
       await personasApi.update(editing.value, {
         name,
-        prompt,
+        soul,
+        identity,
+        agents,
         is_default: formIsDefault.value,
       })
     }
     await load()
     editing.value = null
   } catch (err: unknown) {
-    formError.value = mapPersonaError(err)
+    formError.value = translateError(err, t)
   } finally {
     saving.value = false
   }
@@ -197,7 +216,7 @@ async function setDefaultPersona(persona: Persona) {
     await personasApi.update(persona.id, { is_default: true })
     await load()
   } catch (err: unknown) {
-    error.value = mapPersonaError(err)
+    error.value = translateError(err, t)
   } finally {
     personaMutating.value = false
   }
@@ -217,9 +236,68 @@ async function deletePersona(persona: Persona) {
     await personasApi.delete(persona.id)
     await load()
   } catch (err: unknown) {
-    error.value = mapPersonaError(err)
+    error.value = translateError(err, t)
   } finally {
     personaMutating.value = false
+  }
+}
+
+// ── History-Subview (Plan 36 / Wave A1) ─────────────────────────────
+
+async function loadHistory(persona: Persona) {
+  if (historyLoading.value[persona.id]) return
+  historyLoading.value[persona.id] = true
+  try {
+    const resp = await personasApi.history(persona.id)
+    personaHistory.value[persona.id] = resp.history
+  } catch (err: unknown) {
+    error.value = translateError(err, t)
+  } finally {
+    historyLoading.value[persona.id] = false
+  }
+}
+
+function onHistoryToggle(persona: Persona, ev: Event) {
+  const target = ev.target as HTMLDetailsElement
+  // Lazy-load on first open; subsequent opens reuse the cached list
+  // until a successful restore refreshes it.
+  if (target.open && personaHistory.value[persona.id] === undefined) {
+    void loadHistory(persona)
+  }
+}
+
+function historyFor(personaId: number): PersonaHistoryItem[] {
+  return personaHistory.value[personaId] ?? []
+}
+
+function formatHistoryDate(unixSeconds: number): string {
+  // Native Intl via the active i18n locale — same approach as the rest
+  // of the page (no extra date-fmt dep). Backend stores seconds.
+  return new Date(unixSeconds * 1000).toLocaleString(locale.value)
+}
+
+async function restoreSnapshot(persona: Persona, entry: PersonaHistoryItem) {
+  if (restoring.value[persona.id]) return
+  const ok = await confirm({
+    title: t('pages.preferences.personas.history.restoreConfirm.title'),
+    description: t(
+      'pages.preferences.personas.history.restoreConfirm.description',
+      { name: persona.name, author: entry.author },
+    ),
+    destructive: false,
+  })
+  if (!ok) return
+  restoring.value[persona.id] = true
+  try {
+    await personasApi.restoreHistory(persona.id, entry.id)
+    await load()
+    // The restore itself appends a new snapshot row, so the visible
+    // list is stale until reloaded.
+    await loadHistory(persona)
+  } catch (err: unknown) {
+    error.value = translateError(err, t)
+  } finally {
+    restoring.value[persona.id] = false
   }
 }
 
@@ -336,7 +414,7 @@ async function saveChannel(channel: ChannelPrompt) {
     await channelsApi.update(channel.channel, body)
     await load()
   } catch (err: unknown) {
-    draft.error = mapPersonaError(err)
+    draft.error = translateError(err, t)
   } finally {
     draft.saving = false
   }
@@ -459,7 +537,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
     await channelsApi.reset(channel.channel)
     await load()
   } catch (err: unknown) {
-    draft.error = mapPersonaError(err)
+    draft.error = translateError(err, t)
   } finally {
     draft.saving = false
   }
@@ -568,13 +646,47 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
         </div>
         <div class="flex flex-col gap-1">
           <label class="text-xs font-medium text-muted-foreground">
-            {{ $t('pages.preferences.personas.form.prompt') }}
+            {{ $t('pages.preferences.personas.fragments.soul.label') }}
           </label>
+          <p class="text-[11px] text-muted-foreground">
+            {{ $t('pages.preferences.personas.fragments.soul.description') }}
+          </p>
           <UiTextarea
-            v-model="formPrompt"
-            class="min-h-32 font-mono text-sm"
+            v-model="formSoul"
+            class="min-h-24 font-mono text-sm"
             spellcheck="false"
-            data-testid="personas-form-prompt"
+            :placeholder="$t('pages.preferences.personas.fragments.soul.placeholder')"
+            data-testid="personas-form-soul"
+          />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-muted-foreground">
+            {{ $t('pages.preferences.personas.fragments.identity.label') }}
+          </label>
+          <p class="text-[11px] text-muted-foreground">
+            {{ $t('pages.preferences.personas.fragments.identity.description') }}
+          </p>
+          <UiTextarea
+            v-model="formIdentity"
+            class="min-h-24 font-mono text-sm"
+            spellcheck="false"
+            :placeholder="$t('pages.preferences.personas.fragments.identity.placeholder')"
+            data-testid="personas-form-identity"
+          />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-muted-foreground">
+            {{ $t('pages.preferences.personas.fragments.agents.label') }}
+          </label>
+          <p class="text-[11px] text-muted-foreground">
+            {{ $t('pages.preferences.personas.fragments.agents.description') }}
+          </p>
+          <UiTextarea
+            v-model="formAgents"
+            class="min-h-24 font-mono text-sm"
+            spellcheck="false"
+            :placeholder="$t('pages.preferences.personas.fragments.agents.placeholder')"
+            data-testid="personas-form-agents"
           />
         </div>
         <label class="flex items-center gap-2 text-xs">
@@ -630,12 +742,47 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
             </div>
             <div class="flex flex-col gap-1">
               <label class="text-xs font-medium text-muted-foreground">
-                {{ $t('pages.preferences.personas.form.promptShort') }}
+                {{ $t('pages.preferences.personas.fragments.soul.label') }}
               </label>
+              <p class="text-[11px] text-muted-foreground">
+                {{ $t('pages.preferences.personas.fragments.soul.description') }}
+              </p>
               <UiTextarea
-                v-model="formPrompt"
-                class="min-h-32 font-mono text-sm"
+                v-model="formSoul"
+                class="min-h-24 font-mono text-sm"
                 spellcheck="false"
+                :placeholder="$t('pages.preferences.personas.fragments.soul.placeholder')"
+                data-testid="personas-form-soul"
+              />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-medium text-muted-foreground">
+                {{ $t('pages.preferences.personas.fragments.identity.label') }}
+              </label>
+              <p class="text-[11px] text-muted-foreground">
+                {{ $t('pages.preferences.personas.fragments.identity.description') }}
+              </p>
+              <UiTextarea
+                v-model="formIdentity"
+                class="min-h-24 font-mono text-sm"
+                spellcheck="false"
+                :placeholder="$t('pages.preferences.personas.fragments.identity.placeholder')"
+                data-testid="personas-form-identity"
+              />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-medium text-muted-foreground">
+                {{ $t('pages.preferences.personas.fragments.agents.label') }}
+              </label>
+              <p class="text-[11px] text-muted-foreground">
+                {{ $t('pages.preferences.personas.fragments.agents.description') }}
+              </p>
+              <UiTextarea
+                v-model="formAgents"
+                class="min-h-24 font-mono text-sm"
+                spellcheck="false"
+                :placeholder="$t('pages.preferences.personas.fragments.agents.placeholder')"
+                data-testid="personas-form-agents"
               />
             </div>
             <label class="flex items-center gap-2 text-xs">
@@ -706,9 +853,26 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                 </UiButton>
               </div>
             </div>
-            <pre
-              class="line-clamp-3 whitespace-pre-wrap font-mono text-xs text-muted-foreground"
-              >{{ persona.prompt }}</pre>
+            <div class="flex flex-col gap-2">
+              <div v-if="persona.soul" class="flex flex-col gap-0.5">
+                <span class="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  {{ $t('pages.preferences.personas.fragments.soul.label') }}
+                </span>
+                <pre class="line-clamp-2 whitespace-pre-wrap font-mono text-xs text-muted-foreground">{{ persona.soul }}</pre>
+              </div>
+              <div v-if="persona.identity" class="flex flex-col gap-0.5">
+                <span class="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  {{ $t('pages.preferences.personas.fragments.identity.label') }}
+                </span>
+                <pre class="line-clamp-2 whitespace-pre-wrap font-mono text-xs text-muted-foreground">{{ persona.identity }}</pre>
+              </div>
+              <div v-if="persona.agents" class="flex flex-col gap-0.5">
+                <span class="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  {{ $t('pages.preferences.personas.fragments.agents.label') }}
+                </span>
+                <pre class="line-clamp-2 whitespace-pre-wrap font-mono text-xs text-muted-foreground">{{ persona.agents }}</pre>
+              </div>
+            </div>
 
             <!-- ── Persona-Skill activation (Plan 33) ─────────── -->
             <div
@@ -839,6 +1003,73 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                 </NuxtLink>.
               </p>
             </div>
+
+            <!-- ── Persona history (Plan 36 / Wave A1) ─────────── -->
+            <details
+              class="mt-3 border-t pt-3"
+              :data-testid="`persona-history-block-${persona.id}`"
+              @toggle="onHistoryToggle(persona, $event)"
+            >
+              <summary class="flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                <History class="size-3.5" />
+                {{ $t('pages.preferences.personas.history.toggle') }}
+              </summary>
+              <div class="mt-2">
+                <p
+                  v-if="historyLoading[persona.id]"
+                  class="text-xs text-muted-foreground"
+                >
+                  {{ $t('common.loading') }}
+                </p>
+                <p
+                  v-else-if="!historyFor(persona.id).length"
+                  class="text-xs text-muted-foreground"
+                  :data-testid="`persona-history-empty-${persona.id}`"
+                >
+                  {{ $t('pages.preferences.personas.history.empty') }}
+                </p>
+                <ul v-else class="flex flex-col gap-2">
+                  <li
+                    v-for="entry in historyFor(persona.id)"
+                    :key="entry.id"
+                    class="rounded-md border bg-muted/30 p-2"
+                    :data-testid="`persona-history-entry-${persona.id}-${entry.id}`"
+                  >
+                    <div class="mb-1 flex items-center justify-between gap-2">
+                      <span
+                        class="font-mono text-[10px] text-muted-foreground"
+                        :title="new Date(entry.created_at * 1000).toISOString()"
+                      >
+                        {{ formatHistoryDate(entry.created_at) }} · {{ entry.author }}
+                      </span>
+                      <UiButton
+                        size="sm"
+                        variant="outline"
+                        :disabled="restoring[persona.id]"
+                        :data-testid="`persona-history-restore-${persona.id}-${entry.id}`"
+                        @click="restoreSnapshot(persona, entry)"
+                      >
+                        {{ $t('pages.preferences.personas.history.restoreButton') }}
+                      </UiButton>
+                    </div>
+                    <div class="flex flex-col gap-1 text-xs text-muted-foreground">
+                      <div>
+                        <span class="font-semibold">{{ $t('pages.preferences.personas.fragments.soul.label') }}:</span>
+                        <span class="line-clamp-2 whitespace-pre-wrap">{{ entry.snapshot.soul || '—' }}</span>
+                      </div>
+                      <div>
+                        <span class="font-semibold">{{ $t('pages.preferences.personas.fragments.identity.label') }}:</span>
+                        <span class="line-clamp-2 whitespace-pre-wrap">{{ entry.snapshot.identity || '—' }}</span>
+                      </div>
+                      <div>
+                        <span class="font-semibold">{{ $t('pages.preferences.personas.fragments.agents.label') }}:</span>
+                        <span class="line-clamp-2 whitespace-pre-wrap">{{ entry.snapshot.agents || '—' }}</span>
+                      </div>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </details>
           </div>
         </li>
       </ul>

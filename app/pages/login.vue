@@ -3,6 +3,7 @@ import { useAuthStore } from '~/stores/auth'
 
 const auth = useAuthStore()
 const router = useRouter()
+const { t } = useI18n({ useScope: 'global' })
 
 const token = ref('')
 const error = ref<string | null>(null)
@@ -12,7 +13,7 @@ definePageMeta({ layout: 'default' })
 
 async function submit() {
   if (!token.value.trim()) {
-    error.value = 'Token darf nicht leer sein.'
+    error.value = t('pages.login.errors.tokenRequired')
     return
   }
   submitting.value = true
@@ -23,17 +24,20 @@ async function submit() {
       headers: { Authorization: `Bearer ${token.value.trim()}` },
     })
     if (res.status === 401) {
-      error.value = 'Token ungültig (401).'
+      error.value = t('pages.login.errors.tokenInvalid')
       return
     }
     if (!res.ok) {
-      error.value = `Server antwortete mit ${res.status}.`
+      error.value = t('pages.login.errors.serverError', { status: res.status })
       return
     }
     auth.setToken(token.value)
     await router.replace('/')
-  } catch (err: unknown) {
-    error.value = err instanceof Error ? err.message : 'Netzwerkfehler.'
+  } catch {
+    // We deliberately ignore the underlying `err.message` here — fetch
+    // failures in this branch are network/DNS issues whose message is
+    // never user-friendly, and the translated copy is enough context.
+    error.value = t('pages.login.errors.network')
   } finally {
     submitting.value = false
   }
@@ -50,20 +54,20 @@ onMounted(() => {
   <div class="flex min-h-screen items-center justify-center p-4">
     <UiCard class="w-full max-w-md">
       <UiCardHeader>
-        <UiCardTitle>Hermes</UiCardTitle>
+        <UiCardTitle>{{ $t('pages.login.title') }}</UiCardTitle>
         <UiCardDescription>
-          Bearer-Token eingeben. Wird nur lokal im Browser gespeichert.
+          {{ $t('pages.login.description') }}
         </UiCardDescription>
       </UiCardHeader>
       <UiCardContent>
         <form class="space-y-4" @submit.prevent="submit">
           <div class="space-y-2">
-            <UiLabel for="token">Token</UiLabel>
+            <UiLabel for="token">{{ $t('pages.login.tokenLabel') }}</UiLabel>
             <UiInput
               id="token"
               v-model="token"
               type="password"
-              placeholder="hex-string"
+              :placeholder="$t('pages.login.tokenPlaceholder')"
               autocomplete="current-password"
               autofocus
             />
@@ -72,7 +76,7 @@ onMounted(() => {
             {{ error }}
           </p>
           <UiButton type="submit" :disabled="submitting" class="w-full">
-            {{ submitting ? 'Prüfe…' : 'Einloggen' }}
+            {{ submitting ? $t('pages.login.submitting') : $t('pages.login.submit') }}
           </UiButton>
         </form>
       </UiCardContent>

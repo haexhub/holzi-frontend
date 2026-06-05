@@ -11,7 +11,8 @@
     "confirm": "Bestätigen",
     "back": "Zurück",
     "reload": "Neu laden",
-    "refresh": "Aktualisieren"
+    "refresh": "Aktualisieren",
+    "ok": "OK"
   },
   "nav": {
     "preferences": { "label": "Preferences" },
@@ -405,6 +406,21 @@
         "unknown": "Unbekannter Fehler."
       }
     },
+    "notesPanel": {
+      "title": "Notes",
+      "empty": "Noch keine Notes.",
+      "keyPlaceholder": "key (z. B. project.holzi.status)",
+      "contentPlaceholder": "content"
+    },
+    "modelSelect": {
+      "needsCredential": "Erst Credential aktivieren",
+      "loading": "Lade Modelle…",
+      "error": "Fehler beim Laden",
+      "empty": "Keine Modelle verfügbar",
+      "placeholder": "Modell wählen",
+      "searchPlaceholder": "Modell suchen…",
+      "noMatch": "Kein Treffer."
+    },
     "chatHub": {
       "header": {
         "newChat": "Neuer Chat",
@@ -461,9 +477,148 @@
   "errors": {
     "GENERIC": "Etwas ist schiefgelaufen.",
     "NETWORK": "Verbindung fehlgeschlagen.",
-    "UNKNOWN": "Unbekannter Fehler."
+    "UNKNOWN": "Unbekannter Fehler.",
+    "INVALID_REQUEST": "Anfrage ungültig: {message}",
+    "REQUEST_INVALID_JSON": "Anfrage enthält kein gültiges JSON.",
+    "REQUEST_INVALID_OFFSET": "Offset muss ≥ 0 sein.",
+    "REQUEST_LIMIT_OUT_OF_RANGE": "Limit muss zwischen {min} und {max} liegen.",
+    "REQUEST_INVALID_STATUS": "Status muss einer von {allowed} sein.",
+    "REQUEST_INVALID_PERIOD": "Zeitraum muss einer von {allowed} sein.",
+    "REQUEST_INVALID_MIN_LEVEL": "Min-Level muss einer von {allowed} sein.",
+    "REQUEST_TAIL_OUT_OF_RANGE": "Tail muss zwischen 1 und {max} liegen.",
+    "CHAT_INVALID_SESSION": "Ungültiger Session-Header.",
+    "CHAT_SESSION_NOT_FOUND": "Unbekannte Session.",
+    "CHAT_UPSTREAM_TIMEOUT": "LLM-Provider hat zu lange gebraucht.",
+    "CHAT_UPSTREAM_UNREACHABLE": "LLM-Provider nicht erreichbar.",
+    "CHAT_UPSTREAM_NON_JSON": "LLM-Provider hat kein gültiges JSON geliefert.",
+    "CHAT_UPSTREAM_ERROR": "LLM-Provider hat einen Fehler gemeldet: {message}",
+    "CONVERSATION_NOT_FOUND": "Konversation nicht gefunden.",
+    "CONVERSATION_NOT_WEB": "Diese Konversation gehört nicht zum Web-Channel.",
+    "CONVERSATION_TITLE_BLANK": "Titel darf nicht leer sein.",
+    "CONVERSATION_NO_USER_MESSAGE_TO_RETRY": "Diese Konversation enthält keine User-Nachricht zum Wiederholen.",
+    "MESSAGE_NOT_FOUND": "Nachricht nicht gefunden.",
+    "MESSAGE_ONLY_USER_EDITABLE": "Nur eigene Nachrichten können bearbeitet werden.",
+    "ATTACHMENT_REQUIRES_CONVERSATION": "Anhänge brauchen eine bestehende Konversation.",
+    "ATTACHMENT_UNKNOWN_IDS": "Mindestens ein Anhang ist unbekannt oder gehört nicht zu dieser Konversation.",
+    "ATTACHMENT_UNSUPPORTED_TYPE": "Dateityp wird nicht unterstützt: {type}",
+    "ATTACHMENT_TOO_LARGE": "Datei zu groß (max. {max_bytes} Bytes).",
+    "RUN_NOT_FOUND": "Run nicht gefunden.",
+    "APPROVAL_NOT_FOUND": "Approval-Anfrage nicht gefunden.",
+    "APPROVAL_ALREADY_RESOLVED": "Approval wurde bereits beantwortet.",
+    "TOOL_NOT_IN_ALWAYS_ALLOWED": "Tool steht nicht auf der Always-Allow-Liste.",
+    "TOOL_NOT_IN_SESSION_ALLOWED": "Tool steht nicht auf der Session-Allow-Liste.",
+    "NOTE_NOT_FOUND": "Notiz nicht gefunden.",
+    "TASK_NOT_FOUND": "Task nicht gefunden.",
+    "TASK_DUE_OR_SCHEDULE_REQUIRED": "Genau eines von due_at / schedule muss gesetzt sein.",
+    "TASK_UNKNOWN_TIMEZONE": "Unbekannte Zeitzone: {tz}",
+    "TASK_SCHEDULER_NOT_CONFIGURED": "Scheduler nicht konfiguriert.",
+    "SANDBOX_NOT_CONFIGURED": "Sandbox-Runtime nicht konfiguriert.",
+    "LLM_CREDENTIAL_NOT_FOUND": "Credential nicht gefunden.",
+    "LLM_CREDENTIAL_VANISHED": "Credential während der Operation verschwunden.",
+    "LLM_OAUTH_PENDING": "OAuth-Flow noch offen.",
+    "LLM_OAUTH_NOT_AUTHORIZED": "OAuth-Credential im Status '{state}' — bitte OAuth-Flow abschließen, bevor du sie aktivierst.",
+    "LLM_OAUTH_NOT_PENDING": "OAuth-Flow ist im Status '{state}', nicht 'pending'.",
+    "LLM_OAUTH_FLOW_NOT_FOUND": "OAuth-Flow nicht gefunden.",
+    "LLM_OAUTH_NO_CREDENTIALS": "Claude-CLI hat keine Credentials geschrieben.",
+    "LLM_OAUTH_START_FAILED": "OAuth-Start fehlgeschlagen: {message}",
+    "LLM_OAUTH_CODE_REJECTED": "Verification-Code abgelehnt: {message}",
+    "LLM_PROVIDER_FAILED": "Provider-Antwort fehlgeschlagen: {message}",
+    "MCP_MANAGER_NOT_INITIALISED": "MCP-Server-Manager nicht initialisiert.",
+    "MCP_SERVER_NOT_FOUND": "MCP-Server nicht gefunden.",
+    "MCP_SERVER_NAME_CONFLICT": "MCP-Server-Name '{name}' existiert bereits.",
+    "MCP_SERVER_INVALID_NAME": "Name muss kebab-case sein (a-z, 0-9, -), 2–32 Zeichen, ohne Bindestrich am Anfang oder Ende.",
+    "MCP_HTTP_REQUIRES_URL": "HTTP-Transport braucht eine URL.",
+    "MCP_HTTP_FORBIDS_COMMAND": "HTTP-Transport darf keinen Command setzen.",
+    "MCP_HTTP_FORBIDS_ENV": "HTTP-Transport darf keine Env setzen.",
+    "MCP_STDIO_REQUIRES_COMMAND": "Stdio-Transport braucht einen Command.",
+    "MCP_STDIO_FORBIDS_URL": "Stdio-Transport darf keine URL setzen.",
+    "SKILL_INVALID_SLUG": "Slug muss kebab-case sein (a-z, 0-9, -), 1–64 Zeichen, ohne Bindestrich am Anfang oder Ende.",
+    "SKILL_SLUG_CONFLICT": "Skill-Slug '{slug}' existiert bereits.",
+    "SKILL_NOT_FOUND": "Skill nicht gefunden.",
+    "PERSONA_NOT_FOUND": "Persona nicht gefunden.",
+    "PERSONA_NAME_CONFLICT": "Persona-Name '{name}' existiert bereits.",
+    "PERSONA_DEFAULT_DEMOTE": "Default-Persona kann nicht degradiert werden — wähle vorher eine andere Persona als Default.",
+    "PERSONA_DEFAULT_DELETE": "Default-Persona kann nicht gelöscht werden — wähle vorher eine andere Persona als Default.",
+    "PERSONA_REF_INVALID": "Persona {id} existiert nicht.",
+    "PERSONA_SKILL_ACTIVATION_INVALID": "Ungültige Skill-Aktivierungsliste: unbekannte skill_id oder Duplikat.",
+    "PERSONA_FRAGMENTS_ALL_EMPTY": "Mindestens eines der drei Persona-Felder (Soul, Identity oder Agents) muss gefüllt sein.",
+    "PERSONA_HISTORY_NOT_FOUND": "Die gewählte Versions-Zeile existiert nicht mehr.",
+    "PERSONA_HISTORY_PERSONA_MISMATCH": "Die Versions-Zeile gehört zu einer anderen Persona.",
+    "CHANNEL_NOT_FOUND": "Unbekannter Channel: {channel}",
+    "CHANNEL_ROW_MISSING": "Channel-Eintrag fehlt: {channel}",
+    "WORKSPACE_NOT_FOUND": "Workspace nicht gefunden.",
+    "WORKSPACE_ROOT_NOT_FOUND": "Unbekannter Workspace-Root.",
+    "WORKSPACE_ALREADY_EXISTS": "Workspace existiert bereits.",
+    "WORKSPACE_SANDBOX_NOT_RUNNING": "Workspace-Sandbox läuft nicht.",
+    "WORKSPACE_INVALID_PATH": "Ungültiger Pfad.",
+    "WORKSPACE_PATH_NOT_FOUND": "Pfad nicht gefunden.",
+    "WORKSPACE_PATH_EXISTS": "Pfad existiert bereits.",
+    "WORKSPACE_PATH_IS_DIRECTORY": "Pfad ist ein Verzeichnis.",
+    "WORKSPACE_PATH_IS_DIRECTORY_USE_TREE": "Pfad ist ein Verzeichnis — nutze /tree.",
+    "WORKSPACE_PATH_NOT_DIRECTORY": "Pfad ist kein Verzeichnis.",
+    "WORKSPACE_PATH_NOT_REGULAR": "Pfad ist keine reguläre Datei.",
+    "WORKSPACE_PATH_MUST_BE_FILE": "Pfad muss eine Datei sein.",
+    "WORKSPACE_PARENT_NOT_FOUND": "Übergeordnetes Verzeichnis nicht gefunden.",
+    "WORKSPACE_PARENT_NOT_DIRECTORY": "Übergeordneter Pfad ist kein Verzeichnis.",
+    "WORKSPACE_FILE_NUL_BYTES": "Inhalt enthält NUL-Bytes — Binärdateien können nicht als Text bearbeitet werden.",
+    "WORKSPACE_FILE_TOO_LARGE": "Datei ist zu groß.",
+    "WORKSPACE_FILE_SHA_MISMATCH": "Konflikt: Datei wurde auf der Festplatte geändert.",
+    "WORKSPACE_DELETE_NOT_REGULAR": "Nur reguläre Dateien können gelöscht werden.",
+    "WORKSPACE_DELETE_FAILED": "Löschen fehlgeschlagen: {stderr}",
+    "WORKSPACE_RENAME_SAME_PATH": "Quell- und Zielpfad sind identisch.",
+    "WORKSPACE_RENAME_SRC_NOT_FOUND": "Quelle nicht gefunden.",
+    "WORKSPACE_RENAME_SRC_NOT_REGULAR": "Quelle ist keine reguläre Datei.",
+    "WORKSPACE_RENAME_DEST_EXISTS": "Zielpfad existiert bereits.",
+    "WORKSPACE_RENAME_FAILED": "Umbenennen fehlgeschlagen: {stderr}",
+    "WORKSPACE_LIST_FAILED": "Verzeichnis-Listing fehlgeschlagen.",
+    "WORKSPACE_NOT_GIT_REPO": "Workspace ist kein Git-Repo.",
+    "WORKSPACE_GIT_DIRTY": "Working Tree enthält ungesicherte Änderungen.",
+    "WORKSPACE_GIT_INVALID_BRANCH": "Ungültiger Branch-Name.",
+    "WORKSPACE_GIT_INVALID_CURRENT_BRANCH": "Aktueller Branch-Name ungültig.",
+    "WORKSPACE_GIT_DESTRUCTIVE_DISABLED": "Destruktive Git-Operationen sind serverseitig deaktiviert.",
+    "WORKSPACE_GIT_PUSH_DETACHED_HEAD": "--set-upstream funktioniert nicht aus einem Detached HEAD.",
+    "WORKSPACE_GIT_COMMAND_FAILED": "git {command} fehlgeschlagen: {stderr}",
+    "LOGS_DISABLED": "Log-Tailing ist nicht aktiviert — setze HERMES_LOG_FILE und starte den Backend-Container neu.",
+    "DIAG_DB_NOT_INITIALISED": "Engine nicht initialisiert.",
+    "DIAG_DB_REACHABLE": "Datenbank erreichbar.",
+    "DIAG_DB_UNREACHABLE": "Datenbank nicht erreichbar.",
+    "DIAG_LLM_NO_CREDENTIAL": "Keine aktive LLM-Credential — Chat wird scheitern, bis eine eingerichtet ist.",
+    "DIAG_LLM_ACTIVE": "Aktive Credential: {display} (Modell {model})",
+    "DIAG_LLM_NEEDS_DB": "Kann nicht prüfen — Datenbank nicht initialisiert.",
+    "DIAG_SCHEDULER_NOT_STARTED": "Agent-Task-Scheduler wurde nicht gestartet.",
+    "DIAG_SCHEDULER_LOOP_STOPPED": "Agent-Task-Scheduler läuft nicht (Loop gestoppt).",
+    "DIAG_SCHEDULER_RUNNING": "Agent-Task-Scheduler läuft.",
+    "DIAG_WORKSPACE_NEEDS_DB": "Kann nicht prüfen — Datenbank nicht initialisiert.",
+    "DIAG_WORKSPACE_NONE": "Keine Workspaces konfiguriert (lege einen unter /settings/workspaces an).",
+    "DIAG_WORKSPACE_CONFIGURED": "{count} Workspace(s) konfiguriert: {names}",
+    "DIAG_SANDBOX_CONFIGURED": "Rootless Podman konfiguriert (Image {image}, Netzwerk {network}).",
+    "DIAG_SANDBOX_SOCKET_MISSING": "HERMES_SANDBOX_SOCKET nicht gesetzt — Tool-Calls, die eine Sandbox brauchen, werden scheitern.",
+    "DIAG_SANDBOX_MANAGER_FAILED": "Sandbox-Socket konfiguriert, aber Manager konnte nicht starten.",
+    "chat": {
+      "upstream_unreachable": "LLM-Provider nicht erreichbar. Prüfe deine Credentials in den Settings.",
+      "upstream_timeout": "LLM-Provider hat zu lange gebraucht. Versuch es nochmal.",
+      "upstream_http_error": "LLM-Provider hat einen Fehler zurückgegeben{statusSuffix}. Versuch es gleich nochmal.",
+      "agent_error": "Interner Fehler: {message}",
+      "unauthorized": "Session abgelaufen — bitte neu einloggen.",
+      "request_failed": "Chat-Request fehlgeschlagen{statusSuffix}.",
+      "unknown": "Chat-Fehler."
+    }
   },
   "pages": {
+    "login": {
+      "title": "Hermes",
+      "description": "Bearer-Token eingeben. Wird nur lokal im Browser gespeichert.",
+      "tokenLabel": "Token",
+      "tokenPlaceholder": "hex-string",
+      "submit": "Einloggen",
+      "submitting": "Prüfe…",
+      "errors": {
+        "tokenRequired": "Token darf nicht leer sein.",
+        "tokenInvalid": "Token ungültig (401).",
+        "serverError": "Server antwortete mit {status}.",
+        "network": "Netzwerkfehler."
+      }
+    },
     "chat": {
       "notFound": "Konversation nicht gefunden."
     },
@@ -491,10 +646,34 @@
         "form": {
           "name": "Name",
           "namePlaceholder": "z. B. Hermes der Direkte",
-          "prompt": "Prompt (Identität + Stil)",
-          "promptShort": "Prompt",
           "isDefault": "Als globale Default-Persona setzen",
           "isDefaultShort": "Default-Persona"
+        },
+        "fragments": {
+          "soul": {
+            "label": "Soul – Stimme & Ton",
+            "description": "Wie der Agent klingt: direkt, höflich, sachlich, locker — und welche Grenzen er respektiert.",
+            "placeholder": "Du bist direkt, präzise und technisch. Keine Floskeln."
+          },
+          "identity": {
+            "label": "Identity – Name & Vibe",
+            "description": "Wer der Agent ist: Name, Persönlichkeit, optional ein Emoji.",
+            "placeholder": "Du bist Hermes, ein persönlicher KI-Assistent."
+          },
+          "agents": {
+            "label": "Agents – Arbeitsregeln",
+            "description": "Wie der Agent arbeitet: Test-Driven, fragt vor destruktiven Aktionen, …",
+            "placeholder": "Du befolgst Test-Driven-Development. Du fragst vor destruktiven Aktionen."
+          }
+        },
+        "history": {
+          "toggle": "Verlauf",
+          "empty": "Keine Versionen gespeichert.",
+          "restoreButton": "Wiederherstellen",
+          "restoreConfirm": {
+            "title": "Version wiederherstellen?",
+            "description": "„{name}\" wird auf die Version vom angezeigten Zeitpunkt (Autor: {author}) zurückgesetzt. Eine neue Verlaufs-Zeile wird automatisch erzeugt."
+          }
         },
         "defaultBadge": "Default",
         "editAria": "Bearbeiten",
@@ -505,7 +684,7 @@
           "description": "„{name}\" wird endgültig gelöscht."
         },
         "errors": {
-          "nameRequired": "Name und Prompt sind erforderlich.",
+          "nameRequired": "Name ist erforderlich.",
           "duplicate": "Name bereits vergeben.",
           "invalidInput": "Eingabe ungültig.",
           "generic": "Fehler.",
@@ -827,7 +1006,14 @@
       "running": "läuft …",
       "subsystems": {
         "title": "Subsysteme",
-        "subtitle": "Was der Agent zum Starten und für Chat / Messenger / Tools braucht."
+        "subtitle": "Was der Agent zum Starten und für Chat / Messenger / Tools braucht.",
+        "labels": {
+          "database": "Datenbank",
+          "llm": "LLM",
+          "scheduler": "Scheduler",
+          "workspace": "Workspaces",
+          "sandbox": "Sandbox-Runtime"
+        }
       },
       "crashes": {
         "title": "Sandbox-Abstürze",

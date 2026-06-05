@@ -1,3 +1,4 @@
+import { translateError } from '~/lib/errorMessages'
 import type {
   PersonaSkillListResponse,
   Skill,
@@ -18,6 +19,7 @@ import type {
  */
 export function useSkills() {
   const api = useApi()
+  const { t } = useI18n()
 
   const data = ref<SkillListResponse | null>(null)
   const loading = ref(false)
@@ -29,7 +31,7 @@ export function useSkills() {
     try {
       data.value = await api.get<SkillListResponse>('/api/skills')
     } catch (err: unknown) {
-      error.value = err instanceof Error ? err.message : 'Fehler beim Laden.'
+      error.value = translateError(err, t)
     } finally {
       loading.value = false
     }

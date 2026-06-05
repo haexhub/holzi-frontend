@@ -1,3 +1,4 @@
+import { translateError } from '~/lib/errorMessages'
 import type { ToolsResponse } from '~/types/api'
 
 /**
@@ -7,6 +8,7 @@ import type { ToolsResponse } from '~/types/api'
  */
 export function useTools() {
   const api = useApi()
+  const { t } = useI18n()
 
   const data = ref<ToolsResponse | null>(null)
   const loading = ref(false)
@@ -18,7 +20,7 @@ export function useTools() {
     try {
       data.value = await api.get<ToolsResponse>('/api/tools')
     } catch (err: unknown) {
-      error.value = err instanceof Error ? err.message : 'Fehler beim Laden.'
+      error.value = translateError(err, t)
     } finally {
       loading.value = false
     }

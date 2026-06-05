@@ -198,8 +198,11 @@ describe('settings/insights.vue', () => {
     const wrapper = mount(InsightsPage)
     await flushPromises()
 
+    // Plan 30: translateError() falls back to `errors.GENERIC` for an
+    // Error with no backend ErrorCode; the passthrough `$t` returns the
+    // key verbatim.
     expect(wrapper.get('[data-testid="insights-error"]').text()).toContain(
-      'boom',
+      'errors.GENERIC',
     )
   })
 

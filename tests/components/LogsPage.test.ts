@@ -161,8 +161,11 @@ describe('settings/logs.vue', () => {
     const wrapper = mount(LogsPage)
     await flushPromises()
 
+    // Plan 30: translateError() falls back to `errors.GENERIC` for an
+    // Error with no backend ErrorCode; the passthrough `$t` stub returns
+    // the key verbatim, so the banner shows the key.
     expect(wrapper.get('[data-testid="logs-error"]').text()).toContain(
-      'network gone',
+      'errors.GENERIC',
     )
   })
 
