@@ -15,7 +15,6 @@ import { translateError } from '~/lib/errorMessages'
 import type {
   ChannelPrompt,
   LlmCredential,
-  LlmModelChoice,
   Persona,
   PersonaHistoryItem,
 } from '~/types/api'
@@ -102,8 +101,6 @@ const formIsDefault = ref(false)
 // Plan 29-D (Wave B1): per-persona LLM credential + model override.
 const formCredentialId = ref<number | null>(null)
 const formModel = ref<string | null>(null)
-const formModels = ref<LlmModelChoice[]>([])
-const modelsLoading = ref(false)
 const formError = ref<string | null>(null)
 const saving = ref(false)
 // Guards the "Als Default setzen" + "Löschen" buttons against double-
@@ -128,8 +125,6 @@ function openCreate() {
   formIsDefault.value = false
   formCredentialId.value = null
   formModel.value = null
-  formModels.value = []
-  modelsLoading.value = false
   formError.value = null
 }
 
@@ -142,11 +137,7 @@ function openEdit(persona: Persona) {
   formIsDefault.value = persona.is_default
   formCredentialId.value = persona.llm_credential_id ?? null
   formModel.value = persona.model ?? null
-  formModels.value = []
   formError.value = null
-  if (persona.llm_credential_id !== null && persona.llm_credential_id !== undefined) {
-    void loadModelsForCredential(persona.llm_credential_id)
-  }
 }
 
 function cancelEdit() {
@@ -154,35 +145,6 @@ function cancelEdit() {
   formError.value = null
   formCredentialId.value = null
   formModel.value = null
-  formModels.value = []
-  modelsLoading.value = false
-}
-
-async function loadModelsForCredential(credId: number) {
-  // Race-guard against two sources of staleness on the SAME persona:
-  //   1. editing target changed (user clicked Cancel / opened another card)
-  //   2. credential dropdown changed mid-flight (user picked X then Y;
-  //      X resolves after Y → would overwrite Y's correct list)
-  const currentEditing = editing.value
-  const isFresh = () =>
-    editing.value === currentEditing && formCredentialId.value === credId
-  modelsLoading.value = true
-  try {
-    const resp = await credentialsApi.listModels(credId)
-    if (isFresh()) formModels.value = resp.models
-  } catch {
-    if (isFresh()) formModels.value = []
-  } finally {
-    if (isFresh()) modelsLoading.value = false
-  }
-}
-
-async function onFormCredentialChange() {
-  formModel.value = null
-  formModels.value = []
-  if (formCredentialId.value !== null) {
-    await loadModelsForCredential(formCredentialId.value)
-  }
 }
 
 async function submitPersonaForm() {
@@ -760,7 +722,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                 v-model="formCredentialId"
                 class="h-9 rounded-md border bg-background px-2 text-sm"
                 :data-testid="`persona-cred-select-${persona.id}`"
-                @change="onFormCredentialChange"
+                @change="formModel = null"
               >
                 <option :value="null">{{ $t('pages.preferences.personas.form.credentialGlobalOption') }}</option>
                 <option v-for="cred in credentials" :key="cred.id" :value="cred.id">
@@ -768,7 +730,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                 </option>
               </select>
             </div>
-            <!-- Model dropdown (Plan 29-D) -->
+            <!-- Model dropdown (Plan 29-D-A) -->
             <div class="flex flex-col gap-1">
               <label
                 :for="`persona-model-${persona.id}`"
@@ -776,19 +738,12 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
               >
                 {{ $t('pages.preferences.personas.form.model') }}
               </label>
-              <select
-                :id="`persona-model-${persona.id}`"
-                v-model="formModel"
-                :disabled="formCredentialId === null || modelsLoading"
-                class="h-9 rounded-md border bg-background px-2 text-sm"
-                :data-testid="`persona-model-select-${persona.id}`"
-              >
-                <option :value="null">{{ $t('pages.preferences.personas.form.modelDefaultOption') }}</option>
-                <option v-for="m in formModels" :key="m.id" :value="m.id">{{ m.label }}</option>
-              </select>
-              <p v-if="formCredentialId === null" class="text-[11px] text-muted-foreground">
-                {{ $t('pages.preferences.personas.form.modelHintNoCredential') }}
-              </p>
+              <SettingsModelSelect
+                :model-value="formModel"
+                :credential-id="formCredentialId"
+                :test-id="`persona-model-select-${persona.id}`"
+                @update:model-value="(v) => formModel = v"
+              />
             </div>
             <label class="flex items-center gap-2 text-xs">
               <input v-model="formIsDefault" type="checkbox" />
