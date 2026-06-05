@@ -667,7 +667,6 @@
           }
         },
         "history": {
-          "title": "History",
           "toggle": "History",
           "empty": "No versions stored.",
           "restoreButton": "Restore",
@@ -685,7 +684,7 @@
           "description": "\"{name}\" will be permanently deleted."
         },
         "errors": {
-          "nameRequired": "Name and prompt are required.",
+          "nameRequired": "Name is required.",
           "duplicate": "Name already taken.",
           "invalidInput": "Invalid input.",
           "generic": "Error.",

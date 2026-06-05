@@ -667,7 +667,6 @@
           }
         },
         "history": {
-          "title": "Verlauf",
           "toggle": "Verlauf",
           "empty": "Keine Versionen gespeichert.",
           "restoreButton": "Wiederherstellen",
@@ -685,7 +684,7 @@
           "description": "„{name}\" wird endgültig gelöscht."
         },
         "errors": {
-          "nameRequired": "Name und Prompt sind erforderlich.",
+          "nameRequired": "Name ist erforderlich.",
           "duplicate": "Name bereits vergeben.",
           "invalidInput": "Eingabe ungültig.",
           "generic": "Fehler.",

@@ -163,9 +163,11 @@ function cancelEdit() {
 
 async function submitPersonaForm() {
   const name = formName.value.trim()
-  const soul = formSoul.value
-  const identity = formIdentity.value
-  const agents = formAgents.value
+  // Send trimmed fragments so save-and-reload doesn't visually shift
+  // content if the backend strips on its side.
+  const soul = formSoul.value.trim()
+  const identity = formIdentity.value.trim()
+  const agents = formAgents.value.trim()
   if (!name) {
     formError.value = t('pages.preferences.personas.errors.nameRequired')
     return
@@ -173,7 +175,7 @@ async function submitPersonaForm() {
   // Backend rejects with PERSONA_FRAGMENTS_ALL_EMPTY when all three are
   // blank; mirror the check on the FE so we don't round-trip the form
   // just to surface that.
-  if (!soul.trim() && !identity.trim() && !agents.trim()) {
+  if (!soul && !identity && !agents) {
     formError.value = t('errors.PERSONA_FRAGMENTS_ALL_EMPTY')
     return
   }

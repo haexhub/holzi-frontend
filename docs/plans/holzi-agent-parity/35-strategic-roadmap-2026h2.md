@@ -146,7 +146,7 @@ i18n. Other waves all assume the user has gotten past first-launch.
 
 Shipped as [Plan 36](./36-personas-fragments.md). Branch
 `wave-a1-personas-fragments` in both repos carries the cross-repo
-work (BE: 8 commits, FE: 6 commits). 884 backend pytest + 461
+work (BE: 8 commits, FE: 7 commits). 884 backend pytest + 461
 frontend vitest + ruff + mypy + typecheck all clean. Pending PR
 review + merge.
 
