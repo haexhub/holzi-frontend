@@ -418,6 +418,7 @@
       "error": "Failed to load",
       "empty": "No models available",
       "placeholder": "Pick a model",
+      "useDefault": "— Use credential's default —",
       "searchPlaceholder": "Search model…",
       "noMatch": "No matches."
     },

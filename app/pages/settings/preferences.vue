@@ -743,6 +743,7 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                 v-model="formModel"
                 :credential-id="formCredentialId"
                 :test-id="`persona-model-select-${persona.id}`"
+                clearable
               />
             </div>
             <label class="flex items-center gap-2 text-xs">

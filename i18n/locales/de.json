@@ -418,6 +418,7 @@
       "error": "Fehler beim Laden",
       "empty": "Keine Modelle verfügbar",
       "placeholder": "Modell wählen",
+      "useDefault": "— Default-Modell der Credential —",
       "searchPlaceholder": "Modell suchen…",
       "noMatch": "Kein Treffer."
     },
