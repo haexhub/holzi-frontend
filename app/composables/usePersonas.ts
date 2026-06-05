@@ -1,5 +1,4 @@
 import type {
-  LlmModelListResponse,
   Persona,
   PersonaCreate,
   PersonaHistoryListResponse,
@@ -38,8 +37,5 @@ export function usePersonas() {
       api.post<Persona>(
         `/api/personas/${personaId}/history/${snapshotId}/restore`,
       ),
-
-    listModels: (id: number) =>
-      api.get<LlmModelListResponse>(`/api/personas/${id}/models`),
   }
 }

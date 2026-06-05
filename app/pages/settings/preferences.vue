@@ -15,6 +15,7 @@ import { translateError } from '~/lib/errorMessages'
 import type {
   ChannelPrompt,
   LlmCredential,
+  LlmModelChoice,
   Persona,
   PersonaHistoryItem,
 } from '~/types/api'
@@ -101,7 +102,7 @@ const formIsDefault = ref(false)
 // Plan 29-D (Wave B1): per-persona LLM credential + model override.
 const formCredentialId = ref<number | null>(null)
 const formModel = ref<string | null>(null)
-const formModels = ref<{ id: string; label: string }[]>([])
+const formModels = ref<LlmModelChoice[]>([])
 const modelsLoading = ref(false)
 const formError = ref<string | null>(null)
 const saving = ref(false)
@@ -125,6 +126,10 @@ function openCreate() {
   formIdentity.value = ''
   formAgents.value = ''
   formIsDefault.value = false
+  formCredentialId.value = null
+  formModel.value = null
+  formModels.value = []
+  modelsLoading.value = false
   formError.value = null
 }
 
@@ -154,21 +159,21 @@ function cancelEdit() {
 }
 
 async function loadModelsForCredential(credId: number) {
+  // Race-guard against two sources of staleness on the SAME persona:
+  //   1. editing target changed (user clicked Cancel / opened another card)
+  //   2. credential dropdown changed mid-flight (user picked X then Y;
+  //      X resolves after Y → would overwrite Y's correct list)
   const currentEditing = editing.value
+  const isFresh = () =>
+    editing.value === currentEditing && formCredentialId.value === credId
   modelsLoading.value = true
   try {
     const resp = await credentialsApi.listModels(credId)
-    if (editing.value === currentEditing) {
-      formModels.value = resp.models
-    }
+    if (isFresh()) formModels.value = resp.models
   } catch {
-    if (editing.value === currentEditing) {
-      formModels.value = []
-    }
+    if (isFresh()) formModels.value = []
   } finally {
-    if (editing.value === currentEditing) {
-      modelsLoading.value = false
-    }
+    if (isFresh()) modelsLoading.value = false
   }
 }
 
