@@ -670,6 +670,7 @@
           "toggle": "History",
           "empty": "No versions stored.",
           "restoreButton": "Restore",
+          "restoreAria": "Restore snapshot from {date} (author: {author})",
           "restoreConfirm": {
             "title": "Restore version?",
             "description": "\"{name}\" will be rolled back to the displayed snapshot (author: {author}). A new history entry is created automatically."

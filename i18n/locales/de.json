@@ -670,6 +670,7 @@
           "toggle": "Verlauf",
           "empty": "Keine Versionen gespeichert.",
           "restoreButton": "Wiederherstellen",
+          "restoreAria": "Snapshot vom {date} (Autor: {author}) wiederherstellen",
           "restoreConfirm": {
             "title": "Version wiederherstellen?",
             "description": "„{name}\" wird auf die Version vom angezeigten Zeitpunkt (Autor: {author}) zurückgesetzt. Eine neue Verlaufs-Zeile wird automatisch erzeugt."
