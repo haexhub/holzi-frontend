@@ -1036,6 +1036,22 @@ describe('settings/preferences.vue', () => {
     expect(modelSelect.attributes('disabled')).toBeDefined()
   })
 
+  it('model label is associated with the select control via for/id', async () => {
+    mockInitialLoad([defaultPersona], fourChannels, [])
+    const wrapper = mount(PreferencesPage)
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="persona-card-1"]').exists()).toBe(true))
+
+    await wrapper.find('[data-testid="persona-edit-1"]').trigger('click')
+    await vi.waitFor(() =>
+      expect(wrapper.find('[data-testid="persona-model-select-1"]').exists()).toBe(true),
+    )
+
+    const labelFor = wrapper.find('label[for="persona-model-1"]')
+    expect(labelFor.exists()).toBe(true)
+    const trigger = wrapper.find('[data-testid="persona-model-select-1"]')
+    expect(trigger.attributes('id')).toBe('persona-model-1')
+  })
+
   it('save includes llm_credential_id and model in PUT payload', async () => {
     const cred1 = credential({ id: 10, display_name: 'My OpenAI' })
     apiGet.mockImplementation((path: string) => {
