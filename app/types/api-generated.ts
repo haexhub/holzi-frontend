@@ -1124,24 +1124,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/personas/{persona_id}/skills": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Persona Skills */
-        get: operations["list_persona_skills_api_personas__persona_id__skills_get"];
-        /** Set Persona Skills */
-        put: operations["set_persona_skills_api_personas__persona_id__skills_put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/channels": {
         parameters: {
             query?: never;
@@ -2217,41 +2199,6 @@ export interface components {
             /** Updated At */
             updated_at: number;
         };
-        /**
-         * PersonaSkillItem
-         * @description One row in the persona's skill list as returned by GET — the full
-         *     skill payload is embedded so the UI can render the list without a
-         *     second round-trip to /api/skills.
-         */
-        PersonaSkillItem: {
-            skill: components["schemas"]["SkillResponse"];
-            /** Ordering */
-            ordering: number;
-            /** Enabled */
-            enabled: boolean;
-        };
-        /** PersonaSkillListResponse */
-        PersonaSkillListResponse: {
-            /** Skills */
-            skills: components["schemas"]["PersonaSkillItem"][];
-        };
-        /**
-         * PersonaSkillSetItem
-         * @description One row in the PUT body — refers to a skill by id, no inline data.
-         */
-        PersonaSkillSetItem: {
-            /** Skill Id */
-            skill_id: number;
-            /** Ordering */
-            ordering: number;
-            /** Enabled */
-            enabled: boolean;
-        };
-        /** PersonaSkillSetRequest */
-        PersonaSkillSetRequest: {
-            /** Items */
-            items: components["schemas"]["PersonaSkillSetItem"][];
-        };
         /** PersonaUpdate */
         PersonaUpdate: {
             /** Name */
@@ -2420,6 +2367,11 @@ export interface components {
             when_to_use?: string | null;
             /** Body Markdown */
             body_markdown: string;
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
         };
         /** SkillListResponse */
         SkillListResponse: {
@@ -2440,6 +2392,8 @@ export interface components {
             when_to_use: string | null;
             /** Body Markdown */
             body_markdown: string;
+            /** Enabled */
+            enabled: boolean;
             /** Created At */
             created_at: number;
             /** Updated At */
@@ -2458,6 +2412,8 @@ export interface components {
             when_to_use?: string | null;
             /** Body Markdown */
             body_markdown?: string | null;
+            /** Enabled */
+            enabled?: boolean | null;
         };
         /** StandingAlwaysEntry */
         StandingAlwaysEntry: {
@@ -5282,72 +5238,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PersonaResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_persona_skills_api_personas__persona_id__skills_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                persona_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PersonaSkillListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    set_persona_skills_api_personas__persona_id__skills_put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                persona_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PersonaSkillSetRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PersonaSkillListResponse"];
                 };
             };
             /** @description Validation Error */

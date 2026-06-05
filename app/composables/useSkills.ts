@@ -1,21 +1,17 @@
 import { translateError } from '~/lib/errorMessages'
 import type {
-  PersonaSkillListResponse,
   Skill,
   SkillCreate,
   SkillListResponse,
   SkillUpdate,
-  PersonaSkillSetItem,
 } from '~/types/api'
 
 /**
- * Plan 33: CRUD over `/api/skills` plus persona-skill activation under
- * `/api/personas/{id}/skills`.
+ * Plan 33 / Plan 37: CRUD over `/api/skills`.
  *
- * `data` holds the list of all skills (refreshed after every mutation
- * so the UI never has to reconcile state). `listForPersona` returns
- * the result inline because the persona-skill view is rendered per
- * card on the preferences page — each card owns its own state.
+ * Plan 37 dropped the per-persona activation layer (`listForPersona` /
+ * `setForPersona`). Skills are now a global catalog; the `enabled` flag
+ * controls whether a skill appears in the agent's catalog index.
  */
 export function useSkills() {
   const api = useApi()
@@ -54,24 +50,6 @@ export function useSkills() {
     await list()
   }
 
-  async function listForPersona(
-    personaId: number,
-  ): Promise<PersonaSkillListResponse> {
-    return api.get<PersonaSkillListResponse>(
-      `/api/personas/${personaId}/skills`,
-    )
-  }
-
-  async function setForPersona(
-    personaId: number,
-    items: PersonaSkillSetItem[],
-  ): Promise<PersonaSkillListResponse> {
-    return api.put<PersonaSkillListResponse>(
-      `/api/personas/${personaId}/skills`,
-      { items },
-    )
-  }
-
   return {
     data,
     loading,
@@ -80,7 +58,5 @@ export function useSkills() {
     create,
     update,
     remove,
-    listForPersona,
-    setForPersona,
   }
 }

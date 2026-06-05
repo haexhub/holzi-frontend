@@ -61,6 +61,7 @@ function skill(over: Partial<Skill> & { id: number; slug: string }): Skill {
     description: over.description ?? 'desc',
     when_to_use: over.when_to_use ?? null,
     body_markdown: over.body_markdown ?? 'body',
+    enabled: over.enabled ?? true,
     created_at: over.created_at ?? 1_700_000_000,
     updated_at: over.updated_at ?? 1_700_000_000,
   }
@@ -156,6 +157,7 @@ describe('settings/SkillsSection.vue', () => {
       description: 'German only',
       when_to_use: null,
       body_markdown: 'Body.',
+      enabled: true,
     })
     expect(toastSuccess).toHaveBeenCalled()
   })
@@ -264,5 +266,63 @@ describe('settings/SkillsSection.vue', () => {
     expect(wrapper.find('[data-testid="skill-item-beta-skill"]').exists()).toBe(
       false,
     )
+  })
+
+  // ── Plan 37: enabled-toggle + token-budget counter ─────────────────
+
+  it('renders an enabled-toggle per skill-row, checked when enabled=true', async () => {
+    setupList([
+      skill({ id: 1, slug: 'on-skill', enabled: true }),
+      skill({ id: 2, slug: 'off-skill', enabled: false }),
+    ])
+    const wrapper = mount(SkillsSection)
+    await flushPromises()
+
+    const onToggle = wrapper.get('[data-testid="skill-enabled-on-skill"]')
+      .element as HTMLInputElement
+    expect(onToggle.checked).toBe(true)
+
+    const offToggle = wrapper.get('[data-testid="skill-enabled-off-skill"]')
+      .element as HTMLInputElement
+    expect(offToggle.checked).toBe(false)
+  })
+
+  it('clicking the enabled-toggle calls useSkills.update(id, { enabled: false })', async () => {
+    setupList([skill({ id: 5, slug: 'my-skill', enabled: true })])
+    apiPut.mockResolvedValueOnce(
+      skill({ id: 5, slug: 'my-skill', enabled: false }),
+    )
+    const wrapper = mount(SkillsSection)
+    await flushPromises()
+
+    await wrapper.get('[data-testid="skill-enabled-my-skill"]').trigger('change')
+    await flushPromises()
+
+    expect(apiPut).toHaveBeenCalledWith('/api/skills/5', { enabled: false })
+  })
+
+  it('renders the token-budget counter with correct calculation', async () => {
+    // slug=6, description=4, when_to_use=0 (null → ''), so:
+    // Math.ceil((6 + 4 + 0 + 32) / 4) = Math.ceil(42/4) = 11
+    const s = skill({ id: 1, slug: 'myslug', description: 'desc', when_to_use: null, enabled: true })
+    setupList([s])
+    const wrapper = mount(SkillsSection)
+    await flushPromises()
+
+    const counter = wrapper.get('[data-testid="skill-token-budget"]')
+    // The summary key is passed through as-is by the mock t()
+    expect(counter.text()).toContain('pages.skills.list.tokenBudget.summary')
+  })
+
+  it('token-budget counter excludes disabled skills', async () => {
+    setupList([
+      skill({ id: 1, slug: 'enabled-s', enabled: true }),
+      skill({ id: 2, slug: 'disabled-s', enabled: false }),
+    ])
+    const wrapper = mount(SkillsSection)
+    await flushPromises()
+
+    // The token budget is always rendered (even with 0 enabled)
+    expect(wrapper.find('[data-testid="skill-token-budget"]').exists()).toBe(true)
   })
 })

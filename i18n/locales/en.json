@@ -689,25 +689,7 @@
           "duplicate": "Name already taken.",
           "invalidInput": "Invalid input.",
           "generic": "Error.",
-          "load": "Failed to load.",
-          "skillUpdate": "Failed to update skills."
-        },
-        "skills": {
-          "heading": "Active skills",
-          "empty": "no skills active",
-          "addPlaceholder": "+ Add skill…",
-          "allAttached": "All available skills are already attached.",
-          "noneExist": "No skills exist yet —",
-          "createLink": "create a skill",
-          "tooltips": {
-            "active": "Active — flows into the system prompt",
-            "disabled": "Disabled — stays attached without flowing into the prompt"
-          },
-          "aria": {
-            "up": "Move up",
-            "down": "Move down",
-            "remove": "Remove skill"
-          }
+          "load": "Failed to load."
         }
       },
       "channels": {
@@ -1034,6 +1016,16 @@
     },
     "skills": {
       "title": "Skills & Tools",
+      "list": {
+        "enabledToggle": {
+          "label": "Enabled",
+          "descriptionEnabled": "In catalog",
+          "descriptionDisabled": "Hidden"
+        },
+        "tokenBudget": {
+          "summary": "~{tokens} tokens · {enabled}/{total} active"
+        }
+      },
       "relative": {
         "never": "never checked",
         "seconds": "{n} s ago",

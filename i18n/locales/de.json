@@ -689,25 +689,7 @@
           "duplicate": "Name bereits vergeben.",
           "invalidInput": "Eingabe ungültig.",
           "generic": "Fehler.",
-          "load": "Fehler beim Laden.",
-          "skillUpdate": "Fehler beim Aktualisieren der Skills."
-        },
-        "skills": {
-          "heading": "Aktive Skills",
-          "empty": "keine Skills aktiv",
-          "addPlaceholder": "+ Skill hinzufügen…",
-          "allAttached": "Alle vorhandenen Skills sind bereits hinzugefügt.",
-          "noneExist": "Noch keine Skills angelegt —",
-          "createLink": "Skill anlegen",
-          "tooltips": {
-            "active": "Aktiv — fließt in den System-Prompt",
-            "disabled": "Deaktiviert — bleibt verknüpft, ohne in den Prompt zu fließen"
-          },
-          "aria": {
-            "up": "Nach oben verschieben",
-            "down": "Nach unten verschieben",
-            "remove": "Skill entfernen"
-          }
+          "load": "Fehler beim Laden."
         }
       },
       "channels": {
@@ -1034,6 +1016,16 @@
     },
     "skills": {
       "title": "Skills & Tools",
+      "list": {
+        "enabledToggle": {
+          "label": "Aktiv",
+          "descriptionEnabled": "Im Catalog",
+          "descriptionDisabled": "Versteckt"
+        },
+        "tokenBudget": {
+          "summary": "~{tokens} Tokens · {enabled}/{total} aktiv"
+        }
+      },
       "relative": {
         "never": "noch nie geprüft",
         "seconds": "vor {n} s",
