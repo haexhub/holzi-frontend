@@ -215,6 +215,8 @@ pattern end-to-end (load skill → execute → write artifacts → exit).
 
 #### A3 — Curated Starter Skill Library
 
+**Status**: Plan 38 fully on `wave-a3-starter-skills` — merged 2026-06-05. 9 skills in catalog (bootstrap + 8 starters). Wave A complete.
+
 Ship ~6–10 built-in skills as catalog entries, covering common
 Holzi use cases:
 
