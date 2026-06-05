@@ -852,7 +852,7 @@ async function loadChatContext() {
 
 // --- End slash command state ---
 
-onMounted(() => {
+onMounted(async () => {
   loadConversations()
   loadCredentialState()
   loadPersonas()
@@ -864,10 +864,11 @@ onMounted(() => {
     void loadConversation(props.conversationId)
   }
   // Sub-lg initial load (e.g. mobile reload): the lg→sub-lg watcher above
-  // never fires, so collapse explicitly. Runs after the splitter children
-  // have mounted (and applied any auto-save state), so this overrides any
-  // restored expanded layout for small viewports.
+  // never fires, so collapse explicitly. nextTick defers until after
+  // reka-ui's panelDataArrayChanged watcher has computed the initial layout —
+  // calling collapse() before that produces "Panel size not found" (layout=[]).
   if (!isLgScreen.value) {
+    await nextTick()
     leftPanelRef.value?.collapse()
     rightPanelRef.value?.collapse()
   }
