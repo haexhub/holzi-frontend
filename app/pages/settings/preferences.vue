@@ -602,8 +602,13 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
     </section>
 
     <!-- ── Section 2: Personas ─────────────────────────────────────── -->
+    <!-- Section stays mounted across reload()-cycles so the per-persona
+         <details> history block doesn't lose its open-state when a
+         mutation (set-default / delete / restore) triggers a refresh.
+         The top-level "loading" indicator above still signals progress;
+         the list shows stale data for one paint until load() resolves. -->
     <section
-      v-if="!loading"
+      v-show="!loading || personas.length > 0"
       class="flex flex-col gap-4"
       data-testid="personas-section"
     >
@@ -635,23 +640,31 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
         @submit.prevent="submitPersonaForm"
       >
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-muted-foreground">
+          <label
+            for="persona-create-name"
+            class="text-xs font-medium text-muted-foreground"
+          >
             {{ $t('pages.preferences.personas.form.name') }}
           </label>
           <UiInput
+            id="persona-create-name"
             v-model="formName"
             :placeholder="$t('pages.preferences.personas.form.namePlaceholder')"
             data-testid="personas-form-name"
           />
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-muted-foreground">
+          <label
+            for="persona-create-soul"
+            class="text-xs font-medium text-muted-foreground"
+          >
             {{ $t('pages.preferences.personas.fragments.soul.label') }}
           </label>
           <p class="text-[11px] text-muted-foreground">
             {{ $t('pages.preferences.personas.fragments.soul.description') }}
           </p>
           <UiTextarea
+            id="persona-create-soul"
             v-model="formSoul"
             class="min-h-24 font-mono text-sm"
             spellcheck="false"
@@ -660,13 +673,17 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
           />
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-muted-foreground">
+          <label
+            for="persona-create-identity"
+            class="text-xs font-medium text-muted-foreground"
+          >
             {{ $t('pages.preferences.personas.fragments.identity.label') }}
           </label>
           <p class="text-[11px] text-muted-foreground">
             {{ $t('pages.preferences.personas.fragments.identity.description') }}
           </p>
           <UiTextarea
+            id="persona-create-identity"
             v-model="formIdentity"
             class="min-h-24 font-mono text-sm"
             spellcheck="false"
@@ -675,13 +692,17 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
           />
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-muted-foreground">
+          <label
+            for="persona-create-agents"
+            class="text-xs font-medium text-muted-foreground"
+          >
             {{ $t('pages.preferences.personas.fragments.agents.label') }}
           </label>
           <p class="text-[11px] text-muted-foreground">
             {{ $t('pages.preferences.personas.fragments.agents.description') }}
           </p>
           <UiTextarea
+            id="persona-create-agents"
             v-model="formAgents"
             class="min-h-24 font-mono text-sm"
             spellcheck="false"
@@ -735,19 +756,26 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
             @submit.prevent="submitPersonaForm"
           >
             <div class="flex flex-col gap-1">
-              <label class="text-xs font-medium text-muted-foreground">
+              <label
+                for="persona-edit-name"
+                class="text-xs font-medium text-muted-foreground"
+              >
                 {{ $t('pages.preferences.personas.form.name') }}
               </label>
-              <UiInput v-model="formName" />
+              <UiInput id="persona-edit-name" v-model="formName" />
             </div>
             <div class="flex flex-col gap-1">
-              <label class="text-xs font-medium text-muted-foreground">
+              <label
+                for="persona-edit-soul"
+                class="text-xs font-medium text-muted-foreground"
+              >
                 {{ $t('pages.preferences.personas.fragments.soul.label') }}
               </label>
               <p class="text-[11px] text-muted-foreground">
                 {{ $t('pages.preferences.personas.fragments.soul.description') }}
               </p>
               <UiTextarea
+                id="persona-edit-soul"
                 v-model="formSoul"
                 class="min-h-24 font-mono text-sm"
                 spellcheck="false"
@@ -756,13 +784,17 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
               />
             </div>
             <div class="flex flex-col gap-1">
-              <label class="text-xs font-medium text-muted-foreground">
+              <label
+                for="persona-edit-identity"
+                class="text-xs font-medium text-muted-foreground"
+              >
                 {{ $t('pages.preferences.personas.fragments.identity.label') }}
               </label>
               <p class="text-[11px] text-muted-foreground">
                 {{ $t('pages.preferences.personas.fragments.identity.description') }}
               </p>
               <UiTextarea
+                id="persona-edit-identity"
                 v-model="formIdentity"
                 class="min-h-24 font-mono text-sm"
                 spellcheck="false"
@@ -771,13 +803,17 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
               />
             </div>
             <div class="flex flex-col gap-1">
-              <label class="text-xs font-medium text-muted-foreground">
+              <label
+                for="persona-edit-agents"
+                class="text-xs font-medium text-muted-foreground"
+              >
                 {{ $t('pages.preferences.personas.fragments.agents.label') }}
               </label>
               <p class="text-[11px] text-muted-foreground">
                 {{ $t('pages.preferences.personas.fragments.agents.description') }}
               </p>
               <UiTextarea
+                id="persona-edit-agents"
                 v-model="formAgents"
                 class="min-h-24 font-mono text-sm"
                 spellcheck="false"
@@ -1046,6 +1082,12 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                         size="sm"
                         variant="outline"
                         :disabled="restoring[persona.id]"
+                        :aria-label="
+                          $t('pages.preferences.personas.history.restoreAria', {
+                            date: formatHistoryDate(entry.created_at),
+                            author: entry.author,
+                          })
+                        "
                         :data-testid="`persona-history-restore-${persona.id}-${entry.id}`"
                         @click="restoreSnapshot(persona, entry)"
                       >
