@@ -1090,6 +1090,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/personas/{persona_id}/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Persona Models
+         * @description Return the model list for this persona's credential (or the active credential).
+         *
+         *     Wraps GET /api/llm/credentials/{id}/models so the UI doesn't need to know
+         *     which credential a persona uses.
+         */
+        get: operations["list_persona_models_api_personas__persona_id__models_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/personas/{persona_id}/history": {
         parameters: {
             query?: never;
@@ -2198,6 +2221,10 @@ export interface components {
             created_at: number;
             /** Updated At */
             updated_at: number;
+            /** Llm Credential Id */
+            llm_credential_id?: number | null;
+            /** Model */
+            model?: string | null;
         };
         /** PersonaUpdate */
         PersonaUpdate: {
@@ -2211,6 +2238,10 @@ export interface components {
             agents?: string | null;
             /** Is Default */
             is_default?: boolean | null;
+            /** Llm Credential Id */
+            llm_credential_id?: number | null;
+            /** Model */
+            model?: string | null;
         };
         /**
          * ReasoningData
@@ -5176,6 +5207,39 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_persona_models_api_personas__persona_id__models_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                persona_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
             };
             /** @description Validation Error */
             422: {

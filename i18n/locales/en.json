@@ -544,6 +544,9 @@
     "PERSONA_FRAGMENTS_ALL_EMPTY": "At least one of the three persona fragments (Soul, Identity, or Agents) must have content.",
     "PERSONA_HISTORY_NOT_FOUND": "That history entry no longer exists.",
     "PERSONA_HISTORY_PERSONA_MISMATCH": "That history entry belongs to a different persona.",
+    "PERSONA_NO_CREDENTIAL": "No LLM credential configured. Add an API key under Settings → LLM.",
+    "PERSONA_INVALID_CREDENTIAL": "Credential {id} does not exist.",
+    "PERSONA_INVALID_MODEL": "Model '{model}' is not available for this credential.",
     "CHANNEL_NOT_FOUND": "Unknown channel: {channel}",
     "CHANNEL_ROW_MISSING": "Channel row missing: {channel}",
     "WORKSPACE_NOT_FOUND": "Workspace not found.",
@@ -647,7 +650,12 @@
           "name": "Name",
           "namePlaceholder": "e.g. Hermes the Direct",
           "isDefault": "Set as global default persona",
-          "isDefaultShort": "Default persona"
+          "isDefaultShort": "Default persona",
+          "credential": "LLM Credential",
+          "credentialGlobalOption": "— Global default credential —",
+          "model": "Model",
+          "modelDefaultOption": "— Credential's default model —",
+          "modelHintNoCredential": "uses the active credential's model"
         },
         "fragments": {
           "soul": {

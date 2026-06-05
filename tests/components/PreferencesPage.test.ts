@@ -4,6 +4,7 @@ import PreferencesPage from '~/pages/settings/preferences.vue'
 import type {
   ChannelPrompt,
   ChannelPromptListResponse,
+  LlmCredential,
   Persona,
   PersonaHistoryItem,
   PersonaHistoryListResponse,
@@ -66,6 +67,25 @@ function persona(over: Partial<Persona> & { id: number; name: string }): Persona
     is_default: over.is_default ?? false,
     created_at: over.created_at ?? 1_700_000_000,
     updated_at: over.updated_at ?? 1_700_000_000,
+    // Plan 29-D (Wave B1): per-persona LLM credential + model override.
+    llm_credential_id: over.llm_credential_id ?? null,
+    model: over.model ?? null,
+  }
+}
+
+function credential(over: Partial<LlmCredential> & { id: number }): LlmCredential {
+  return {
+    id: over.id,
+    provider: over.provider ?? 'openai',
+    mode: over.mode ?? 'api_key',
+    display_name: over.display_name ?? `Cred ${over.id}`,
+    base_url: over.base_url ?? null,
+    model: over.model ?? null,
+    is_active: over.is_active ?? false,
+    oauth_status: null,
+    oauth_authorized_at: null,
+    created_at: 1_700_000_000,
+    updated_at: 1_700_000_000,
   }
 }
 
@@ -124,12 +144,14 @@ const fourChannels: ChannelPrompt[] = [
 function mockInitialLoad(
   personas: Persona[] = [defaultPersona],
   channels: ChannelPrompt[] = fourChannels,
+  credentialsList: LlmCredential[] = [],
 ) {
   const personaResp: PersonaListResponse = { personas }
   const channelResp: ChannelPromptListResponse = { channels }
   apiGet.mockImplementation((path: string) => {
     if (path === '/api/personas') return Promise.resolve(personaResp)
     if (path === '/api/channels') return Promise.resolve(channelResp)
+    if (path === '/api/llm/credentials') return Promise.resolve(credentialsList)
     return Promise.reject(new Error(`unexpected GET ${path}`))
   })
 }
@@ -416,6 +438,8 @@ describe('settings/preferences.vue', () => {
       identity: 'identity new',
       agents: 'agents new',
       is_default: true,
+      llm_credential_id: null,
+      model: null,
     })
   })
 
@@ -948,5 +972,118 @@ describe('settings/preferences.vue', () => {
     await flushPromises()
 
     expect(setLocaleMock).toHaveBeenCalledWith('en')
+  })
+
+  // ── Plan 29-D (Wave B1): credential + model dropdowns ─────────────
+
+  it('credential dropdown shows available credentials', async () => {
+    const cred1 = credential({ id: 10, display_name: 'My OpenAI', is_active: true })
+    mockInitialLoad([defaultPersona], fourChannels, [cred1])
+    const wrapper = mount(PreferencesPage)
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="persona-card-1"]').exists()).toBe(true))
+
+    await wrapper.find('[data-testid="persona-edit-1"]').trigger('click')
+    await vi.waitFor(() =>
+      expect(wrapper.find('[data-testid="persona-cred-select-1"]').exists()).toBe(true),
+    )
+
+    const options = wrapper.find('[data-testid="persona-cred-select-1"]').findAll('option')
+    // First option is "global default" (null value), second is the credential
+    expect(options.length).toBe(2)
+    expect(options[1].text()).toContain('My OpenAI')
+  })
+
+  it('credential change triggers model list fetch', async () => {
+    const cred1 = credential({ id: 10, display_name: 'My OpenAI' })
+    apiGet.mockImplementation((path: string) => {
+      if (path === '/api/personas') return Promise.resolve({ personas: [defaultPersona] })
+      if (path === '/api/channels') return Promise.resolve({ channels: fourChannels })
+      if (path === '/api/llm/credentials') return Promise.resolve([cred1])
+      if (path === '/api/llm/credentials/10/models')
+        return Promise.resolve({ models: [{ id: 'gpt-4o', label: 'GPT-4o' }] })
+      return Promise.reject(new Error(`unexpected GET ${path}`))
+    })
+
+    const wrapper = mount(PreferencesPage)
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="persona-card-1"]').exists()).toBe(true))
+
+    await wrapper.find('[data-testid="persona-edit-1"]').trigger('click')
+    await vi.waitFor(() =>
+      expect(wrapper.find('[data-testid="persona-cred-select-1"]').exists()).toBe(true),
+    )
+
+    const credSelect = wrapper.find('[data-testid="persona-cred-select-1"]')
+    await credSelect.setValue('10')
+    await credSelect.trigger('change')
+
+    await vi.waitFor(() =>
+      expect(apiGet).toHaveBeenCalledWith('/api/llm/credentials/10/models', undefined),
+    )
+  })
+
+  it('model dropdown disabled when no credential selected', async () => {
+    mockInitialLoad([defaultPersona], fourChannels, [])
+    const wrapper = mount(PreferencesPage)
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="persona-card-1"]').exists()).toBe(true))
+
+    await wrapper.find('[data-testid="persona-edit-1"]').trigger('click')
+    await vi.waitFor(() =>
+      expect(wrapper.find('[data-testid="persona-model-select-1"]').exists()).toBe(true),
+    )
+
+    const modelSelect = wrapper.find('[data-testid="persona-model-select-1"]')
+    expect(modelSelect.attributes('disabled')).toBeDefined()
+  })
+
+  it('save includes llm_credential_id and model in PUT payload', async () => {
+    const cred1 = credential({ id: 10, display_name: 'My OpenAI' })
+    apiGet.mockImplementation((path: string) => {
+      if (path === '/api/personas') return Promise.resolve({ personas: [defaultPersona] })
+      if (path === '/api/channels') return Promise.resolve({ channels: fourChannels })
+      if (path === '/api/llm/credentials') return Promise.resolve([cred1])
+      if (path === '/api/llm/credentials/10/models')
+        return Promise.resolve({ models: [{ id: 'gpt-4o', label: 'GPT-4o' }] })
+      return Promise.reject(new Error(`unexpected GET ${path}`))
+    })
+    apiPut.mockResolvedValue({
+      ...defaultPersona,
+      llm_credential_id: 10,
+      model: 'gpt-4o',
+    })
+
+    const wrapper = mount(PreferencesPage)
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="persona-card-1"]').exists()).toBe(true))
+
+    await wrapper.find('[data-testid="persona-edit-1"]').trigger('click')
+    await vi.waitFor(() =>
+      expect(wrapper.find('[data-testid="persona-cred-select-1"]').exists()).toBe(true),
+    )
+
+    // Select credential
+    const credSelect = wrapper.find('[data-testid="persona-cred-select-1"]')
+    await credSelect.setValue('10')
+    await credSelect.trigger('change')
+
+    // Wait for model list to load
+    await vi.waitFor(() => {
+      const modelSelect = wrapper.find('[data-testid="persona-model-select-1"]')
+      return !modelSelect.attributes('disabled')
+    })
+
+    // Select model
+    const modelSelect = wrapper.find('[data-testid="persona-model-select-1"]')
+    await modelSelect.setValue('gpt-4o')
+
+    // Submit via form
+    await wrapper.find('[data-testid="personas-edit-form"]').trigger('submit')
+    await vi.waitFor(() =>
+      expect(apiPut).toHaveBeenCalledWith(
+        '/api/personas/1',
+        expect.objectContaining({
+          llm_credential_id: 10,
+          model: 'gpt-4o',
+        }),
+      ),
+    )
   })
 })
