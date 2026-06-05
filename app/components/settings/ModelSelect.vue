@@ -19,6 +19,7 @@ const props = defineProps<{
   modelValue: string | null
   credentialId: number | null
   disabled?: boolean
+  testId?: string
 }>()
 
 const emit = defineEmits<{
@@ -117,6 +118,7 @@ function pick(id: string) {
         <ComboboxTrigger
           class="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 text-sm disabled:cursor-not-allowed disabled:opacity-50"
           :class="!selectedLabel && 'text-muted-foreground'"
+          :data-testid="testId"
         >
           <span class="truncate text-left">{{ triggerLabel }}</span>
           <ChevronsUpDown class="ml-2 size-4 shrink-0 opacity-50" />

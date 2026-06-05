@@ -653,9 +653,7 @@
           "isDefaultShort": "Default-Persona",
           "credential": "LLM-Credential",
           "credentialGlobalOption": "— Globale Default-Credential —",
-          "model": "Modell",
-          "modelDefaultOption": "— Default-Modell der Credential —",
-          "modelHintNoCredential": "verwendet das Modell der aktiven Credential"
+          "model": "Modell"
         },
         "fragments": {
           "soul": {

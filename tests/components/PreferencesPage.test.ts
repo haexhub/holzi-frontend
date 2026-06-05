@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import PreferencesPage from '~/pages/settings/preferences.vue'
+import SettingsModelSelect from '~/components/settings/ModelSelect.vue'
 import type {
   ChannelPrompt,
   ChannelPromptListResponse,
@@ -1070,9 +1071,9 @@ describe('settings/preferences.vue', () => {
       return !modelSelect.attributes('disabled')
     })
 
-    // Select model
-    const modelSelect = wrapper.find('[data-testid="persona-model-select-1"]')
-    await modelSelect.setValue('gpt-4o')
+    // Select model via SettingsModelSelect component emit (ComboboxTrigger is a
+    // button, not a select — setValue doesn't apply; emit directly instead)
+    await wrapper.findComponent(SettingsModelSelect).vm.$emit('update:modelValue', 'gpt-4o')
 
     // Submit via form
     await wrapper.find('[data-testid="personas-edit-form"]').trigger('submit')
