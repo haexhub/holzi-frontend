@@ -147,23 +147,15 @@ export type SubagentDoneData = components['schemas']['SubagentDoneData']
 // stream so the UI can offer a Restart action.
 export type SandboxCrashedData = components['schemas']['SandboxCrashedData']
 
-// --- Skills (Plan 33) ---------------------------------------------------
+// --- Skills (Plan 33 / Plan 37) -----------------------------------------
 // Reusable prompt building blocks ("skills" in the Anthropic sense). Each
-// row carries a Markdown body and frontmatter-style metadata; personas
-// activate skills via /api/personas/{id}/skills with an ordered list.
-// The backend resolver mixes the active (enabled=true) bodies into the
-// effective system prompt between persona and capability_index.
+// row carries a Markdown body and frontmatter-style metadata. Plan 37
+// dropped the per-persona activation layer; skills are now a global catalog
+// and the agent loads bodies on demand via the `skill_load` built-in tool.
 export type Skill = components['schemas']['SkillResponse']
 export type SkillListResponse = components['schemas']['SkillListResponse']
 export type SkillCreate = components['schemas']['SkillCreate']
 export type SkillUpdate = components['schemas']['SkillUpdate']
-export type PersonaSkillItem = components['schemas']['PersonaSkillItem']
-export type PersonaSkillListResponse =
-  components['schemas']['PersonaSkillListResponse']
-export type PersonaSkillSetItem =
-  components['schemas']['PersonaSkillSetItem']
-export type PersonaSkillSetRequest =
-  components['schemas']['PersonaSkillSetRequest']
 
 // --- MCP servers (Plan 32) ----------------------------------------------
 // Registered external MCP servers — the agent pulls their tools into its
