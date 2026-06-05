@@ -1036,6 +1036,22 @@ describe('settings/preferences.vue', () => {
     expect(modelSelect.attributes('disabled')).toBeDefined()
   })
 
+  it('model label is associated with the select control via for/id', async () => {
+    mockInitialLoad([defaultPersona], fourChannels, [])
+    const wrapper = mount(PreferencesPage)
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="persona-card-1"]').exists()).toBe(true))
+
+    await wrapper.find('[data-testid="persona-edit-1"]').trigger('click')
+    await vi.waitFor(() =>
+      expect(wrapper.find('[data-testid="persona-model-select-1"]').exists()).toBe(true),
+    )
+
+    const labelFor = wrapper.find('label[for="persona-model-1"]')
+    expect(labelFor.exists()).toBe(true)
+    const trigger = wrapper.find('[data-testid="persona-model-select-1"]')
+    expect(trigger.attributes('id')).toBe('persona-model-1')
+  })
+
   it('save includes llm_credential_id and model in PUT payload', async () => {
     const cred1 = credential({ id: 10, display_name: 'My OpenAI' })
     apiGet.mockImplementation((path: string) => {
@@ -1084,6 +1100,48 @@ describe('settings/preferences.vue', () => {
           llm_credential_id: 10,
           model: 'gpt-4o',
         }),
+      ),
+    )
+  })
+
+  it('model select is clearable and clearing saves model: null', async () => {
+    const cred1 = credential({ id: 10, display_name: 'My OpenAI' })
+    const withModel = persona({
+      id: 1,
+      name: 'Hermes',
+      is_default: true,
+      llm_credential_id: 10,
+      model: 'gpt-4o',
+    })
+    apiGet.mockImplementation((path: string) => {
+      if (path === '/api/personas') return Promise.resolve({ personas: [withModel] })
+      if (path === '/api/channels') return Promise.resolve({ channels: fourChannels })
+      if (path === '/api/llm/credentials') return Promise.resolve([cred1])
+      if (path === '/api/llm/credentials/10/models')
+        return Promise.resolve({ models: [{ id: 'gpt-4o', label: 'GPT-4o' }] })
+      return Promise.reject(new Error(`unexpected GET ${path}`))
+    })
+    apiPut.mockResolvedValue({ ...withModel, model: null })
+
+    const wrapper = mount(PreferencesPage)
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="persona-card-1"]').exists()).toBe(true))
+
+    await wrapper.find('[data-testid="persona-edit-1"]').trigger('click')
+    await vi.waitFor(() =>
+      expect(wrapper.find('[data-testid="persona-model-select-1"]').exists()).toBe(true),
+    )
+
+    // The persona-card variant opts into the "use credential default" entry.
+    expect(wrapper.findComponent(SettingsModelSelect).props('clearable')).toBe(true)
+
+    // Clearing emits null (what the "use default" entry triggers).
+    await wrapper.findComponent(SettingsModelSelect).vm.$emit('update:modelValue', null)
+
+    await wrapper.find('[data-testid="personas-edit-form"]').trigger('submit')
+    await vi.waitFor(() =>
+      expect(apiPut).toHaveBeenCalledWith(
+        '/api/personas/1',
+        expect.objectContaining({ llm_credential_id: 10, model: null }),
       ),
     )
   })

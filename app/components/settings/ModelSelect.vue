@@ -20,6 +20,10 @@ const props = defineProps<{
   credentialId: number | null
   disabled?: boolean
   testId?: string
+  // Forwarded to the trigger so an external <label for> can target it.
+  id?: string
+  // Show a "use credential default" entry that resets the value to null.
+  clearable?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -79,6 +83,8 @@ const triggerLabel = computed(() => {
   if (loading.value) return t('components.modelSelect.loading')
   if (error.value) return t('components.modelSelect.error')
   if (selectedLabel.value) return selectedLabel.value
+  if (props.clearable && props.modelValue === null)
+    return t('components.modelSelect.useDefault')
   if (models.value.length === 0) return t('components.modelSelect.empty')
   return t('components.modelSelect.placeholder')
 })
@@ -104,6 +110,11 @@ function pick(id: string) {
   emit('update:modelValue', id)
   open.value = false
 }
+
+function clear() {
+  emit('update:modelValue', null)
+  open.value = false
+}
 </script>
 
 <template>
@@ -118,6 +129,7 @@ function pick(id: string) {
         <ComboboxTrigger
           class="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 text-sm disabled:cursor-not-allowed disabled:opacity-50"
           :class="!selectedLabel && 'text-muted-foreground'"
+          :id="id"
           :data-testid="testId"
         >
           <span class="truncate text-left">{{ triggerLabel }}</span>
@@ -138,6 +150,21 @@ function pick(id: string) {
             />
           </div>
           <ComboboxViewport class="max-h-60 overflow-y-auto p-1">
+            <ComboboxItem
+              v-if="clearable && !search.trim()"
+              :value="''"
+              class="relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
+              @select.prevent="clear"
+            >
+              <ComboboxItemIndicator class="mr-2 size-4">
+                <Check class="size-4" />
+              </ComboboxItemIndicator>
+              <span
+                v-if="modelValue !== null"
+                class="mr-2 inline-block size-4"
+              />
+              <span class="truncate text-muted-foreground">{{ $t('components.modelSelect.useDefault') }}</span>
+            </ComboboxItem>
             <ComboboxEmpty
               v-if="filtered.length === 0"
               class="py-6 text-center text-sm text-muted-foreground"

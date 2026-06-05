@@ -739,10 +739,11 @@ async function resetChannelPrompt(channel: ChannelPrompt) {
                 {{ $t('pages.preferences.personas.form.model') }}
               </label>
               <SettingsModelSelect
-                :model-value="formModel"
+                :id="`persona-model-${persona.id}`"
+                v-model="formModel"
                 :credential-id="formCredentialId"
                 :test-id="`persona-model-select-${persona.id}`"
-                @update:model-value="(v) => formModel = v"
+                clearable
               />
             </div>
             <label class="flex items-center gap-2 text-xs">
