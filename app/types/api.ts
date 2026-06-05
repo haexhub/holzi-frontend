@@ -119,6 +119,10 @@ export type PersonaUpdate = components['schemas']['PersonaUpdate']
 export type PersonaHistoryItem = components['schemas']['PersonaHistoryItem']
 export type PersonaHistoryListResponse =
   components['schemas']['PersonaHistoryListResponse']
+// The four named fragments stored at write-time. Typed by the backend
+// (Plan-36 follow-up) so `entry.snapshot.<field>` reads are tsc-checked.
+export type PersonaHistorySnapshot =
+  components['schemas']['PersonaHistorySnapshot']
 export type ChannelPrompt = components['schemas']['ChannelPromptResponse']
 export type ChannelPromptListResponse =
   components['schemas']['ChannelPromptListResponse']
