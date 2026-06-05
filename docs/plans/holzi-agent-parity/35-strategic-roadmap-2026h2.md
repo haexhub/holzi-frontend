@@ -7,10 +7,11 @@
 > wave.
 
 Status: **Planned. Strategy / sequencing only.** No code touched by this
-plan. **Wave 0 (Plan 30, i18n) shipped 2026-06-04** — next executable
-slice is **Wave A1 (Persona-Fragments + `persona_history`)**, to be
-written as `36-personas-fragments.md` per the per-wave numbering scheme
-in "How this plan relates to others" below.
+plan. **Wave 0 (i18n), Wave A (A1/A2/A3 — Plans 36/37/38), and Wave B1
+(Plans 29-D + 29-D-A) all shipped by 2026-06-05.** Next executable slice
+is **Wave B2 (Slash-Command Picker + Improved Error UX)** — to be written
+as its own plan file (next free number `39-…`) per the per-wave numbering
+scheme in "How this plan relates to others" below.
 
 ## Genesis
 
@@ -265,12 +266,18 @@ different model. No silent fallback.
 the user's „explicit failure over silent recovery" directive
 (2026-06-04). Fallback-chain dropped entirely.
 
-#### B1 — Plan 29-D activated (Modell pro Persona)
+#### B1 — Plan 29-D activated (Modell pro Persona) **(done 2026-06-05)**
 
 Already planned in `29d-persona-llm-and-model.md`. Wave B1 = execute
 it. `personas.llm_credential_id` + `personas.model`, resolver
 returns `PersonaContext { credential, model }` alongside the system
 prompt. Two dropdowns per persona card on `/settings/preferences`.
+
+**Status**: Done. BE Holzi#76 + FE #96 merged 2026-06-05; refactor
+follow-up Plan 29-D-A (`29da-modelselect-reuse.md`) reused the existing
+`SettingsModelSelect` combobox (FE #97), and review-fix #98 restored the
+a11y label association + a clearable "use credential default" entry.
+**Next executable slice is B2** below.
 
 #### B2 — Slash-Command Picker + Improved Error UX
 
