@@ -180,7 +180,7 @@ via the Wave-A2 catalog mechanism — no Persona-pinning.
 
 **Est. effort**: 1 session cross-repo.
 
-#### A2 — Skill-Catalog (lazy-load) + Bootstrap-Skill
+#### A2 — Skill-Catalog (lazy-load) + Bootstrap-Skill **[done 2026-06-05, Plan 37]**
 
 Two related changes that ride the same mechanism:
 
