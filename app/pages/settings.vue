@@ -21,7 +21,7 @@ const localePath = useLocalePath()
 </script>
 
 <template>
-  <div class="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 p-6">
+  <div class="mx-auto flex min-h-screen max-w-7xl flex-col gap-6 p-6">
     <header class="flex items-center justify-between">
       <div>
         <h1 class="text-xl font-semibold">{{ $t('pages.settings.title') }}</h1>
