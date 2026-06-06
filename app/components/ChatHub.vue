@@ -175,13 +175,13 @@ function rememberLastConversation(id: number | null) {
 async function loadConversations() {
   const seq = ++loadSeq
   try {
-    const query: Record<string, unknown> = { channel: 'web' }
+    const query: Record<string, unknown> = {}
     if (searchQuery.value) {
       query.q = searchQuery.value
     }
     const result = await api.get<Conversation[]>('/api/conversations', query)
     if (seq === loadSeq) {
-      conversations.value = result
+      conversations.value = result.filter(c => c.channel !== 'task')
     }
   } catch (err: unknown) {
     if (seq === loadSeq) {
