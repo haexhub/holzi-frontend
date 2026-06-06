@@ -64,6 +64,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/chat/context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Api Chat Context
+         * @description Return the currently-resolved persona name + model for the web channel.
+         *
+         *     Resolves persona → credential → model using the same priority chain as
+         *     POST /api/chat but skips the (expensive) system-prompt build. Suitable
+         *     for polling from the header pill. Returns 503 if no credential is
+         *     configured (same condition that would block a real chat turn).
+         */
+        get: operations["api_chat_context_api_chat_context_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/approvals/{approval_id}": {
         parameters: {
             query?: never;
@@ -1533,6 +1558,21 @@ export interface components {
             prompt?: string | null;
             /** Default Persona Id */
             default_persona_id?: number | null;
+        };
+        /**
+         * ChatContextResponse
+         * @description Lightweight metadata about the currently-resolved persona + model.
+         *
+         *     Used by the chat header pill to display the active agent identity.
+         *     Does NOT include the system_prompt (large; computed per-turn only).
+         */
+        ChatContextResponse: {
+            /** Persona Id */
+            persona_id: number | null;
+            /** Persona Name */
+            persona_name: string | null;
+            /** Model */
+            model: string;
         };
         /**
          * ChatStreamEnvelope
@@ -3118,6 +3158,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_chat_context_api_chat_context_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatContextResponse"];
                 };
             };
         };
