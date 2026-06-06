@@ -1,3 +1,25 @@
+Status: Stufe 1 done (sticky session + web UI visibility)
+
+## Cline Configuration
+
+In VS Code, open Cline settings and configure a custom OpenAI-compatible provider:
+
+| Setting | Value |
+|---------|-------|
+| Base URL | `https://<your-holzi-host>/v1` |
+| API Key | your Holzi Bearer token (from `.env` → `AUTH_TOKEN`) |
+| Model | any model ID Holzi is configured to use |
+
+Optional headers (set in Cline's "Custom Headers" if supported):
+
+| Header | Value | Effect |
+|--------|-------|--------|
+| `X-Holzi-Workspace` | project name, e.g. `holzi-frontend` | Isolates the sticky session per project |
+
+Without `X-Holzi-Workspace`, all Cline requests share a single `"default"` session.
+
+---
+
 # Plan 17: Cline/Roo First-Class Channel
 
 Depends on: nothing strictly, but the channel/space mapping it introduces is
