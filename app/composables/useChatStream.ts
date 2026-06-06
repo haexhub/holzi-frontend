@@ -135,6 +135,8 @@ export async function sendChatMessage(
     // One-turn overrides. Not persisted. Cleared after the agent run.
     model_override?: string
     persona_id_override?: number
+    thinking_budget?: 'low' | 'medium' | 'high'
+    skill_hints?: string[]
   },
   callbacks: ChatStreamCallbacks = {},
 ): Promise<ChatStreamResult> {

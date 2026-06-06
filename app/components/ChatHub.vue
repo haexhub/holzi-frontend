@@ -20,8 +20,10 @@ import type {
   Conversation,
   ConversationDetail,
   Message,
+  ModelEntry,
   Persona,
   SandboxCrashedData,
+  Skill,
 } from '~/types/api'
 import { ChatStreamError } from '~/composables/useChatStream'
 
@@ -631,10 +633,13 @@ async function send(payload: { text: string; files: File[] }) {
         attachment_ids: uploaded.map((a) => a.id),
         model_override: nextTurnOverride.value?.model,
         persona_id_override: nextTurnOverride.value?.personaId,
+        thinking_budget: nextTurnOverride.value?.thinkingBudget,
+        skill_hints: nextTurnSkillHints.value.length ? nextTurnSkillHints.value : undefined,
       },
       callbacks,
     ),
   )
+  nextTurnSkillHints.value = []
 }
 
 async function retryLast() {
@@ -827,10 +832,17 @@ function parseSlashOverrides(raw: string): SlashParseResult {
   return { cleanText: text, modelOverride, personaName }
 }
 
-const nextTurnOverride = ref<{ model?: string; personaId?: number } | null>(null)
+const nextTurnOverride = ref<{
+  model?: string
+  personaId?: number
+  thinkingBudget?: 'low' | 'medium' | 'high'
+} | null>(null)
+const nextTurnSkillHints = ref<string[]>([])
 
 const personasList = ref<Persona[]>([])
 const chatContext = ref<ChatContextResponse | null>(null)
+const modelsList = ref<ModelEntry[]>([])
+const skillsList = ref<{ slug: string; name: string }[]>([])
 
 async function loadPersonas() {
   const personas = usePersonas()
@@ -846,7 +858,39 @@ async function loadChatContext() {
   try {
     chatContext.value = await api.get<ChatContextResponse>('/api/chat/context')
   } catch {
-    // non-fatal: pill shows nothing if context can't be loaded
+    // non-fatal
+  }
+}
+
+async function loadModels() {
+  const modelsApi = useModels()
+  try {
+    const res = await modelsApi.list()
+    modelsList.value = res.models
+  } catch {
+    // non-fatal
+  }
+}
+
+async function loadSkills() {
+  const skillsApi = useSkills()
+  await skillsApi.list()
+  skillsList.value = (skillsApi.data.value?.skills ?? [])
+    .filter((s: Skill) => s.enabled)
+    .map((s: Skill) => ({ slug: s.slug, name: s.name }))
+}
+
+async function clearConversation() {
+  if (!activeId.value) return
+  try {
+    await api.delete<void>(`/api/conversations/${activeId.value}`)
+    activeId.value = null
+    rememberLastConversation(null)
+    messages.value = []
+    navigateTo(localePath('/'))
+    await loadConversations()
+  } catch (err: unknown) {
+    error.value = err instanceof Error ? err.message : t('components.chatHub.errors.delete')
   }
 }
 
@@ -857,6 +901,8 @@ onMounted(async () => {
   loadCredentialState()
   loadPersonas()
   loadChatContext()
+  loadModels()
+  loadSkills()
   // If we mounted with a conversation id from the route (deep-link or
   // reload of `/chat/:id`), load it now. The watcher above won't fire
   // for the initial value, so we kick it off explicitly.
@@ -938,16 +984,6 @@ onMounted(async () => {
           <h1 class="text-sm font-semibold">
             {{ activeId === null ? $t('components.chatHub.header.newChat') : $t('components.chatHub.header.conversation', { id: activeId }) }}
           </h1>
-          <ChatHeaderPill
-            v-if="chatContext"
-            :persona-name="chatContext.persona_name"
-            :model="chatContext.model"
-            :personas="personasList"
-            :override="nextTurnOverride"
-            class="ml-1"
-            @clear="nextTurnOverride = null"
-            @update:override="nextTurnOverride = $event"
-          />
         </div>
         <div class="flex items-center gap-1">
           <button
@@ -1158,8 +1194,18 @@ onMounted(async () => {
       <ChatComposer
         :streaming="isStreaming"
         :can-stop="currentRunId !== null"
+        :persona-name="chatContext?.persona_name ?? null"
+        :model="chatContext?.model ?? ''"
+        :personas="personasList"
+        :models="modelsList"
+        :skills="skillsList"
+        :override="nextTurnOverride"
+        :skill-hints="nextTurnSkillHints"
         @send="send"
         @stop="stopStreaming"
+        @update:override="nextTurnOverride = $event ?? null"
+        @update:skill-hints="nextTurnSkillHints = $event"
+        @clear-conversation="clearConversation"
       />
       </main>
     </UiResizablePanel>
