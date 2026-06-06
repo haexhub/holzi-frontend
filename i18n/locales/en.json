@@ -526,7 +526,7 @@
     "CHAT_UPSTREAM_NON_JSON": "The LLM provider returned a non-JSON body.",
     "CHAT_UPSTREAM_ERROR": "LLM provider returned an error: {message}",
     "CONVERSATION_NOT_FOUND": "Conversation not found.",
-    "CONVERSATION_NOT_WEB": "This conversation is not part of the web channel.",
+    "CONVERSATION_NOT_WEB": "This conversation cannot be continued here.",
     "CONVERSATION_TITLE_BLANK": "Title must not be blank.",
     "CONVERSATION_NO_USER_MESSAGE_TO_RETRY": "This conversation has no user message to retry.",
     "MESSAGE_NOT_FOUND": "Message not found.",

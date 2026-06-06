@@ -526,7 +526,7 @@
     "CHAT_UPSTREAM_NON_JSON": "LLM-Provider hat kein gültiges JSON geliefert.",
     "CHAT_UPSTREAM_ERROR": "LLM-Provider hat einen Fehler gemeldet: {message}",
     "CONVERSATION_NOT_FOUND": "Konversation nicht gefunden.",
-    "CONVERSATION_NOT_WEB": "Diese Konversation gehört nicht zum Web-Channel.",
+    "CONVERSATION_NOT_WEB": "Diese Konversation kann hier nicht fortgesetzt werden.",
     "CONVERSATION_TITLE_BLANK": "Titel darf nicht leer sein.",
     "CONVERSATION_NO_USER_MESSAGE_TO_RETRY": "Diese Konversation enthält keine User-Nachricht zum Wiederholen.",
     "MESSAGE_NOT_FOUND": "Nachricht nicht gefunden.",
