@@ -89,6 +89,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Api Models
+         * @description Return all models available across all configured credentials.
+         *
+         *     Calls each credential's GET /v1/models endpoint. Falls back to the
+         *     credential's configured model field when the provider doesn't support
+         *     model listing. Models are returned in credential order.
+         */
+        get: operations["api_models_api_models_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/approvals/{approval_id}": {
         parameters: {
             query?: never;
@@ -2114,6 +2138,15 @@ export interface components {
             /** Label */
             label: string;
         };
+        /** ModelEntry */
+        ModelEntry: {
+            /** Id */
+            id: string;
+            /** Credential Id */
+            credential_id: number;
+            /** Credential Name */
+            credential_name: string;
+        };
         /** ModelListResponse */
         ModelListResponse: {
             /** Models */
@@ -2126,6 +2159,11 @@ export interface components {
         ModelUpdateRequest: {
             /** Model */
             model?: string | null;
+        };
+        /** ModelsResponse */
+        ModelsResponse: {
+            /** Models */
+            models: components["schemas"]["ModelEntry"][];
         };
         /** NoteCreate */
         NoteCreate: {
@@ -3178,6 +3216,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ChatContextResponse"];
+                };
+            };
+        };
+    };
+    api_models_api_models_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelsResponse"];
                 };
             };
         };
