@@ -16,7 +16,11 @@ const persona: Persona = {
   created_at: 0, updated_at: 0,
 }
 
-const model: ModelEntry = { id: 'claude-opus-4-8', credential_id: 1, credential_name: 'Default' }
+const model: ModelEntry = {
+  id: 'claude-opus-4-8', credential_id: 1, credential_name: 'Default',
+  provider: 'anthropic',
+  thinking: { supported: true, levels: ['low', 'medium', 'high'] },
+}
 
 describe('CommandPicker.vue', () => {
   it('renders trigger button', () => {
