@@ -64,6 +64,55 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/chat/context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Api Chat Context
+         * @description Return the currently-resolved persona name + model for the web channel.
+         *
+         *     Resolves persona → credential → model using the same priority chain as
+         *     POST /api/chat but skips the (expensive) system-prompt build. Suitable
+         *     for polling from the header pill. Returns 503 if no credential is
+         *     configured (same condition that would block a real chat turn).
+         */
+        get: operations["api_chat_context_api_chat_context_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Api Models
+         * @description Return all models available across all configured credentials.
+         *
+         *     Calls each credential's GET /v1/models endpoint. Falls back to the
+         *     credential's configured model field when the provider doesn't support
+         *     model listing. Models are returned in credential order.
+         */
+        get: operations["api_models_api_models_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/approvals/{approval_id}": {
         parameters: {
             query?: never;
@@ -1535,6 +1584,21 @@ export interface components {
             default_persona_id?: number | null;
         };
         /**
+         * ChatContextResponse
+         * @description Lightweight metadata about the currently-resolved persona + model.
+         *
+         *     Used by the chat header pill to display the active agent identity.
+         *     Does NOT include the system_prompt (large; computed per-turn only).
+         */
+        ChatContextResponse: {
+            /** Persona Id */
+            persona_id: number | null;
+            /** Persona Name */
+            persona_name: string | null;
+            /** Model */
+            model: string;
+        };
+        /**
          * ChatStreamEnvelope
          * @description Documentation wrapper so the discriminated union surfaces as a single
          *     named component in the OpenAPI schema (and thus the generated TS types).
@@ -2074,6 +2138,15 @@ export interface components {
             /** Label */
             label: string;
         };
+        /** ModelEntry */
+        ModelEntry: {
+            /** Id */
+            id: string;
+            /** Credential Id */
+            credential_id: number;
+            /** Credential Name */
+            credential_name: string;
+        };
         /** ModelListResponse */
         ModelListResponse: {
             /** Models */
@@ -2086,6 +2159,11 @@ export interface components {
         ModelUpdateRequest: {
             /** Model */
             model?: string | null;
+        };
+        /** ModelsResponse */
+        ModelsResponse: {
+            /** Models */
+            models: components["schemas"]["ModelEntry"][];
         };
         /** NoteCreate */
         NoteCreate: {
@@ -3118,6 +3196,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    api_chat_context_api_chat_context_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatContextResponse"];
+                };
+            };
+        };
+    };
+    api_models_api_models_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelsResponse"];
                 };
             };
         };

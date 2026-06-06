@@ -16,11 +16,16 @@ import { useLastConversationStore } from '~/stores/lastConversation'
 import { useAuthStore } from '~/stores/auth'
 import type {
   Attachment,
+  ChatContextResponse,
   Conversation,
   ConversationDetail,
   Message,
+  ModelEntry,
+  Persona,
   SandboxCrashedData,
+  Skill,
 } from '~/types/api'
+import { ChatStreamError } from '~/composables/useChatStream'
 
 // Plan 26: the active conversation id is now driven by the URL.
 // `/chat/:id` parses and passes the numeric id; `/` omits the prop so
@@ -127,6 +132,7 @@ const currentRunId = ref<string | null>(null)
 // notice into an unrelated chat. Cleared by selectConversation() or on
 // the next send into the same conversation.
 const cancelledConversationId = ref<number | null>(null)
+const streamError = ref<ChatStreamError | null>(null)
 const error = ref<string | null>(null)
 // Resizable sidebar panels. Widths persist via reka-ui's `auto-save-id`
 // (localStorage). `*Collapsed` mirror the panel's collapsed state, driven by
@@ -294,6 +300,9 @@ function newChat() {
   queue.clear()
   sandboxCrashes.value = []
   loadingConversation.value = false
+  // One-turn overrides are transient — a fresh chat must start clean.
+  nextTurnOverride.value = null
+  nextTurnSkillHints.value = []
   rememberLastConversation(null)
   // Drop the id from the URL so a reload doesn't reopen the previous chat.
   const homePath = localePath('/')
@@ -326,6 +335,7 @@ async function runStream(
   currentRunId.value = null
   // Fresh activity supersedes any prior abort notice.
   cancelledConversationId.value = null
+  streamError.value = null
   error.value = null
   let outcome: 'done' | 'cancelled' | 'failed' = 'done'
   // Track whether this stream created a fresh conversation. If so, replace
@@ -464,7 +474,11 @@ async function runStream(
     }
   } catch (err: unknown) {
     outcome = 'failed'
-    error.value = friendlyChatError(err, t)
+    if (err instanceof ChatStreamError) {
+      streamError.value = err
+    } else {
+      error.value = friendlyChatError(err, t)
+    }
   } finally {
     streamingText.value = ''
     streamingToolCalls.value = []
@@ -472,6 +486,7 @@ async function runStream(
     streamingReasoning.value = ''
     streamingSubagents.value = []
     currentRunId.value = null
+    nextTurnOverride.value = null
     streamState.value =
       outcome === 'cancelled' ? 'cancelled' : outcome === 'failed' ? 'failed' : 'idle'
   }
@@ -479,6 +494,7 @@ async function runStream(
   // dropped stream the queued messages stay put and visible (the user
   // gets an explicit retry path) so we never silently fire them.
   if (outcome === 'done') {
+    loadChatContext()
     flushQueue()
   }
 }
@@ -522,8 +538,28 @@ function uploadErrorMessage(err: unknown): string {
 }
 
 async function send(payload: { text: string; files: File[] }) {
-  const text = payload.text
   const files = payload.files ?? []
+
+  // Parse slash overrides out of the raw text before anything else.
+  const parsed = parseSlashOverrides(payload.text)
+  if (parsed.modelOverride !== undefined) {
+    nextTurnOverride.value = { ...nextTurnOverride.value, model: parsed.modelOverride }
+  }
+  if (parsed.personaName !== undefined) {
+    const match = personasList.value.find(
+      (p) => p.name.toLowerCase() === parsed.personaName!.toLowerCase(),
+    )
+    if (match) {
+      nextTurnOverride.value = { ...nextTurnOverride.value, personaId: match.id }
+    }
+  }
+  const text = parsed.cleanText
+
+  if (!text && !files.length) {
+    // Pure slash command — override is set, nothing to send.
+    return
+  }
+
   if (isStreaming.value) {
     // A turn is already in flight — hold this follow-up (and its files) in
     // the visible queue. flushQueue() sends it once the turn finishes.
@@ -598,10 +634,15 @@ async function send(payload: { text: string; files: File[] }) {
         message: text,
         conversation_id: conversationId ?? undefined,
         attachment_ids: uploaded.map((a) => a.id),
+        model_override: nextTurnOverride.value?.model,
+        persona_id_override: nextTurnOverride.value?.personaId,
+        thinking_budget: nextTurnOverride.value?.thinkingBudget,
+        skill_hints: nextTurnSkillHints.value.length ? nextTurnSkillHints.value : undefined,
       },
       callbacks,
     ),
   )
+  nextTurnSkillHints.value = []
 }
 
 async function retryLast() {
@@ -766,9 +807,113 @@ watch(
   },
 )
 
+// --- Slash command override state ---
+
+interface SlashParseResult {
+  cleanText: string
+  modelOverride?: string
+  personaName?: string
+}
+
+function parseSlashOverrides(raw: string): SlashParseResult {
+  let text = raw.trimStart().startsWith('/') ? raw.trimStart() : raw
+  let modelOverride: string | undefined
+  let personaName: string | undefined
+
+  const modelM = text.match(/^\/model\s+(\S+)([\s\S]*)$/)
+  if (modelM) {
+    modelOverride = modelM[1]!.trim()
+    text = (modelM[2] ?? '').trim()
+  }
+
+  const personaM = text.match(/^\/persona\s+(.+?)(?:\n|$)([\s\S]*)$/)
+  if (personaM) {
+    personaName = personaM[1]!.trim()
+    text = (personaM[2] ?? '').trim()
+  }
+
+  return { cleanText: text, modelOverride, personaName }
+}
+
+const nextTurnOverride = ref<{
+  model?: string
+  personaId?: number
+  thinkingBudget?: 'low' | 'medium' | 'high'
+} | null>(null)
+const nextTurnSkillHints = ref<string[]>([])
+
+const personasList = ref<Persona[]>([])
+const chatContext = ref<ChatContextResponse | null>(null)
+const modelsList = ref<ModelEntry[]>([])
+const skillsList = ref<{ slug: string; name: string }[]>([])
+
+async function loadPersonas() {
+  const personas = usePersonas()
+  try {
+    const res = await personas.list()
+    personasList.value = res.personas
+  } catch {
+    // non-fatal: /persona command won't resolve names
+  }
+}
+
+async function loadChatContext() {
+  try {
+    chatContext.value = await api.get<ChatContextResponse>('/api/chat/context')
+  } catch {
+    // non-fatal
+  }
+}
+
+async function loadModels() {
+  const modelsApi = useModels()
+  try {
+    const res = await modelsApi.list()
+    modelsList.value = res.models
+  } catch {
+    // non-fatal
+  }
+}
+
+async function loadSkills() {
+  try {
+    const skillsApi = useSkills()
+    await skillsApi.list()
+    skillsList.value = (skillsApi.data.value?.skills ?? [])
+      .filter((s: Skill) => s.enabled)
+      .map((s: Skill) => ({ slug: s.slug, name: s.name }))
+  } catch {
+    // non-fatal: command picker shows no skills section
+  }
+}
+
+async function clearConversation() {
+  if (!activeId.value) return
+  try {
+    await api.delete<void>(`/api/conversations/${activeId.value}`)
+    activeId.value = null
+    rememberLastConversation(null)
+    messages.value = []
+    // Reset all transient composer state so nothing leaks into the next chat.
+    queue.clear()
+    nextTurnOverride.value = null
+    nextTurnSkillHints.value = []
+    navigateTo(localePath('/'))
+    await loadConversations()
+  } catch (err: unknown) {
+    error.value = err instanceof Error ? err.message : t('components.chatHub.errors.delete')
+  }
+}
+
+// --- End slash command state ---
+
 onMounted(async () => {
   loadConversations()
   loadCredentialState()
+  loadPersonas()
+  loadChatContext()
+  loadModels()
+  loadSkills()
   // If we mounted with a conversation id from the route (deep-link or
   // reload of `/chat/:id`), load it now. The watcher above won't fire
   // for the initial value, so we kick it off explicitly.
@@ -1032,6 +1177,13 @@ onMounted(async () => {
         >
           {{ $t('components.chatHub.cancelled') }}
         </div>
+        <!-- Structured provider/stream errors (code + hint). -->
+        <ChatErrorCard
+          v-if="streamError"
+          :error="streamError"
+          @dismiss="streamError = null"
+        />
+        <!-- Plain non-stream errors (upload failures, etc.). -->
         <div
           v-if="error"
           role="alert"
@@ -1053,8 +1205,18 @@ onMounted(async () => {
       <ChatComposer
         :streaming="isStreaming"
         :can-stop="currentRunId !== null"
+        :persona-name="chatContext?.persona_name ?? null"
+        :model="chatContext?.model ?? ''"
+        :personas="personasList"
+        :models="modelsList"
+        :skills="skillsList"
+        :override="nextTurnOverride"
+        :skill-hints="nextTurnSkillHints"
         @send="send"
         @stop="stopStreaming"
+        @update:override="nextTurnOverride = $event ?? null"
+        @update:skill-hints="nextTurnSkillHints = $event"
+        @clear-conversation="clearConversation"
       />
       </main>
     </UiResizablePanel>

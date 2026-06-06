@@ -128,6 +128,9 @@ export type ChannelPromptListResponse =
   components['schemas']['ChannelPromptListResponse']
 export type ChannelPromptUpdate = components['schemas']['ChannelUpdate']
 
+// --- Chat context (Wave B2) ---------------------------------------------
+export type ChatContextResponse = components['schemas']['ChatContextResponse']
+
 // --- Chat SSE event envelope (Plan 08) ----------------------------------
 // One versioned envelope per stream event; the discriminated union is the
 // single source of truth shared with the backend's src/hermes/events.py.
@@ -146,6 +149,10 @@ export type SubagentDoneData = components['schemas']['SubagentDoneData']
 // Workspace sandbox crash notification (Plan 11b-b). Surfaced into the chat
 // stream so the UI can offer a Restart action.
 export type SandboxCrashedData = components['schemas']['SandboxCrashedData']
+
+// --- Models (Plan 40) ---------------------------------------------------
+export type ModelEntry = components['schemas']['ModelEntry']
+export type ModelsResponse = components['schemas']['ModelsResponse']
 
 // --- Skills (Plan 33 / Plan 37) -----------------------------------------
 // Reusable prompt building blocks ("skills" in the Anthropic sense). Each

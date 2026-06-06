@@ -472,6 +472,38 @@
       "sandbox": {
         "restartFailedWithDetail": "Sandbox restart failed: {detail}",
         "restartFailed": "Sandbox restart failed. Please try again."
+      },
+      "contextPill": {
+        "aria": "Active persona and model",
+        "overrideActive": "Override active — applies to next turn only",
+        "clearOverride": "Clear override",
+        "personaLabel": "Persona",
+        "modelLabel": "Model",
+        "modelPlaceholder": "e.g. claude-opus-4-8",
+        "apply": "Apply"
+      },
+      "commandPicker": {
+        "trigger": "Commands",
+        "sections": {
+          "model": "Model",
+          "persona": "Persona",
+          "thinkingEffort": "Thinking Effort",
+          "skills": "Skills (this turn)",
+          "actions": "Actions"
+        },
+        "thinkingEffort": {
+          "none": "Off",
+          "low": "Low (~1k tokens)",
+          "medium": "Medium (~5k tokens)",
+          "high": "High (~16k tokens)"
+        },
+        "clearConversation": "Clear conversation",
+        "noModels": "No models available"
+      },
+      "composerToolbar": {
+        "attach": "Attach file",
+        "commands": "Commands",
+        "clearOverride": "Clear override"
       }
     }
   },
@@ -601,11 +633,15 @@
     "chat": {
       "upstream_unreachable": "The LLM provider is unreachable. Check your credentials in Settings.",
       "upstream_timeout": "The LLM provider took too long. Please try again.",
-      "upstream_http_error": "The LLM provider returned an error{statusSuffix}. Please try again.",
+      "upstream_http_error": "The LLM provider returned an error{statusSuffix}.",
+      "upstream_rate_limited": "Request limit reached at the provider (429 Too Many Requests).",
       "agent_error": "Internal error: {message}",
       "unauthorized": "Session expired — please sign in again.",
       "request_failed": "Chat request failed{statusSuffix}.",
-      "unknown": "Chat error."
+      "unknown": "Chat error.",
+      "hintModelSwitch": "Try a different model:",
+      "hintModelSwitchCommand": "/model [model-name] in chat",
+      "hintModelSwitchLink": "Choose model in Settings"
     }
   },
   "pages": {
