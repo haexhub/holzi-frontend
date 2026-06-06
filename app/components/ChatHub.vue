@@ -21,6 +21,7 @@ import type {
   Message,
   SandboxCrashedData,
 } from '~/types/api'
+import type { ChatStreamError } from '~/composables/useChatStream'
 
 // Plan 26: the active conversation id is now driven by the URL.
 // `/chat/:id` parses and passes the numeric id; `/` omits the prop so
@@ -127,6 +128,7 @@ const currentRunId = ref<string | null>(null)
 // notice into an unrelated chat. Cleared by selectConversation() or on
 // the next send into the same conversation.
 const cancelledConversationId = ref<number | null>(null)
+const streamError = ref<ChatStreamError | null>(null)
 const error = ref<string | null>(null)
 // Resizable sidebar panels. Widths persist via reka-ui's `auto-save-id`
 // (localStorage). `*Collapsed` mirror the panel's collapsed state, driven by
@@ -326,6 +328,7 @@ async function runStream(
   currentRunId.value = null
   // Fresh activity supersedes any prior abort notice.
   cancelledConversationId.value = null
+  streamError.value = null
   error.value = null
   let outcome: 'done' | 'cancelled' | 'failed' = 'done'
   // Track whether this stream created a fresh conversation. If so, replace
@@ -464,7 +467,11 @@ async function runStream(
     }
   } catch (err: unknown) {
     outcome = 'failed'
-    error.value = friendlyChatError(err, t)
+    if (err instanceof ChatStreamError) {
+      streamError.value = err
+    } else {
+      error.value = friendlyChatError(err, t)
+    }
   } finally {
     streamingText.value = ''
     streamingToolCalls.value = []
@@ -1031,6 +1038,13 @@ onMounted(() => {
         >
           {{ $t('components.chatHub.cancelled') }}
         </div>
+        <!-- Structured provider/stream errors (code + hint). -->
+        <ChatErrorCard
+          v-if="streamError"
+          :error="streamError"
+          @dismiss="streamError = null"
+        />
+        <!-- Plain non-stream errors (upload failures, etc.). -->
         <div
           v-if="error"
           role="alert"
