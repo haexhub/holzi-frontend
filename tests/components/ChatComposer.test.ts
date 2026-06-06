@@ -1,5 +1,11 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
+
+vi.mock('vue-i18n', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('vue-i18n')>()
+  return { ...orig, useI18n: () => ({ t: (k: string) => k }) }
+})
+
 import ChatComposer from '~/components/chat/ChatComposer.vue'
 
 function addFile(wrapper: ReturnType<typeof mount>, file: File) {
