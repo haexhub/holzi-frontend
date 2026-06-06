@@ -472,6 +472,14 @@
       "sandbox": {
         "restartFailedWithDetail": "Sandbox-Neustart fehlgeschlagen: {detail}",
         "restartFailed": "Sandbox-Neustart fehlgeschlagen. Bitte erneut versuchen."
+      },
+      "contextPill": {
+        "aria": "Aktive Persona und Modell",
+        "overrideActive": "Override aktiv — gilt für den nächsten Turn",
+        "clearOverride": "Override zurücksetzen",
+        "personaLabel": "Persona",
+        "modelLabel": "Modell",
+        "apply": "Anwenden"
       }
     }
   },
@@ -599,13 +607,17 @@
     "DIAG_SANDBOX_SOCKET_MISSING": "HERMES_SANDBOX_SOCKET nicht gesetzt — Tool-Calls, die eine Sandbox brauchen, werden scheitern.",
     "DIAG_SANDBOX_MANAGER_FAILED": "Sandbox-Socket konfiguriert, aber Manager konnte nicht starten.",
     "chat": {
-      "upstream_unreachable": "LLM-Provider nicht erreichbar. Prüfe deine Credentials in den Settings.",
+      "upstream_unreachable": "LLM-Provider nicht erreichbar. Prüfe deine Credentials in den Einstellungen.",
       "upstream_timeout": "LLM-Provider hat zu lange gebraucht. Versuch es nochmal.",
-      "upstream_http_error": "LLM-Provider hat einen Fehler zurückgegeben{statusSuffix}. Versuch es gleich nochmal.",
+      "upstream_http_error": "LLM-Provider hat einen Fehler gemeldet{statusSuffix}.",
+      "upstream_rate_limited": "Anfrage-Limit beim Provider erreicht (429 Too Many Requests).",
       "agent_error": "Interner Fehler: {message}",
       "unauthorized": "Session abgelaufen — bitte neu einloggen.",
       "request_failed": "Chat-Request fehlgeschlagen{statusSuffix}.",
-      "unknown": "Chat-Fehler."
+      "unknown": "Chat-Fehler.",
+      "hintModelSwitch": "Versuch's mit einem anderen Modell:",
+      "hintModelSwitchCommand": "/model [modell-name] im Chat",
+      "hintModelSwitchLink": "Modell in den Einstellungen wählen"
     }
   },
   "pages": {

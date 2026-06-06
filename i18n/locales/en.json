@@ -472,6 +472,14 @@
       "sandbox": {
         "restartFailedWithDetail": "Sandbox restart failed: {detail}",
         "restartFailed": "Sandbox restart failed. Please try again."
+      },
+      "contextPill": {
+        "aria": "Active persona and model",
+        "overrideActive": "Override active — applies to next turn only",
+        "clearOverride": "Clear override",
+        "personaLabel": "Persona",
+        "modelLabel": "Model",
+        "apply": "Apply"
       }
     }
   },
@@ -601,11 +609,15 @@
     "chat": {
       "upstream_unreachable": "The LLM provider is unreachable. Check your credentials in Settings.",
       "upstream_timeout": "The LLM provider took too long. Please try again.",
-      "upstream_http_error": "The LLM provider returned an error{statusSuffix}. Please try again.",
+      "upstream_http_error": "The LLM provider returned an error{statusSuffix}.",
+      "upstream_rate_limited": "Request limit reached at the provider (429 Too Many Requests).",
       "agent_error": "Internal error: {message}",
       "unauthorized": "Session expired — please sign in again.",
       "request_failed": "Chat request failed{statusSuffix}.",
-      "unknown": "Chat error."
+      "unknown": "Chat error.",
+      "hintModelSwitch": "Try a different model:",
+      "hintModelSwitchCommand": "/model [model-name] in chat",
+      "hintModelSwitchLink": "Choose model in Settings"
     }
   },
   "pages": {
