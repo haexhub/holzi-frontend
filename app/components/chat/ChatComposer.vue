@@ -178,6 +178,7 @@ const hasOverride = computed(
       <ChatCommandPicker
         :personas="personas ?? []"
         :models="models ?? []"
+        :default-model="model ?? ''"
         :skills="skills ?? []"
         :override="override ?? null"
         :skill-hints="skillHints ?? []"

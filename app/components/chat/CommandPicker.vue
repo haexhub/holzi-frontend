@@ -16,6 +16,7 @@ const props = defineProps<{
   skills: Skill[]
   override: { model?: string; personaId?: number; thinkingBudget?: 'low' | 'medium' | 'high' } | null
   skillHints: string[]
+  defaultModel: string
 }>()
 
 const emit = defineEmits<{
@@ -28,7 +29,10 @@ const { t } = useI18n({ useScope: 'global' })
 const open = ref(false)
 
 function selectModel(id: string) {
-  emit('update:override', { ...props.override, model: id })
+  const next = { ...props.override, model: id }
+  const picked = props.models.find((m) => m.id === id)
+  if (!picked?.thinking.supported) delete next.thinkingBudget
+  emit('update:override', Object.keys(next).length ? next : null)
   open.value = false
 }
 
@@ -57,7 +61,19 @@ function clearConversation() {
   emit('clear-conversation')
 }
 
-const THINKING_LEVELS = ['none', 'low', 'medium', 'high'] as const
+// The model that will actually run this turn: explicit override wins,
+// otherwise the persona/context-resolved default.
+const effectiveModelId = computed(() => props.override?.model ?? props.defaultModel)
+const effectiveModel = computed(() =>
+  props.models.find((m) => m.id === effectiveModelId.value),
+)
+// Unknown model (not in the list) -> treat as no thinking support; the
+// backend will drop any budget anyway, and we can't offer levels we
+// don't know.
+const thinkingSupported = computed(() => effectiveModel.value?.thinking.supported ?? false)
+const thinkingLevels = computed<readonly string[]>(() =>
+  thinkingSupported.value ? ['none', ...effectiveModel.value!.thinking.levels] : [],
+)
 </script>
 
 <template>
@@ -88,6 +104,7 @@ const THINKING_LEVELS = ['none', 'low', 'medium', 'high'] as const
           <button
             v-for="m in models"
             :key="`${m.credential_id}:${m.id}`"
+            :data-testid="`model-row-${m.id}`"
             type="button"
             class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
             @click="selectModel(m.id)"
@@ -124,25 +141,30 @@ const THINKING_LEVELS = ['none', 'low', 'medium', 'high'] as const
           {{ p.name }}
         </button>
 
-        <div class="my-1.5 border-t" />
-
         <!-- Thinking Effort section -->
-        <p class="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-          {{ t('components.chatHub.commandPicker.sections.thinkingEffort') }}
-        </p>
-        <button
-          v-for="level in THINKING_LEVELS"
-          :key="level"
-          type="button"
-          class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
-          @click="selectThinking(level === 'none' ? null : level)"
-        >
-          <Check
-            class="size-3.5 shrink-0"
-            :class="(level === 'none' ? !override?.thinkingBudget : override?.thinkingBudget === level) ? 'opacity-100' : 'opacity-0'"
-          />
-          {{ t(`components.chatHub.commandPicker.thinkingEffort.${level}`) }}
-        </button>
+        <template v-if="thinkingSupported">
+          <div class="my-1.5 border-t" />
+          <p
+            data-testid="thinking-section"
+            class="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide"
+          >
+            {{ t('components.chatHub.commandPicker.sections.thinkingEffort') }}
+          </p>
+          <button
+            v-for="level in thinkingLevels"
+            :key="level"
+            type="button"
+            :data-testid="`thinking-level-${level}`"
+            class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+            @click="selectThinking(level === 'none' ? null : (level as 'low' | 'medium' | 'high'))"
+          >
+            <Check
+              class="size-3.5 shrink-0"
+              :class="(level === 'none' ? !override?.thinkingBudget : override?.thinkingBudget === level) ? 'opacity-100' : 'opacity-0'"
+            />
+            {{ t(`components.chatHub.commandPicker.thinkingEffort.${level}`) }}
+          </button>
+        </template>
 
         <template v-if="skills.length">
           <div class="my-1.5 border-t" />
