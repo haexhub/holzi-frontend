@@ -7,11 +7,11 @@
 > wave.
 
 Status: **Planned. Strategy / sequencing only.** No code touched by this
-plan. **Wave 0 (i18n), Wave A (A1/A2/A3 — Plans 36/37/38), and Wave B1
-(Plans 29-D + 29-D-A) all shipped by 2026-06-05.** Next executable slice
-is **Wave B2 (Slash-Command Picker + Improved Error UX)** — to be written
-as its own plan file (next free number `39-…`) per the per-wave numbering
-scheme in "How this plan relates to others" below.
+plan. **Wave 0 (i18n), Wave A (A1/A2/A3 — Plans 36/37/38), Wave B1
+(Plans 29-D + 29-D-A), and Wave B2 (Plan 39) all shipped by 2026-06-06.**
+Next executable slice is **Plan 40 — Claude-Code-style Composer Redesign**
+(toolbar below textarea, `/`-Command Picker with model/persona/thinking-effort/skills,
+replaces header pill).
 
 ## Genesis
 
@@ -279,7 +279,7 @@ follow-up Plan 29-D-A (`29da-modelselect-reuse.md`) reused the existing
 a11y label association + a clearable "use credential default" entry.
 **Next executable slice is B2** below.
 
-#### B2 — Slash-Command Picker + Improved Error UX
+#### B2 — Slash-Command Picker + Improved Error UX **(done 2026-06-06)**
 
 Two related changes:
 
