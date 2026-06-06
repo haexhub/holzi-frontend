@@ -100,9 +100,12 @@ export interface paths {
          * Api Models
          * @description Return all models available across all configured credentials.
          *
-         *     Calls each credential's GET /v1/models endpoint. Falls back to the
-         *     credential's configured model field when the provider doesn't support
-         *     model listing. Models are returned in credential order.
+         *     Delegates the actual listing to `provider_models.list_provider_models`
+         *     so we share its 10 min per-credential cache and pick up OpenRouter's
+         *     `supported_parameters` metadata for capability resolution. Falls back
+         *     to `cred.model` when the lister raises (network / non-listing
+         *     provider). Each entry carries a `thinking` block telling the composer
+         *     which budgets to offer.
          */
         get: operations["api_models_api_models_get"];
         put?: never;
@@ -2146,6 +2149,9 @@ export interface components {
             credential_id: number;
             /** Credential Name */
             credential_name: string;
+            /** Provider */
+            provider: string;
+            thinking: components["schemas"]["ThinkingSupportDTO"];
         };
         /** ModelListResponse */
         ModelListResponse: {
@@ -2757,6 +2763,13 @@ export interface components {
              */
             version: number;
             data: components["schemas"]["TextData"];
+        };
+        /** ThinkingSupportDTO */
+        ThinkingSupportDTO: {
+            /** Supported */
+            supported: boolean;
+            /** Levels */
+            levels: string[];
         };
         /**
          * ToolCallData
