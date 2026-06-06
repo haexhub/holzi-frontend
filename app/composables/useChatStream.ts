@@ -107,6 +107,7 @@ export interface ChatStreamCallbacks {
  */
 export type ChatStreamErrorCode =
   | 'upstream_http_error'
+  | 'upstream_rate_limited'
   | 'upstream_timeout'
   | 'upstream_unreachable'
   | 'agent_error'
@@ -131,6 +132,9 @@ export async function sendChatMessage(
     // Ids of files already uploaded to this conversation (Plan 11). The
     // backend links them to the user message and inlines text content.
     attachment_ids?: number[]
+    // One-turn overrides. Not persisted. Cleared after the agent run.
+    model_override?: string
+    persona_id_override?: number
   },
   callbacks: ChatStreamCallbacks = {},
 ): Promise<ChatStreamResult> {

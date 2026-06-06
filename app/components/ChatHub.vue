@@ -21,7 +21,7 @@ import type {
   Message,
   SandboxCrashedData,
 } from '~/types/api'
-import type { ChatStreamError } from '~/composables/useChatStream'
+import { ChatStreamError } from '~/composables/useChatStream'
 
 // Plan 26: the active conversation id is now driven by the URL.
 // `/chat/:id` parses and passes the numeric id; `/` omits the prop so
@@ -479,6 +479,7 @@ async function runStream(
     streamingReasoning.value = ''
     streamingSubagents.value = []
     currentRunId.value = null
+    nextTurnOverride.value = null
     streamState.value =
       outcome === 'cancelled' ? 'cancelled' : outcome === 'failed' ? 'failed' : 'idle'
   }
@@ -529,8 +530,28 @@ function uploadErrorMessage(err: unknown): string {
 }
 
 async function send(payload: { text: string; files: File[] }) {
-  const text = payload.text
   const files = payload.files ?? []
+
+  // Parse slash overrides out of the raw text before anything else.
+  const parsed = parseSlashOverrides(payload.text)
+  if (parsed.modelOverride !== undefined) {
+    nextTurnOverride.value = { ...nextTurnOverride.value, model: parsed.modelOverride }
+  }
+  if (parsed.personaName !== undefined) {
+    const match = personasList.value.find(
+      (p) => p.name.toLowerCase() === parsed.personaName!.toLowerCase(),
+    )
+    if (match) {
+      nextTurnOverride.value = { ...nextTurnOverride.value, personaId: match.id }
+    }
+  }
+  const text = parsed.cleanText
+
+  if (!text && !files.length) {
+    // Pure slash command — override is set, nothing to send.
+    return
+  }
+
   if (isStreaming.value) {
     // A turn is already in flight — hold this follow-up (and its files) in
     // the visible queue. flushQueue() sends it once the turn finishes.
@@ -605,6 +626,8 @@ async function send(payload: { text: string; files: File[] }) {
         message: text,
         conversation_id: conversationId ?? undefined,
         attachment_ids: uploaded.map((a) => a.id),
+        model_override: nextTurnOverride.value?.model,
+        persona_id_override: nextTurnOverride.value?.personaId,
       },
       callbacks,
     ),
@@ -773,9 +796,54 @@ watch(
   },
 )
 
+// --- Slash command override state ---
+
+interface SlashParseResult {
+  cleanText: string
+  modelOverride?: string
+  personaName?: string
+}
+
+function parseSlashOverrides(raw: string): SlashParseResult {
+  let text = raw.trimStart()
+  let modelOverride: string | undefined
+  let personaName: string | undefined
+
+  const modelM = text.match(/^\/model\s+(\S+)([\s\S]*)$/)
+  if (modelM) {
+    modelOverride = modelM[1]!.trim()
+    text = (modelM[2] ?? '').trim()
+  }
+
+  const personaM = text.match(/^\/persona\s+(.+?)(?:\n|$)([\s\S]*)$/)
+  if (personaM) {
+    personaName = personaM[1]!.trim()
+    text = (personaM[2] ?? '').trim()
+  }
+
+  return { cleanText: text, modelOverride, personaName }
+}
+
+const nextTurnOverride = ref<{ model?: string; personaId?: number } | null>(null)
+
+const personasList = ref<import('~/types/api').Persona[]>([])
+
+async function loadPersonas() {
+  const personas = usePersonas()
+  try {
+    const res = await personas.list()
+    personasList.value = res.personas
+  } catch {
+    // non-fatal: /persona command won't resolve names
+  }
+}
+
+// --- End slash command state ---
+
 onMounted(() => {
   loadConversations()
   loadCredentialState()
+  loadPersonas()
   // If we mounted with a conversation id from the route (deep-link or
   // reload of `/chat/:id`), load it now. The watcher above won't fire
   // for the initial value, so we kick it off explicitly.
