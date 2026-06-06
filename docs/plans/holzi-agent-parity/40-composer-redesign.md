@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-Status: **Draft / Not started**
+Status: **In Progress — BE PR haexhub/Holzi#78 open (2026-06-06), FE PR haexhub/holzi-frontend#103 open (2026-06-06, base: Plan 39 #101)**
 
 **Goal:** Redesign the chat composer to match Claude Code's layout — full-width textarea with a toolbar below, and a `/`-Command Picker that covers model switch, persona switch, thinking effort, skill quick-select, and clear conversation.
 

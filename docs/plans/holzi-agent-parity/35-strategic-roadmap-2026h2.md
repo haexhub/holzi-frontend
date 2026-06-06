@@ -8,10 +8,9 @@
 
 Status: **Planned. Strategy / sequencing only.** No code touched by this
 plan. **Wave 0 (i18n), Wave A (A1/A2/A3 — Plans 36/37/38), Wave B1
-(Plans 29-D + 29-D-A), and Wave B2 (Plan 39) all shipped by 2026-06-06.**
-Next executable slice is **Plan 40 — Claude-Code-style Composer Redesign**
-(toolbar below textarea, `/`-Command Picker with model/persona/thinking-effort/skills,
-replaces header pill).
+(Plans 29-D + 29-D-A), Wave B2 (Plan 39), and Plan 40 (Composer Redesign)
+all shipped/in-PR by 2026-06-06.**
+Next executable slice: **Wave C1** (multi-user / family-mode foundation).
 
 ## Genesis
 
