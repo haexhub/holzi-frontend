@@ -481,6 +481,33 @@
         "modelLabel": "Modell",
         "modelPlaceholder": "z. B. claude-opus-4-8",
         "apply": "Anwenden"
+      },
+      "commandPicker": {
+        "trigger": "Kommandos",
+        "sections": {
+          "model": "Modell",
+          "persona": "Persona",
+          "thinkingEffort": "Thinking Effort",
+          "skills": "Skills (dieser Turn)",
+          "actions": "Aktionen"
+        },
+        "thinkingEffort": {
+          "none": "Aus",
+          "low": "Niedrig (~1k Tokens)",
+          "medium": "Mittel (~5k Tokens)",
+          "high": "Hoch (~16k Tokens)"
+        },
+        "clearConversation": "Konversation leeren",
+        "clearConversationConfirm": "Alle Nachrichten in dieser Konversation löschen?",
+        "noModels": "Keine Modelle verfügbar",
+        "noSkills": "Keine Skills aktiviert",
+        "apply": "Übernehmen",
+        "activeOverride": "Override aktiv"
+      },
+      "composerToolbar": {
+        "attach": "Datei anhängen",
+        "commands": "Kommandos",
+        "clearOverride": "Override zurücksetzen"
       }
     }
   },
