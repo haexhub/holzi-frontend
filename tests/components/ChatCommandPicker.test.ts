@@ -29,12 +29,15 @@ describe('CommandPicker.vue', () => {
   it('emits clear-conversation when action is clicked', async () => {
     const wrapper = mount(CommandPicker, {
       props: { personas: [persona], models: [model], skills: [], override: null, skillHints: [] },
+      attachTo: document.body,
     })
     await wrapper.find('[data-testid="command-picker-trigger"]').trigger('click')
-    const clearBtn = wrapper.find('[data-testid="clear-conversation"]')
-    if (clearBtn.exists()) {
-      await clearBtn.trigger('click')
-      expect(wrapper.emitted('clear-conversation')).toBeTruthy()
-    }
+    // PopoverContent is portaled into document.body — search there.
+    const clearBtn = document.querySelector('[data-testid="clear-conversation"]')
+    expect(clearBtn).not.toBeNull()
+    ;(clearBtn as HTMLElement).click()
+    await wrapper.vm.$nextTick()
+    expect(wrapper.emitted('clear-conversation')).toBeTruthy()
+    wrapper.unmount()
   })
 })

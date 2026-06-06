@@ -873,11 +873,15 @@ async function loadModels() {
 }
 
 async function loadSkills() {
-  const skillsApi = useSkills()
-  await skillsApi.list()
-  skillsList.value = (skillsApi.data.value?.skills ?? [])
-    .filter((s: Skill) => s.enabled)
-    .map((s: Skill) => ({ slug: s.slug, name: s.name }))
+  try {
+    const skillsApi = useSkills()
+    await skillsApi.list()
+    skillsList.value = (skillsApi.data.value?.skills ?? [])
+      .filter((s: Skill) => s.enabled)
+      .map((s: Skill) => ({ slug: s.slug, name: s.name }))
+  } catch {
+    // non-fatal: command picker shows no skills section
+  }
 }
 
 async function clearConversation() {
@@ -887,6 +891,10 @@ async function clearConversation() {
     activeId.value = null
     rememberLastConversation(null)
     messages.value = []
+    // Reset all transient composer state so nothing leaks into the next chat.
+    queue.clear()
+    nextTurnOverride.value = null
+    nextTurnSkillHints.value = []
     navigateTo(localePath('/'))
     await loadConversations()
   } catch (err: unknown) {
