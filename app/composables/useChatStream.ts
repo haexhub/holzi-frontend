@@ -459,6 +459,7 @@ const KNOWN_CHAT_CODES = new Set([
   'upstream_unreachable',
   'upstream_timeout',
   'upstream_http_error',
+  'upstream_rate_limited',
   'agent_error',
   'unauthorized',
   'request_failed',

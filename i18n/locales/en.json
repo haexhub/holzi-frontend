@@ -479,6 +479,7 @@
         "clearOverride": "Clear override",
         "personaLabel": "Persona",
         "modelLabel": "Model",
+        "modelPlaceholder": "e.g. claude-opus-4-8",
         "apply": "Apply"
       }
     }

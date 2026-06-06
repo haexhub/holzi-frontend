@@ -99,7 +99,7 @@ const hasOverride = computed(() => !!props.override && Object.keys(props.overrid
                 v-model="pickerModel"
                 type="text"
                 class="w-full rounded-md border bg-background px-3 py-1.5 text-sm font-mono placeholder:font-sans placeholder:text-muted-foreground"
-                placeholder="e.g. claude-opus-4-8"
+                :placeholder="t('components.chatHub.contextPill.modelPlaceholder')"
               />
             </div>
             <button

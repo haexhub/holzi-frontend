@@ -808,7 +808,7 @@ interface SlashParseResult {
 }
 
 function parseSlashOverrides(raw: string): SlashParseResult {
-  let text = raw.trimStart()
+  let text = raw.trimStart().startsWith('/') ? raw.trimStart() : raw
   let modelOverride: string | undefined
   let personaName: string | undefined
 
