@@ -150,6 +150,10 @@ export type SubagentDoneData = components['schemas']['SubagentDoneData']
 // stream so the UI can offer a Restart action.
 export type SandboxCrashedData = components['schemas']['SandboxCrashedData']
 
+// --- Models (Plan 40) ---------------------------------------------------
+export type ModelEntry = components['schemas']['ModelEntry']
+export type ModelsResponse = components['schemas']['ModelsResponse']
+
 // --- Skills (Plan 33 / Plan 37) -----------------------------------------
 // Reusable prompt building blocks ("skills" in the Anthropic sense). Each
 // row carries a Markdown body and frontmatter-style metadata. Plan 37
