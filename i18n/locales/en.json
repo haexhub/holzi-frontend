@@ -498,11 +498,7 @@
           "high": "High (~16k tokens)"
         },
         "clearConversation": "Clear conversation",
-        "clearConversationConfirm": "Delete all messages in this conversation?",
-        "noModels": "No models available",
-        "noSkills": "No skills enabled",
-        "apply": "Apply",
-        "activeOverride": "Override active"
+        "noModels": "No models available"
       },
       "composerToolbar": {
         "attach": "Attach file",

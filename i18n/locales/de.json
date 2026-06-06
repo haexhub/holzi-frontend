@@ -498,11 +498,7 @@
           "high": "Hoch (~16k Tokens)"
         },
         "clearConversation": "Konversation leeren",
-        "clearConversationConfirm": "Alle Nachrichten in dieser Konversation löschen?",
-        "noModels": "Keine Modelle verfügbar",
-        "noSkills": "Keine Skills aktiviert",
-        "apply": "Übernehmen",
-        "activeOverride": "Override aktiv"
+        "noModels": "Keine Modelle verfügbar"
       },
       "composerToolbar": {
         "attach": "Datei anhängen",

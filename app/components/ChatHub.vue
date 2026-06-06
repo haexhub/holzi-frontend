@@ -300,6 +300,9 @@ function newChat() {
   queue.clear()
   sandboxCrashes.value = []
   loadingConversation.value = false
+  // One-turn overrides are transient — a fresh chat must start clean.
+  nextTurnOverride.value = null
+  nextTurnSkillHints.value = []
   rememberLastConversation(null)
   // Drop the id from the URL so a reload doesn't reopen the previous chat.
   const homePath = localePath('/')
