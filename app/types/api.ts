@@ -128,6 +128,9 @@ export type ChannelPromptListResponse =
   components['schemas']['ChannelPromptListResponse']
 export type ChannelPromptUpdate = components['schemas']['ChannelUpdate']
 
+// --- Chat context (Wave B2) ---------------------------------------------
+export type ChatContextResponse = components['schemas']['ChatContextResponse']
+
 // --- Chat SSE event envelope (Plan 08) ----------------------------------
 // One versioned envelope per stream event; the discriminated union is the
 // single source of truth shared with the backend's src/hermes/events.py.

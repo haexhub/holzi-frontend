@@ -16,9 +16,11 @@ import { useLastConversationStore } from '~/stores/lastConversation'
 import { useAuthStore } from '~/stores/auth'
 import type {
   Attachment,
+  ChatContextResponse,
   Conversation,
   ConversationDetail,
   Message,
+  Persona,
   SandboxCrashedData,
 } from '~/types/api'
 import { ChatStreamError } from '~/composables/useChatStream'
@@ -487,6 +489,7 @@ async function runStream(
   // dropped stream the queued messages stay put and visible (the user
   // gets an explicit retry path) so we never silently fire them.
   if (outcome === 'done') {
+    loadChatContext()
     flushQueue()
   }
 }
@@ -826,7 +829,8 @@ function parseSlashOverrides(raw: string): SlashParseResult {
 
 const nextTurnOverride = ref<{ model?: string; personaId?: number } | null>(null)
 
-const personasList = ref<import('~/types/api').Persona[]>([])
+const personasList = ref<Persona[]>([])
+const chatContext = ref<ChatContextResponse | null>(null)
 
 async function loadPersonas() {
   const personas = usePersonas()
@@ -838,12 +842,21 @@ async function loadPersonas() {
   }
 }
 
+async function loadChatContext() {
+  try {
+    chatContext.value = await api.get<ChatContextResponse>('/api/chat/context')
+  } catch {
+    // non-fatal: pill shows nothing if context can't be loaded
+  }
+}
+
 // --- End slash command state ---
 
 onMounted(() => {
   loadConversations()
   loadCredentialState()
   loadPersonas()
+  loadChatContext()
   // If we mounted with a conversation id from the route (deep-link or
   // reload of `/chat/:id`), load it now. The watcher above won't fire
   // for the initial value, so we kick it off explicitly.
@@ -924,6 +937,16 @@ onMounted(() => {
           <h1 class="text-sm font-semibold">
             {{ activeId === null ? $t('components.chatHub.header.newChat') : $t('components.chatHub.header.conversation', { id: activeId }) }}
           </h1>
+          <ChatHeaderPill
+            v-if="chatContext"
+            :persona-name="chatContext.persona_name"
+            :model="chatContext.model"
+            :personas="personasList"
+            :override="nextTurnOverride"
+            class="ml-1"
+            @clear="nextTurnOverride = null"
+            @update:override="nextTurnOverride = $event"
+          />
         </div>
         <div class="flex items-center gap-1">
           <button
