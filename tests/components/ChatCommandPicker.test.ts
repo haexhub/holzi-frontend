@@ -95,4 +95,20 @@ describe('CommandPicker.vue', () => {
     })
     expect(document.querySelector('[data-testid="thinking-section"]')).toBeNull()
   })
+
+  it('clears thinkingBudget when switching to a non-thinking model', async () => {
+    const wrapper = await openPicker({
+      personas: [persona], models: [model, nonThinkingModel], skills: [],
+      override: { model: 'claude-opus-4-8', thinkingBudget: 'high' }, skillHints: [],
+      defaultModel: 'claude-opus-4-8',
+    })
+    // Click the non-thinking model row
+    const gpt = document.querySelector('[data-testid="model-row-gpt-4o"]') as HTMLElement
+    gpt.click()
+    await wrapper.vm.$nextTick()
+    const last = wrapper.emitted('update:override')!.at(-1)![0] as Record<string, unknown> | null
+    expect(last).not.toBeNull()
+    expect(last!.model).toBe('gpt-4o')
+    expect(last!.thinkingBudget).toBeUndefined()
+  })
 })

@@ -104,6 +104,7 @@ const thinkingLevels = computed<readonly string[]>(() =>
           <button
             v-for="m in models"
             :key="`${m.credential_id}:${m.id}`"
+            :data-testid="`model-row-${m.id}`"
             type="button"
             class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
             @click="selectModel(m.id)"
