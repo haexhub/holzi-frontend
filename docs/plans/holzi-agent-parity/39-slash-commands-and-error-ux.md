@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-Status: **Done — BE merged PR #77 (2026-06-05), FE PR #101 open (2026-06-06)**
+Status: **Done — BE merged PR #77 (2026-06-05), FE folded into Plan 40 #103, merged 2026-06-06 (squash `42cb7b6`; #101 closed as superseded)**
 
 **Goal:** Ship two inter-related features: (1) per-turn model + persona overrides via `/model <name>` and `/persona <name>` composer commands + a header pill that shows the active persona/model and opens a picker; (2) replace the generic inline error string with a structured `ChatErrorCard` that shows the sanitised provider error, the real HTTP status code, and a contextual hint to try a different model.
 
