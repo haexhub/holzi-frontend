@@ -1,4 +1,4 @@
-Status: Design complete, not started
+Status: BE done (PR #82, merged 2026-06-08, squash `2361ebf`). FE extension (separate VS Code project) not started.
 
 # Plan 41: Holzi VS Code Extension
 
@@ -164,6 +164,9 @@ automatically. Modelled after Claude Code's VS Code extension.
 
 ## Holzi Backend Changes
 
+**Status: implemented and merged in PR #82 (squash `2361ebf`, 2026-06-08).**
+12 new pytest tests cover the protocol; full suite 1004 passed, ruff + mypy clean.
+
 ### New endpoint: `GET /ws/agent`
 
 WebSocket upgrade endpoint. Auth via `Authorization: Bearer <token>` header or
@@ -179,13 +182,20 @@ src/hermes/tools/plan_wrapper.py   # Wraps RemoteTools in plan mode: no exec
 
 ### RemoteTool
 
+Shipped as `make_remote_tool(name, session)` factory in `src/hermes/tools/remote.py`
+(not a `BaseTool` subclass — the codebase's `Tool` dataclass is composed
+with a closure-based handler). Sends a `tool_call` message over the WS,
+awaits the matching `tool_result` with a 30s timeout, returns the result string.
+
 ```python
-class RemoteTool(BaseTool):
-    async def execute(self, params, *, session: WsSession) -> ToolResult:
+def make_remote_tool(name: str, session: WsSession) -> Tool:
+    async def handler(params: dict[str, Any]) -> str:
         call_id = uuid4().hex
-        await session.send({"type": "tool_call", "id": call_id,
-                            "name": self.name, "params": params})
-        return await session.wait_for_result(call_id, timeout=30)
+        await session.ws.send_json(
+            {"type": "tool_call", "id": call_id, "name": name, "params": params}
+        )
+        return await session.wait_for_result(call_id, timeout=30.0)
+    return Tool(name=name, ..., handler=handler)
 ```
 
 Remote tools are registered dynamically per session from `start_session.tools`.
