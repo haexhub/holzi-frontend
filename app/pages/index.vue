@@ -24,8 +24,14 @@ onMounted(async () => {
     await api.get(`/api/conversations/${lastId}`)
     await navigateTo(localePath(`/chat/${lastId}`), { replace: true })
   }
-  catch {
-    // 404 / 401 / network — drop the stale pointer, render the empty hub.
+  catch (err: unknown) {
+    const status = (err as { statusCode?: number; status?: number })?.statusCode
+      ?? (err as { status?: number })?.status
+    if (status === 401) {
+      await navigateTo(localePath('/login'), { replace: true })
+      return
+    }
+    // 404 / network — drop the stale pointer, render the empty hub.
     lastConv.clear()
     ready.value = true
   }

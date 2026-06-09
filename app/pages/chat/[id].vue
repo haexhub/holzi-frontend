@@ -44,12 +44,15 @@ async function validate(id: number | null) {
     valid.value = true
   }
   catch (err: unknown) {
-    // 401 is handled by the global auth middleware (redirects to /login).
-    // For anything else (404, 5xx, network) bounce back to `/` with a
-    // toast — the URL was bookmarked but the chat is gone.
     const status = (err as { statusCode?: number; status?: number })?.statusCode
       ?? (err as { status?: number })?.status
-    if (status === 401) return
+    // Token stale or invalid — the middleware already passed because it only
+    // runs on navigation. Clear the token and go to login explicitly so the
+    // user isn't left on a blank page.
+    if (status === 401) {
+      await navigateTo(localePath('/login'), { replace: true })
+      return
+    }
     valid.value = false
     toast.error(t('pages.chat.notFound'))
     // Drop the last-active pointer too — if it was pointing here we
